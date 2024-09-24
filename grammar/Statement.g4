@@ -2,10 +2,10 @@ grammar Statement;
 
 import Arithmetic, Typing, Directive, Tokens;
 
-statement_list: (body|flow|(directive|(SEMI SEMI*)|(statement semi_truck)))*;
+statement_list: (body|flow|(directive|SEMI+|(statement semi_truck)))*;
 body: '{' statement_list '}';
 
-statement: call | definition | assignment | directive| ret;
+statement: call | definition | assignment | directive | ret;
 
 // return
 ret: RETURN expr;
@@ -14,7 +14,7 @@ ret: RETURN expr;
 flow: if|loop|special|label;
 loop: label* (for|while|do);
 
-special: ((BREAK WORD?)|(CONTINUE WORD?)) state_end;
+special: ((BREAK|CONTINUE) WORD?) state_end;
 state_end: (SEMI|NL);
 label: WORD ':';
 
@@ -22,14 +22,14 @@ label: WORD ':';
 do: DO body while_header;
 
 // while loop
-while: while_header (body|(statement+semi_truck));
+while: while_header (body|(statement semi_truck));
 while_header: WHILE '(' (expr) ')';
 
 // if
-if: IF '(' (expr) ')' (body|(statement+semi_truck));
+if: IF '(' expr ')' (body|(statement semi_truck));
 
 // for loop
-for: FOR '(' (loop_enhanced|loop_standard) ')' (body|(statement+semi_truck));
+for: FOR '(' (loop_enhanced|loop_standard) ')' (body|(statement semi_truck));
 loop_enhanced: (full_type? WORD ':' expr);
 loop_standard: ((statement?) semi_truck (expr) semi_truck (statement?));
 
@@ -51,4 +51,4 @@ operand: EQUAL
        | MOD_EQUAL
 ;
 
-semi_truck: ((SEMI SEMI*)|{inferSemicolons}?);
+semi_truck: (SEMI+)|{inferSemicolons}?;

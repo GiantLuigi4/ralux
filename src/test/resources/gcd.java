@@ -1,3 +1,5 @@
+pkg tfc.ralux.core;
+
 [ImmediateCompile]
 public class Math {
     public int gcd() {

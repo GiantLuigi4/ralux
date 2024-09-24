@@ -12,7 +12,7 @@ C_TYPE: CLASS|INTERFACE;
 PRIMITIVE_INT: 'byte' | 'int' | 'short' | 'long';
 PRIMITIVE_FP: 'half' | 'float' | 'double';
 PRIMITIVE_OTHER: 'char' | 'boolean' | 'void';
-MODIFIER: 'public'|'private'|'protected'|'final';
+MODIFIER: 'public' | 'private' | 'protected' | 'final';
 STATIC: 'static';
 
 CONSTANT: TRUE | FALSE | NULL;
@@ -112,7 +112,7 @@ BYTE: INUM'b';
 INUM: [0-9]+;
 
 // Skip whitespace
-NL: [\n]+    -> channel(1);
-WS: [ \t\r]+ -> skip;
-COMMENT: '//' ~[\n]* -> skip;
-BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+NL: [\n]+    -> channel(2);
+WS: [ \t\r]+ -> channel(2);
+COMMENT: '//' ~[\n]* -> channel(2);
+BLOCK_COMMENT: '/*' .*? '*/' -> channel(2);

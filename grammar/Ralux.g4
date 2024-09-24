@@ -2,7 +2,7 @@ grammar Ralux;
 
 import Class, Method, Directive;
 
-file: (class);
+file: (directive|header|class|(SEMI+))*;
 
 header: ((static_use)|('use'|'pkg') named_type) semi_truck;
 // syntax: use static tfc.ralux.core.System#out#println
@@ -10,4 +10,4 @@ header: ((static_use)|('use'|'pkg') named_type) semi_truck;
 static_use: 'use' STATIC named_type WORD;
 
 // common
-annotation: '[' .*? ']';
+annotation: '[' (~']')* ']';
