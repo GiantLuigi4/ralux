@@ -357,6 +357,16 @@ public interface RaluxListener extends ParseTreeListener {
 	 */
 	void exitExpr(RaluxParser.ExprContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link RaluxParser#fb_expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterFb_expr(RaluxParser.Fb_exprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link RaluxParser#fb_expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitFb_expr(RaluxParser.Fb_exprContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link RaluxParser#full_type}.
 	 * @param ctx the parse tree
 	 */

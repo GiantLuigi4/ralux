@@ -17,8 +17,8 @@ STATIC: 'static';
 
 CONSTANT: TRUE | FALSE | NULL;
 
-STRING: '"' ((ESC|.)*?) '"';
-CHR: '\'' (ESC|.) '\'';
+STRING: '"' ((ESC|~(["]))*?) ('"'|EOF);
+CHR: '\'' (ESC|~(['])) ('\''|EOF);
 fragment ESC: '\\' [btnfr'"\\];
 
 // constants
@@ -36,15 +36,19 @@ INTERFACE: 'interface';
 EXTENDS: 'extends';
 SUPER: 'super';
 INSTANCE_OF: 'instanceof';
+
 NEW: 'new';
+
 IF: 'if';
 FOR: 'for';
 WHILE: 'while';
 DO: 'do';
-UNSIGNED: 'unsigned';
+
 BREAK: 'break';
 CONTINUE: 'continue';
 RETURN: 'return';
+
+UNSIGNED: 'unsigned';
 
 // Operators and parentheses
 PLUS: '+';

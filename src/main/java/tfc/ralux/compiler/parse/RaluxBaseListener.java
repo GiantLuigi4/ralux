@@ -436,6 +436,18 @@ public class RaluxBaseListener implements RaluxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterFb_expr(RaluxParser.Fb_exprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFb_expr(RaluxParser.Fb_exprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterFull_type(RaluxParser.Full_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}

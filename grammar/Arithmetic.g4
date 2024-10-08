@@ -4,16 +4,21 @@ import Tokens, Typing, Statement;
 
 // Parser rules
 expr: expr '.#'
-    | expr '**' expr
-    | expr op=('*'|'/') expr
-    | expr op=('+'|'-') expr
-    | expr op=('%'|'&'|'^'|'|') expr
-    | expr op=('&&'|'||') expr
-    | expr op=('<'|'>'|'<='|'>='|'=='|'!='|'.=') expr
     | '(' expr ')'
-    | NUMBER | CONSTANT // const&number
-    | WORD              // variable
-    | STRING | CHR      // string&char
-    | call
-    | assignment
+    | expr (
+          '**'
+        | ('*'|'/')
+        | ('+'|'-')
+        | ('%'|'&'|'^'|'|')
+        | ('&&'|'||')
+        | ('<'|'>'|'<='|'>='|'=='|'!='|'.=')
+    ) expr
+    | fb_expr
+;
+
+fb_expr: NUMBER | CONSTANT // const&number
+       | WORD              // variable
+       | STRING | CHR      // string&char
+       | call
+       | assignment
 ;

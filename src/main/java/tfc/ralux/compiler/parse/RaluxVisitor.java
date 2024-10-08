@@ -220,6 +220,12 @@ public interface RaluxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExpr(RaluxParser.ExprContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link RaluxParser#fb_expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFb_expr(RaluxParser.Fb_exprContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link RaluxParser#full_type}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
