@@ -40,6 +40,7 @@ INSTANCE_OF: 'instanceof';
 NEW: 'new';
 
 IF: 'if';
+ELSE: 'else';
 FOR: 'for';
 WHILE: 'while';
 DO: 'do';
@@ -84,6 +85,7 @@ GEQUAL: '>=';
 EEQUAL: '==';
 NEQUAL: '!=';
 DEQUAL: '.=';
+DNEQUAL: '.!=';
 DHASH: '.#';
 
 L_BRACKET: '[';

@@ -6,6 +6,7 @@ public class ShortHand {
         String str1 = "Test";
         if (str0 .= str1) {
             System.out.println(42);
-        }
+        } else if (str0 .!= str1)
+            System.out.println(24);
     }
 }
