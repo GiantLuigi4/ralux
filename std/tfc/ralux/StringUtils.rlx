@@ -1,0 +1,9 @@
+pkg tfc.ralux;
+
+public class StringUtils {
+    [+ NumericPrims->T int +]
+    public static String intToString(T integer) {
+        // TODO: implement
+        return null;
+    }
+}

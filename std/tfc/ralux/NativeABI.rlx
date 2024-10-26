@@ -1,0 +1,5 @@
+pkg tfc.ralux;
+
+public class NativeABI {
+    public static abi int puts([+ AbiType: byte* +] String text);
+}
