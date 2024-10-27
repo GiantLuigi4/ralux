@@ -128,6 +128,10 @@ public class BuilderRoot extends ModuleRoot {
         return building;
     }
 
+    public LLVMValueRef simul(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return track(LLVM.LLVMBuildMul(builder, lh, rh, name));
+    }
+
     public LLVMValueRef sidiv(LLVMValueRef lh, LLVMValueRef rh, String name) {
         return track(LLVM.LLVMBuildSDiv(builder, lh, rh, name));
     }
@@ -140,8 +144,8 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildAdd(builder, lh, rh, name));
     }
 
-    public LLVMValueRef bitcast(LLVMTypeRef toType, LLVMValueRef value, String name) {
-        return track(LLVM.LLVMBuildBitCast(builder, value, toType, name));
+    public LLVMValueRef sisub(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return track(LLVM.LLVMBuildSub(builder, lh, rh, name));
     }
 
     public void validate() {
@@ -154,6 +158,14 @@ public class BuilderRoot extends ModuleRoot {
     public void trackFunction(FunctionBuilder functionBuilder) {
         track(functionBuilder);
         functions.add(functionBuilder);
+    }
+
+    public LLVMValueRef bitcast(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        return track(LLVM.LLVMBuildBitCast(builder, value, toType, name));
+    }
+
+    public LLVMValueRef bitcastOrExtend(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        return LLVM.LLVMBuildZExtOrBitCast(builder, value, toType, name);
     }
 
     public LLVMValueRef truncate(LLVMTypeRef toType, LLVMValueRef value, String name) {

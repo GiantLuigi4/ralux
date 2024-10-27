@@ -2,7 +2,9 @@ pkg tfc.ralux;
 
 public class StringUtils {
     [+ NumericPrims->T int +]
+    [+ T->SizeOf->size +]
     public static String intToString(T integer) {
+        char[] buffer = new char[size];
         // TODO: implement
         return null;
     }

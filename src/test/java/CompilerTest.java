@@ -1,6 +1,7 @@
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMMemoryBufferRef;
+import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import tfc.ralux.compiler.backend.llvm.BlockBuilder;
@@ -30,8 +31,8 @@ public class CompilerTest {
         BuilderRoot root = new BuilderRoot("module");
         STDLib lib = new STDLib(root);
 
+//        int bitCount = 16;
         int bitCount = 32;
-//        int bitCount = 32;
 
         FunctionType type = new FunctionType(root, root.getIntType(bitCount))
                 .build();
@@ -52,8 +53,9 @@ public class CompilerTest {
 
         root.dump();
 
-//        LLVMPassManagerRef pm = LLVMCreatePassManager();
-//        LLVMRunPassManager(pm, module);
+        LLVMPassManagerRef pm = LLVMCreatePassManager();
+        root.hyperAggressiveOptimizer(false, pm);
+        LLVMRunPassManager(pm, root.getModule());
 
         root.toTargetMachine(
                 new Target(
