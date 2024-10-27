@@ -33,16 +33,21 @@ public class CompilerInvoker {
                 
                 public class TestClass {
                     public static int main() {
-                        quadruple fv = 2;
+                        float fv = 2;
                         fv += 2;
-                        half i = fv * 10;
+                        float i = fv * 10;
                         fv /= 2;
                         fv /= 4;
                         fv *= 100;
                         i += fv;
                         
-                        int asInt = i;
-                        return asInt;
+                        i += test(5, 4);
+                        
+                        return i;
+                    }
+                    
+                    public static int test(int lh, int rh) {
+                        return lh + rh;
                     }
                 }
                 """);
@@ -65,7 +70,7 @@ public class CompilerInvoker {
                 Architecture.X86_64,
                 Vendor.APPLE,
                 OperatingSystem.WINDOWS,
-                Environment.NEWLIB
+                Environment.UCLIBC
         ), CPU.GENERIC);
         moduleRoot.writeToFile(new File("module.obj").getAbsolutePath());
     }

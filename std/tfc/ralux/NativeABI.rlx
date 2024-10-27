@@ -2,4 +2,13 @@ pkg tfc.ralux;
 
 public class NativeABI {
     public static abi int puts([+ AbiType: byte* +] String text);
+    public static abi [+ AbiType: void* +] void[] memcpy(
+        [+ AbiType: void* +] void[] dst,
+        [+ AbiType: void* +] void[] src,
+        unsigned long count
+    );
+    public static abi [+ AbiType: void* +] void[] realloc(
+        [+ AbiType: void* +] void[] ptr,
+        unsigned long new_size
+    );
 }

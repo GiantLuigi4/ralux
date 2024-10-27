@@ -1,9 +1,10 @@
 grammar Arithmetic;
 
-import Tokens, Typing, Statement;
+import Tokens, Typing, Statement, Typing;
 
 // Parser rules
 expr: expr '.#'
+    | '(' full_type ')' expr
     | '(' expr ')'
     | expr (
           '**'

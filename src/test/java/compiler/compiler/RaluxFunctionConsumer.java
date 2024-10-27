@@ -5,6 +5,9 @@ import compiler.compiler.analysis.Type;
 import compiler.compiler.analysis.Value;
 import compiler.compiler.analysis.Variable;
 import org.antlr.v4.runtime.RuleContext;
+import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.global.LLVM;
+import tfc.ralux.compiler.backend.llvm.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.helper.STDLib;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
@@ -19,14 +22,21 @@ public class RaluxFunctionConsumer {
 
     Stack<Scope> scopes = new Stack<>();
     Scope currentScope;
+    Type type;
+    BlockBuilder rootBuilder;
 
-    public RaluxFunctionConsumer(BuilderRoot root, FunctionBuilder direct, Compiler compiler) {
+    public RaluxFunctionConsumer(BuilderRoot root, FunctionBuilder direct, Compiler compiler, Type type) {
         this.root = root;
         this.direct = direct;
         this.compiler = compiler;
         currentScope = new Scope(root, direct, null);
         scopes.push(currentScope);
-        direct.block("entry").enableBuilding();
+        (rootBuilder = direct.block("entry")).enableBuilding();
+        this.type = type;
+    }
+
+    public void buildRoot() {
+        rootBuilder.enableBuilding();
     }
 
     private void acceptDefine(RaluxParser.DefinitionContext node) {
@@ -112,10 +122,25 @@ public class RaluxFunctionConsumer {
                 root, this,
                 currentScope, expr
         );
+
+        LLVMValueRef casted = type.cast(root, val);
+
         // TODO: auto cast to function return type
         root.stdLib.print(
-                root.stdLib.intToString(val.type.llvm(), val.llvm)
+                root.stdLib.intToString(type.llvm(), casted)
         );
-        root.getBlockBuilding().ret(val.llvm);
+        root.getBlockBuilding().ret(casted);
+    }
+
+    int pCount = 0;
+
+    public void addParam(String varName, Type type) {
+        Variable variable = currentScope.defineVariable(varName, type);
+        variable.setValue(currentScope, new Value(
+                root, this,
+                root.track(LLVM.LLVMGetParam(
+                        direct.getDirect(), pCount++
+                )), type
+        ));
     }
 }

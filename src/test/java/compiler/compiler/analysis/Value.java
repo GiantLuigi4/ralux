@@ -1,5 +1,6 @@
 package compiler.compiler.analysis;
 
+import compiler.compiler.CallCompiler;
 import compiler.compiler.RaluxFunctionConsumer;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -45,6 +46,15 @@ public class Value {
         if (context.getChildCount() != 1) {
             if (context.getChildCount() == 3) {
                 return compileOperation(context);
+            } else if (context.getChildCount() == 4) {
+                RaluxParser.Full_typeContext type = (RaluxParser.Full_typeContext) context.getChild(1);
+                RaluxParser.ExprContext expr = (RaluxParser.ExprContext) context.getChild(3);
+                Value val = compileExpr(expr);
+                Type aType = new Type(root, consumer, type);
+                return new Value(
+                        root, consumer,
+                        aType.cast(root, val), aType
+                );
             } else throw new RuntimeException("TODO");
         }
         RuleContext ctx = (RuleContext) context.getChild(0);
@@ -95,7 +105,13 @@ public class Value {
 
         ParseTree elem = context.getChild(0);
         if (elem instanceof TerminalNodeImpl terminal) return compileConstant(terminal);
-        else throw new RuntimeException("TODO");
+        else {
+            return switch (((RuleContext) elem).getRuleIndex()) {
+                case RaluxParser.RULE_call ->
+                        CallCompiler.compileCall(root, consumer, currentScope, (RaluxParser.CallContext) elem);
+                default -> throw new RuntimeException("TODO");
+            };
+        }
     }
 
     protected Value compileConstant(TerminalNodeImpl terminal) {
@@ -114,9 +130,8 @@ public class Value {
             }
             case RaluxParser.WORD -> {
                 Variable var = currentScope.getVariable(terminal.getText());
-                if (var != null) {
+                if (var != null)
                     return var.getValue();
-                }
                 throw new RuntimeException("TODO");
             }
             default -> throw new RuntimeException("TODO");

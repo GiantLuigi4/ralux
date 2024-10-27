@@ -1,16 +1,24 @@
 package compiler.compiler;
 
+import compiler.compiler.analysis.Type;
+import compiler.compiler.analysis.Value;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
+import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionType;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.ModuleRoot;
 import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.util.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class Compiler {
     // TODO: module should be named based upon project
@@ -66,14 +74,70 @@ public class Compiler {
     }
 
     private FunctionBuilder writeFunctionHeader(RaluxParser.Full_typeContext type, String name, RaluxParser.Def_paramsContext params) {
+        return writeFunctionHeader(type, name, params, new Type[1], new Consumer[1]);
+    }
+
+    // TODO: should account for access, hierarchy, owners, function names, etc
+    //       this is a lazy solution which will be slow
+    List<Pair<Pair<String, List<Type>>, Pair<FunctionBuilder, Type>>> funcsByParams = new ArrayList<>();
+
+    private FunctionBuilder writeFunctionHeader(RaluxParser.Full_typeContext type, String name, RaluxParser.Def_paramsContext params, Type[] outType, Consumer<RaluxFunctionConsumer>[] parameterInserter) {
         // TODO: write type&params
-        FunctionType funcType = new FunctionType(root, root.getIntType(32));
+        Type typ = new Type(root, null, type);
+        FunctionType funcType = new FunctionType(root, typ.llvm());
+
+        List<Type> args = new ArrayList<>();
+        {
+            RaluxParser.Def_paramsContext paramsContext = params;
+            RaluxParser.Full_typeContext typeCtx = null;
+            for (int i = 0; i < paramsContext.getChildCount(); i++) {
+                if (typeCtx == null) typeCtx = (RaluxParser.Full_typeContext) paramsContext.getChild(i);
+                else {
+                    Type typa;
+                    funcType.withArgs(
+                            (typa = new Type(
+                                    root, null, // TODO: account for generics
+                                    typeCtx
+                            )).llvm()
+                    );
+                    args.add(typa);
+                    typeCtx = null;
+                    i++;
+                }
+            }
+        }
+
         funcType = funcType.build();
-        return root.function(
+        outType[0] = typ;
+        parameterInserter[0] = (consumer) -> {
+            RaluxParser.Def_paramsContext paramsContext = params;
+            if (paramsContext.getChildCount() == 0) {
+                return;
+            }
+            RaluxParser.Full_typeContext typeCtx = null;
+            for (int i = 0; i < paramsContext.getChildCount(); i++) {
+                if (typeCtx == null) typeCtx = (RaluxParser.Full_typeContext) paramsContext.getChild(i);
+                else {
+                    String varName = paramsContext.getChild(i).getText();
+                    consumer.addParam(varName, new Type(
+                            root, consumer,
+                            typeCtx
+                    ));
+                    typeCtx = null;
+                    i++;
+                }
+            }
+        };
+
+        FunctionBuilder func = root.function(
                 name,
                 funcType
         );
+        funcsByParams.add(Pair.of(Pair.of(name, args), Pair.of(func, typ)));
+        return func;
     }
+
+    ArrayList<Pair<RaluxParser.BodyContext, RaluxFunctionConsumer>> functions = new ArrayList<>();
 
     private void acceptMethod(RaluxParser.MethodContext tree) {
         RaluxParser.Full_typeContext type = null;
@@ -109,10 +173,14 @@ public class Compiler {
                     case RaluxParser.RULE_def_params -> params = ((RaluxParser.Def_paramsContext) node);
                     case RaluxParser.RULE_body -> {
                         built = true;
+                        Type[] outType = new Type[1];
+                        Consumer<RaluxFunctionConsumer>[] outParams = new Consumer[1];
                         FunctionBuilder builder = writeFunctionHeader(
-                                type, name, params
+                                type, name, params, outType, outParams
                         );
-                        new RaluxFunctionConsumer(root, builder, this).acceptBlock((RaluxParser.BodyContext) node);
+                        RaluxFunctionConsumer functionConsumer = new RaluxFunctionConsumer(root, builder, this, outType[0]);
+                        outParams[0].accept(functionConsumer);
+                        functions.add(Pair.of((RaluxParser.BodyContext) node, functionConsumer));
                     }
                     default -> throw new RuntimeException("Unexpected rule: " + node);
                 }
@@ -135,6 +203,11 @@ public class Compiler {
                 default -> throw new RuntimeException("Unexpected rule: " + tree.getPayload());
             }
         }
+
+        for (Pair<RaluxParser.BodyContext, RaluxFunctionConsumer> function : functions) {
+            function.getSecond().buildRoot();
+            function.getSecond().acceptBlock(function.getFirst());
+        }
     }
 
     public void dump() {
@@ -152,5 +225,27 @@ public class Compiler {
 
     public ModuleRoot getModule() {
         return root;
+    }
+
+    public Pair<FunctionBuilder, Type> getFunction(RaluxFunctionConsumer consumer, String funcName, List<Value> args) {
+        loopFuncs:
+        for (Pair<Pair<String, List<Type>>, Pair<FunctionBuilder, Type>> funcByParam : funcsByParams) {
+            if (funcByParam.getFirst().getFirst().equals(funcName)) {
+                List<Type> argTypes = funcByParam.getFirst().getSecond();
+
+                // TODO: var-args
+                if (argTypes.size() != args.size())
+                    continue;
+
+                for (int i = 0; i < args.size(); i++) {
+                    if (!argTypes.get(i).equals(args.get(i).type)) {
+                        continue loopFuncs;
+                    }
+                }
+
+                return funcByParam.getSecond();
+            }
+        }
+        throw new RuntimeException("Method not found " + funcName);
     }
 }
