@@ -9,8 +9,8 @@ GENERIC_WILDCARD: QUESTION;
 C_TYPE: CLASS|INTERFACE;
 
 // Primitive types have higher precedence than generic WORDs
-PRIMITIVE_INT: 'byte' | 'int' | 'short' | 'long';
-PRIMITIVE_FP: 'half' | 'float' | 'double';
+PRIMITIVE_INT: 'byte' | 'int' | 'short' | 'long' | 'stretch';
+PRIMITIVE_FP: 'half' | 'float' | 'double' | 'quadruple';
 PRIMITIVE_OTHER: 'char' | 'boolean' | 'void';
 MODIFIER: 'public' | 'private' | 'protected' | 'final';
 STATIC: 'static';

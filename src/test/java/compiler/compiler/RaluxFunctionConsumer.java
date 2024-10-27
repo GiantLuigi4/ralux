@@ -6,6 +6,7 @@ import compiler.compiler.analysis.Value;
 import compiler.compiler.analysis.Variable;
 import org.antlr.v4.runtime.RuleContext;
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
+import tfc.ralux.compiler.backend.llvm.helper.STDLib;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.parse.RaluxParser;
 
@@ -51,34 +52,26 @@ public class RaluxFunctionConsumer {
             Variable var = currentScope.getVariable(varName);
             switch (operand.getText()) {
                 case "=" -> {/* no-op */}
-                case "+=" -> {
-                    val = new Value(
-                            root, this,
-                            var.getType().eqSum(root, var.llvm, val),
-                            var.getType()
-                    );
-                }
-                case "-=" -> {
-                    val = new Value(
-                            root, this,
-                            var.getType().eqDiff(root, var.llvm, val),
-                            var.getType()
-                    );
-                }
-                case "*=" -> {
-                    val = new Value(
-                            root, this,
-                            var.getType().eqMul(root, var.llvm, val),
-                            var.getType()
-                    );
-                }
-                case "/=" -> {
-                    val = new Value(
-                            root, this,
-                            var.getType().eqDiv(root, var.llvm, val),
-                            var.getType()
-                    );
-                }
+                case "+=" -> val = new Value(
+                        root, this,
+                        var.getType().eqSum(root, var.getValue().llvm, val),
+                        var.getType()
+                );
+                case "-=" -> val = new Value(
+                        root, this,
+                        var.getType().eqDiff(root, var.getValue().llvm, val),
+                        var.getType()
+                );
+                case "*=" -> val = new Value(
+                        root, this,
+                        var.getType().eqMul(root, var.getValue().llvm, val),
+                        var.getType()
+                );
+                case "/=" -> val = new Value(
+                        root, this,
+                        var.getType().eqDiv(root, var.getValue().llvm, val),
+                        var.getType()
+                );
                 default -> throw new RuntimeException("Unsupported operand: " + operand.getText());
             }
             var.setValue(currentScope, val);
@@ -95,22 +88,14 @@ public class RaluxFunctionConsumer {
                 case RaluxParser.RULE_semi_truck -> {
                     continue;
                 }
-                case RaluxParser.RULE_statement -> {
-                    node = (RuleContext) node.getChild(0);
-                }
+                case RaluxParser.RULE_statement -> node = (RuleContext) node.getChild(0);
                 default -> throw new RuntimeException("Unexpected rule: " + node);
             }
 
             switch (node.getRuleIndex()) {
-                case RaluxParser.RULE_definition -> {
-                    acceptDefine((RaluxParser.DefinitionContext) node);
-                }
-                case RaluxParser.RULE_assignment -> {
-                    acceptAssign((RaluxParser.AssignmentContext) node);
-                }
-                case RaluxParser.RULE_ret -> {
-                    acceptReturn((RaluxParser.RetContext) node);
-                }
+                case RaluxParser.RULE_definition -> acceptDefine((RaluxParser.DefinitionContext) node);
+                case RaluxParser.RULE_assignment -> acceptAssign((RaluxParser.AssignmentContext) node);
+                case RaluxParser.RULE_ret -> acceptReturn((RaluxParser.RetContext) node);
                 default -> throw new RuntimeException("Unexpected rule: " + node);
             }
         }
@@ -128,6 +113,9 @@ public class RaluxFunctionConsumer {
                 currentScope, expr
         );
         // TODO: auto cast to function return type
+        root.stdLib.print(
+                root.stdLib.intToString(val.type.llvm(), val.llvm)
+        );
         root.getBlockBuilding().ret(val.llvm);
     }
 }

@@ -17,7 +17,7 @@ public class Variable {
 
     public void setValue(Scope currentScope, Value value) {
         currentValue = value;
-        root.setValue(llvm, value.llvm);
+        root.setValue(llvm, type.cast(root, value));
     }
 
     public Type getType() {
@@ -26,7 +26,7 @@ public class Variable {
 
     public Value getValue() {
         return new Value(
-                root, currentValue.consumer,
+                root, null,
                 root.getValue(llvm, "get_value"), type
         );
     }

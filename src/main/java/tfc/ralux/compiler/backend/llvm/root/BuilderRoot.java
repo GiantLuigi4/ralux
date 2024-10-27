@@ -6,6 +6,7 @@ import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionType;
+import tfc.ralux.compiler.backend.llvm.helper.STDLib;
 import tfc.ralux.compiler.backend.llvm.helper.Util;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 
@@ -16,17 +17,30 @@ import static org.bytedeco.llvm.global.LLVM.*;
 
 public class BuilderRoot extends ModuleRoot {
     public final LLVMTypeRef VOID;
+    public STDLib stdLib;
     LLVMBuilderRef builder = LLVMCreateBuilderInContext(context);
 
     List<LLVMTypeRef> intTypes = new ArrayList<>();
+    List<LLVMTypeRef> floatTypes = new ArrayList<>();
 
     public BuilderRoot(String moduleName) {
         super(moduleName);
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 8; i++) {
             intTypes.add(LLVMIntTypeInContext(context, 1 << i));
             System.out.println(1 << i);
         }
+
+        floatTypes.add(null);
+        floatTypes.add(null);
+        floatTypes.add(null);
+        floatTypes.add(null);
+        floatTypes.add(LLVMHalfTypeInContext(context));
+        floatTypes.add(LLVMFloatTypeInContext(context));
+        floatTypes.add(LLVMDoubleTypeInContext(context));
+        floatTypes.add(LLVMFP128TypeInContext(context));
+
         VOID = LLVM.LLVMVoidTypeInContext(context);
+        stdLib = new STDLib(this);
     }
 
     List<FunctionBuilder> functions = new ArrayList<>();
@@ -59,6 +73,27 @@ public class BuilderRoot extends ModuleRoot {
     public LLVMTypeRef getIntType(int bits) {
         int index = Util.log2(bits) - 1;
         return intTypes.get(index);
+    }
+
+    public int getIntSize(LLVMTypeRef typeRef) {
+        for (int i = 0; i < intTypes.size(); i++) {
+            if (intTypes.get(i).equals(typeRef))
+                return 1 << i;
+        }
+        throw new RuntimeException("Not a valid int type");
+    }
+
+    public LLVMTypeRef getFloatType(int bits) {
+        int index = Util.log2(bits) - 1;
+        return floatTypes.get(index);
+    }
+
+    public int getFloatSize(LLVMTypeRef typeRef) {
+        for (int i = 0; i < floatTypes.size(); i++) {
+            if (typeRef.equals(floatTypes.get(i)))
+                return 1 << i;
+        }
+        throw new RuntimeException("Not a valid float type");
     }
 
     public FunctionBuilder function(
@@ -148,6 +183,22 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildSub(builder, lh, rh, name));
     }
 
+    public LLVMValueRef fsum(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return track(LLVM.LLVMBuildFAdd(builder, lh, rh, name));
+    }
+
+    public LLVMValueRef fsub(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return track(LLVM.LLVMBuildFSub(builder, lh, rh, name));
+    }
+
+    public LLVMValueRef fmul(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return track(LLVM.LLVMBuildFMul(builder, lh, rh, name));
+    }
+
+    public LLVMValueRef fdiv(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return track(LLVM.LLVMBuildFDiv(builder, lh, rh, name));
+    }
+
     public void validate() {
         boolean valid = true;
         for (FunctionBuilder function : functions)
@@ -164,12 +215,28 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildBitCast(builder, value, toType, name));
     }
 
+    public LLVMValueRef castSIToFP(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        return track(LLVM.LLVMBuildCast(builder, LLVMSIToFP, value, toType, name));
+    }
+
+    public LLVMValueRef castFP(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        return track(LLVM.LLVMBuildFPCast(builder, value, toType, name));
+    }
+
+    public LLVMValueRef castFPToSI(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        return track(LLVM.LLVMBuildCast(builder, LLVMFPToSI, value, toType, name));
+    }
+
     public LLVMValueRef bitcastOrExtend(LLVMTypeRef toType, LLVMValueRef value, String name) {
-        return LLVM.LLVMBuildZExtOrBitCast(builder, value, toType, name);
+        return track(LLVM.LLVMBuildZExtOrBitCast(builder, value, toType, name));
     }
 
     public LLVMValueRef truncate(LLVMTypeRef toType, LLVMValueRef value, String name) {
         return track(LLVM.LLVMBuildTrunc(builder, value, toType, name));
+    }
+
+    public LLVMValueRef extend(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        return track(LLVM.LLVMBuildZExt(builder, value, toType, name));
     }
 
     public LLVMValueRef gepString(LLVMValueRef text) {
@@ -190,14 +257,6 @@ public class BuilderRoot extends ModuleRoot {
 
     public LLVMValueRef select(LLVMValueRef conditionPN, LLVMValueRef dig, LLVMValueRef negate) {
         return track(LLVM.LLVMBuildSelect(builder, conditionPN, dig, negate, "select"));
-    }
-
-    public int getIntSize(LLVMTypeRef typeRef) {
-        for (int i = 0; i < intTypes.size(); i++) {
-            if (intTypes.get(i).equals(typeRef))
-                return 1 << i;
-        }
-        throw new RuntimeException("Not a valid int type");
     }
 
     public void hyperAggressiveOptimizer(boolean forFunction, LLVMPassManagerRef pass) {

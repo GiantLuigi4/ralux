@@ -14,7 +14,7 @@ public class Value {
 
     BuilderRoot root;
     RaluxFunctionConsumer consumer;
-    Type type;
+    public final Type type;
     Scope currentScope;
 
     public Value(
@@ -61,7 +61,7 @@ public class Value {
         }
         Value left = compileExpr((RaluxParser.ExprContext) context.getChild(0));
         Value right = compileExpr((RaluxParser.ExprContext) context.getChild(2));
-        Type coercion = left.type.coerce(right.type);
+        Type coercion = left.type.coerce(root, right.type);
         return new Value(
                 root, consumer,
                 switch (operand.getText()) {
@@ -109,7 +109,7 @@ public class Value {
                 );
                 return new Value(
                         root, consumer,
-                        llvm, new Type(root.getIntType(32), true, true, true)
+                        llvm, new Type(root.getIntType(32), true, true, true, false)
                 );
             }
             case RaluxParser.WORD -> {

@@ -9,6 +9,7 @@ import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionType;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
+import tfc.ralux.compiler.backend.llvm.root.ModuleRoot;
 import tfc.ralux.compiler.parse.RaluxParser;
 
 public class Compiler {
@@ -104,12 +105,8 @@ public class Compiler {
                 }
             } else {
                 switch (((RuleContext) node).getRuleIndex()) {
-                    case RaluxParser.RULE_full_type -> {
-                        type = ((RaluxParser.Full_typeContext) node);
-                    }
-                    case RaluxParser.RULE_def_params -> {
-                        params = ((RaluxParser.Def_paramsContext) node);
-                    }
+                    case RaluxParser.RULE_full_type -> type = ((RaluxParser.Full_typeContext) node);
+                    case RaluxParser.RULE_def_params -> params = ((RaluxParser.Def_paramsContext) node);
                     case RaluxParser.RULE_body -> {
                         built = true;
                         FunctionBuilder builder = writeFunctionHeader(
@@ -151,5 +148,9 @@ public class Compiler {
         }
         LLVM.LLVMRunPassManager(pass, root.getModule());
         LLVM.LLVMDisposePassManager(pass);
+    }
+
+    public ModuleRoot getModule() {
+        return root;
     }
 }
