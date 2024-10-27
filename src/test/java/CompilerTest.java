@@ -4,6 +4,7 @@ import org.bytedeco.llvm.LLVM.LLVMMemoryBufferRef;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.helper.STDLib;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
@@ -64,7 +65,8 @@ public class CompilerTest {
                         OperatingSystem.WINDOWS,
                         Environment.NEWLIB
                 ),
-                CPU.GENERIC
+                CPU.GENERIC,
+                LLVMCodeGenLevelNone
         );
         root.dump();
 

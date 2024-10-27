@@ -207,6 +207,7 @@ public class Compiler {
         for (Pair<RaluxParser.BodyContext, RaluxFunctionConsumer> function : functions) {
             function.getSecond().buildRoot();
             function.getSecond().acceptBlock(function.getFirst());
+            if (!root.getBlockBuilding().isTerminated()) root.getBlockBuilding().ret();
         }
     }
 
@@ -214,7 +215,7 @@ public class Compiler {
         root.dump();
     }
 
-    public void optimize(int llvm, int rlx) {
+    public void optimize(int rlx) {
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
         if (rlx == 4) {
             root.hyperAggressiveOptimizer(false, pass);

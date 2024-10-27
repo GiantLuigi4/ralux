@@ -70,7 +70,8 @@ public class ModuleRoot extends ContextRoot {
 
     public void toTargetMachine(
             Target target,
-            CPU cpu
+            CPU cpu,
+            int codeGenLevel
     ) {
         BytePointer targetTriple;
 
@@ -98,7 +99,7 @@ public class ModuleRoot extends ContextRoot {
         LLVMTargetMachineRef machineRef = track(LLVM.LLVMCreateTargetMachine(
                 targetRef, targetTriple,
                 CPU, blank,
-                LLVMCodeGenLevelDefault,
+                codeGenLevel,
                 LLVMRelocPIC,
                 LLVMCodeModelDefault
         ));

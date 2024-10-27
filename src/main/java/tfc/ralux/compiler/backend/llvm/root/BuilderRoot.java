@@ -263,7 +263,7 @@ public class BuilderRoot extends ModuleRoot {
         LLVMAddAggressiveDCEPass(pass); // dead code elimination
         LLVMAddCFGSimplificationPass(pass);
         LLVMAddSimplifyLibCallsPass(pass);
-        LLVMAddPartiallyInlineLibCallsPass(pass);
+        LLVMAddAlwaysInlinerPass(pass);
         LLVMAddEarlyCSEMemSSAPass(pass);
         LLVMAddEarlyCSEPass(pass);
 

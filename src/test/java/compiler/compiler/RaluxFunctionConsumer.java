@@ -106,6 +106,8 @@ public class RaluxFunctionConsumer {
                 case RaluxParser.RULE_definition -> acceptDefine((RaluxParser.DefinitionContext) node);
                 case RaluxParser.RULE_assignment -> acceptAssign((RaluxParser.AssignmentContext) node);
                 case RaluxParser.RULE_ret -> acceptReturn((RaluxParser.RetContext) node);
+                case RaluxParser.RULE_call ->
+                        CallCompiler.compileCall(root, this, currentScope, (RaluxParser.CallContext) node);
                 default -> throw new RuntimeException("Unexpected rule: " + node);
             }
         }

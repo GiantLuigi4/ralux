@@ -16,6 +16,11 @@ public class Type {
     boolean primitive;
     boolean isInt;
     boolean isBool;
+    boolean isVoid;
+
+    public boolean isVoid() {
+        return isVoid;
+    }
 
     BuilderRoot root;
 
@@ -37,24 +42,31 @@ public class Type {
             isInt = true;
             signed = true;
             String text = impl.symbol.getText();
-            baseTypeLLVM = switch (text) {
-                case "boolean" -> root.getIntType(1);
-                case "byte", "char" -> root.getIntType(8);
-                case "short" -> root.getIntType(16);
-                case "int" -> root.getIntType(32);
-                case "long" -> root.getIntType(64);
-                case "stretch" -> root.getIntType(128);
-                default -> null;
-            };
-            if (baseTypeLLVM == null) {
+            if (text.equals("void")) {
                 isInt = false;
+                isBool = false;
+                isVoid = true;
+                baseTypeLLVM = root.VOID;
+            } else {
                 baseTypeLLVM = switch (text) {
-                    case "half" -> root.getFloatType(16);
-                    case "float" -> root.getFloatType(32);
-                    case "double" -> root.getFloatType(64);
-                    case "quadruple" -> root.getFloatType(128);
-                    default -> throw new RuntimeException("Unexpected type: " + text);
+                    case "boolean" -> root.getIntType(1);
+                    case "byte", "char" -> root.getIntType(8);
+                    case "short" -> root.getIntType(16);
+                    case "int" -> root.getIntType(32);
+                    case "long" -> root.getIntType(64);
+                    case "stretch" -> root.getIntType(128);
+                    default -> null;
                 };
+                if (baseTypeLLVM == null) {
+                    isInt = false;
+                    baseTypeLLVM = switch (text) {
+                        case "half" -> root.getFloatType(16);
+                        case "float" -> root.getFloatType(32);
+                        case "double" -> root.getFloatType(64);
+                        case "quadruple" -> root.getFloatType(128);
+                        default -> throw new RuntimeException("Unexpected type: " + text);
+                    };
+                }
             }
 
             if (text.equals("boolean"))
@@ -244,6 +256,7 @@ public class Type {
 
     @Override
     public String toString() {
+        if (isVoid) return "void";
         if (isBool) return "bool";
         if (isInt) return "int" + numberSize(root);
         if (isFloat()) return "fp" + numberSize(root);

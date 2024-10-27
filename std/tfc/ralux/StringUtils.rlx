@@ -4,8 +4,31 @@ public class StringUtils {
     [+ NumericPrims->T int +]
     [+ T->SizeOf->size +]
     public static String intToString(T integer) {
-        char[] buffer = new char[size];
-        // TODO: implement
-        return null;
+        if (integer == 0) {
+            return "0";
+        } else {
+            char[] buf = new char[size];
+            boolean condPN = integer < 0;
+
+            int index = 0;
+            while (integer != 0) {
+                T quotient = integer / 10;
+                byte rem = (byte) (integer - (quotient * 10)); // TODO: profile (vs using actual rem op)
+                if (condPN) rem = -rem;
+                integer = quotient;
+                buf[index] = (char) (rem + '0');
+                index++;
+            }
+
+            if (condPN)
+                buf[index] = '-';
+            else index -= 1;
+
+            for (int i = 0; i < (index + 1) / 2; i++) {
+                buf[i] <-> buf[index - i];
+            }
+            buf = realloc(buf, index + 1);
+            return (String) buf;
+        }
     }
 }

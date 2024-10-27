@@ -27,15 +27,18 @@ public class CompilerInvoker {
         LLVMInitializeNativeAsmPrinter();
         LLVMInitializeAllTargets();
 
+        final int optLLVM = 3;
+        final int optRlx = 4;
+
         CharStream stream;
         stream = CharStreams.fromString("""
                 pkg tfc.test;
-                
+                                
                 public class TestClass {
                     public static int main() {
-                        float fv = 2;
+                        stretch fv = 2;
                         fv += 2;
-                        float i = fv * 10;
+                        half i = fv * 10;
                         fv /= 2;
                         fv /= 4;
                         fv *= 100;
@@ -44,6 +47,10 @@ public class CompilerInvoker {
                         i += test(5, 4);
                         
                         return i;
+                    }
+                    
+                    public static int recursive(int value) {
+                        return recursive(value + 1);
                     }
                     
                     public static int test(int lh, int rh) {
@@ -63,7 +70,7 @@ public class CompilerInvoker {
         ModuleRoot moduleRoot = compiler.getModule();
         compiler.dump();
         ((BuilderRoot) moduleRoot).validate();
-        compiler.optimize(3, 4);
+        compiler.optimize(optRlx);
         compiler.dump();
 
         moduleRoot.toTargetMachine(new Target(
@@ -71,7 +78,16 @@ public class CompilerInvoker {
                 Vendor.APPLE,
                 OperatingSystem.WINDOWS,
                 Environment.UCLIBC
-        ), CPU.GENERIC);
+        ), CPU.GENERIC, optLLVM);
         moduleRoot.writeToFile(new File("module.obj").getAbsolutePath());
+
+        try {
+            Process proc = Runtime.getRuntime().exec(
+                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib"
+            );
+            System.out.println(proc.waitFor());
+        } catch (Throwable err) {
+            throw new RuntimeException(err);
+        }
     }
 }

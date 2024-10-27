@@ -20,15 +20,17 @@ public class CallCompiler {
         Compiler compiler = consumer.compiler;
         if (ctx.getChildCount() == 1) {
             RaluxParser.Method_callContext mcall = (RaluxParser.Method_callContext) ctx.getChild(0);
-            if (mcall.getChildCount() == 4) {
+            if (mcall.getChildCount() <= 4) {
                 String funcName = mcall.getChild(0).getText();
-                RaluxParser.ParamsContext params = (RaluxParser.ParamsContext) mcall.getChild(2);
                 List<Value> args = new ArrayList<>();
-                for (int i = 0; i < params.getChildCount(); i += 2) {
-                    args.add(new Value(
-                            root, consumer, currentScope,
-                            (RaluxParser.ExprContext) params.getChild(i)
-                    ));
+                if (mcall.getChildCount() == 4) {
+                    RaluxParser.ParamsContext params = (RaluxParser.ParamsContext) mcall.getChild(2);
+                    for (int i = 0; i < params.getChildCount(); i += 2) {
+                        args.add(new Value(
+                                root, consumer, currentScope,
+                                (RaluxParser.ExprContext) params.getChild(i)
+                        ));
+                    }
                 }
                 Pair<FunctionBuilder, Type> toCall = compiler.getFunction(consumer, funcName, args);
                 PointerPointer argsPtrPtr = root.track(new PointerPointer(args.size()));
@@ -39,7 +41,7 @@ public class CallCompiler {
                         toCall.getFirst().getDirect(),
                         argsPtrPtr,
                         args.size(),
-                        "call_" + funcName
+                        toCall.getSecond().isVoid() ? "" : ("call_" + funcName)
                 ));
                 return new Value(
                         root, consumer,
