@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
+import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.parse.RaluxParser;
 
 public class Value {
@@ -72,31 +73,73 @@ public class Value {
         Value left = compileExpr((RaluxParser.ExprContext) context.getChild(0));
         Value right = compileExpr((RaluxParser.ExprContext) context.getChild(2));
         Type coercion = left.type.coerce(root, right.type);
+
+        LLVMValueRef val = switch (operand.getText()) {
+            case "+" -> coercion.sum(
+                    root,
+                    coercion.cast(root, left),
+                    coercion.cast(root, right)
+            );
+            case "-" -> coercion.diff(
+                    root,
+                    coercion.cast(root, left),
+                    coercion.cast(root, right)
+            );
+            case "*" -> coercion.mul(
+                    root,
+                    coercion.cast(root, left),
+                    coercion.cast(root, right)
+            );
+            case "/" -> coercion.div(
+                    root,
+                    coercion.cast(root, left),
+                    coercion.cast(root, right)
+            );
+            default -> null;
+        };
+
+        if (val == null) {
+            switch (operand.getText()) {
+                case "<" -> val = coercion.compare(
+                        root, ECompOp.LT,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case ">" -> val = coercion.compare(
+                        root, ECompOp.GT,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case "<=" -> val = coercion.compare(
+                        root, ECompOp.LE,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case ">=" -> val = coercion.compare(
+                        root, ECompOp.GE,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case "==" -> val = coercion.compare(
+                        root, ECompOp.EQ,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case "!=" -> val = coercion.compare(
+                        root, ECompOp.NE,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+            }
+            coercion = new Type(
+                    root.getIntType(1),
+                    false, true, true, true
+            );
+        }
+
         return new Value(
                 root, consumer,
-                switch (operand.getText()) {
-                    case "+" -> coercion.sum(
-                            root,
-                            coercion.cast(root, left),
-                            coercion.cast(root, right)
-                    );
-                    case "-" -> coercion.diff(
-                            root,
-                            coercion.cast(root, left),
-                            coercion.cast(root, right)
-                    );
-                    case "*" -> coercion.mul(
-                            root,
-                            coercion.cast(root, left),
-                            coercion.cast(root, right)
-                    );
-                    case "/" -> coercion.div(
-                            root,
-                            coercion.cast(root, left),
-                            coercion.cast(root, right)
-                    );
-                    default -> throw new RuntimeException("Unsupported operand " + operand.getText());
-                }, coercion
+                val, coercion
         );
     }
 

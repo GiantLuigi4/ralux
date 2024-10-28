@@ -5,6 +5,7 @@ import compiler.compiler.analysis.Type;
 import compiler.compiler.analysis.Value;
 import compiler.compiler.analysis.Variable;
 import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.BlockBuilder;
@@ -90,27 +91,74 @@ public class RaluxFunctionConsumer {
         }
     }
 
+    protected void acceptStatement(RuleContext node) {
+        switch (node.getRuleIndex()) {
+            case RaluxParser.RULE_semi_truck -> {
+                return;
+            }
+            case RaluxParser.RULE_statement, RaluxParser.RULE_flow -> node = (RuleContext) node.getChild(0);
+            default -> throw new RuntimeException("Unexpected rule: " + node);
+        }
+
+        switch (node.getRuleIndex()) {
+            case RaluxParser.RULE_definition -> acceptDefine((RaluxParser.DefinitionContext) node);
+            case RaluxParser.RULE_assignment -> acceptAssign((RaluxParser.AssignmentContext) node);
+            case RaluxParser.RULE_ret -> acceptReturn((RaluxParser.RetContext) node);
+            case RaluxParser.RULE_call ->
+                    CallCompiler.compileCall(root, this, currentScope, (RaluxParser.CallContext) node);
+            case RaluxParser.RULE_if -> acceptIf((RaluxParser.IfContext) node);
+            default -> throw new RuntimeException("Unexpected rule: " + node);
+        }
+    }
+
     public void acceptBlock(RaluxParser.BodyContext body) {
         RaluxParser.Statement_listContext list = (RaluxParser.Statement_listContext) body.getChild(1);
         for (int i = 0; i < list.getChildCount(); i++) {
-            RuleContext node = (RuleContext) list.getChild(i);
-            switch (node.getRuleIndex()) {
-                case RaluxParser.RULE_semi_truck -> {
-                    continue;
-                }
-                case RaluxParser.RULE_statement -> node = (RuleContext) node.getChild(0);
-                default -> throw new RuntimeException("Unexpected rule: " + node);
-            }
-
-            switch (node.getRuleIndex()) {
-                case RaluxParser.RULE_definition -> acceptDefine((RaluxParser.DefinitionContext) node);
-                case RaluxParser.RULE_assignment -> acceptAssign((RaluxParser.AssignmentContext) node);
-                case RaluxParser.RULE_ret -> acceptReturn((RaluxParser.RetContext) node);
-                case RaluxParser.RULE_call ->
-                        CallCompiler.compileCall(root, this, currentScope, (RaluxParser.CallContext) node);
-                default -> throw new RuntimeException("Unexpected rule: " + node);
-            }
+            acceptStatement((RuleContext) list.getChild(i));
         }
+    }
+
+    private void acceptIf(RaluxParser.IfContext child) {
+        BlockBuilder block = direct.block("tree_exit");
+        acceptIf(child, block);
+        block.enableBuilding();
+    }
+
+    private void acceptIf(RaluxParser.IfContext child, BlockBuilder exit) {
+        RaluxParser.ExprContext condition = (RaluxParser.ExprContext) child.getChild(2);
+        RuleContext body = (RuleContext) child.getChild(4);
+
+        Value value = new Value(root, this, currentScope, condition);
+
+        BlockBuilder cond_false = direct.block("condition_false");
+        BlockBuilder cond_true = direct.block("condition_true");
+
+        root.getBlockBuilding().conditionalJump(value.llvm, cond_true, cond_false);
+        cond_true.enableBuilding();
+        // TODO: scope
+        switch (body.getRuleIndex()) {
+            case RaluxParser.RULE_statement -> acceptStatement(body);
+            case RaluxParser.RULE_body -> acceptBlock((RaluxParser.BodyContext) body);
+            default -> throw new RuntimeException("Unexpected rule: " + body);
+        }
+        // TODO: unscope
+        if (!cond_true.isTerminated())
+            cond_true.jump(exit);
+
+        cond_false.enableBuilding();
+        // TODO: else handling
+        if (child.getChildCount() > 5) {
+            if (child.getChild(5) instanceof RuleContext ctx) {
+                switch (ctx.getRuleIndex()) {
+                    case RaluxParser.RULE_semi_truck -> {
+                        if (child.getChildCount() > 6)
+                            throw new RuntimeException("NYI");
+                    }
+                    default -> throw new RuntimeException("NYI");
+                }
+            } else throw new RuntimeException("NYI");
+        }
+        cond_false.jump(exit);
     }
 
     private void acceptReturn(RaluxParser.RetContext node) {

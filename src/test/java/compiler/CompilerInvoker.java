@@ -28,12 +28,12 @@ public class CompilerInvoker {
         LLVMInitializeAllTargets();
 
         final int optLLVM = 3;
-        final int optRlx = 4;
+        final int optRlx = 1;
 
         CharStream stream;
         stream = CharStreams.fromString("""
                 pkg tfc.test;
-                                
+                
                 public class TestClass {
                     public static int main() {
                         stretch fv = 2;
@@ -46,11 +46,19 @@ public class CompilerInvoker {
                         
                         i += test(5, 4);
                         
+                        i = 90;
+                        
+                        if (i > 90) {
+                            i = 0;
+                        }
+                        recursive(0);
+                        
                         return i;
                     }
                     
                     public static int recursive(int value) {
-                        return recursive(value + 1);
+                        if (value > 200) return value;
+                        return recursive(value + 1) - 1;
                     }
                     
                     public static int test(int lh, int rh) {

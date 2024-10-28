@@ -152,6 +152,10 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildICmp(builder, op.opSInt, lh, rh, label));
     }
 
+    public LLVMValueRef compareFloat(ECompOp op, LLVMValueRef lh, LLVMValueRef rh, String label) {
+        return track(LLVM.LLVMBuildFCmp(builder, op.opFP, lh, rh, label));
+    }
+
     BlockBuilder building;
 
     public void buildBlock(BlockBuilder blockBuilder) {
@@ -331,5 +335,9 @@ public class BuilderRoot extends ModuleRoot {
         LLVM.LLVMAddInstructionCombiningPass(pass);
         LLVM.LLVMAddReassociatePass(pass);
         LLVM.LLVMAddCFGSimplificationPass(pass);
+    }
+
+    public void memSet(LLVMValueRef ptr, LLVMValueRef value, LLVMValueRef len, int alignment) {
+        LLVM.LLVMBuildMemSet(builder, ptr, value, len, alignment);
     }
 }

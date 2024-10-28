@@ -163,6 +163,7 @@ public class IntToString {
         // 1 for int2
         // +1 for sign
         LLVMValueRef str = root.allocA(root.BYTE_TYPE, baseStrLen + 1, "str_buf");
+        root.memSet(str, root.integer(0, 8), root.integer(baseStrLen + 1, 32), 8);
         PointerPointer args = root.track(new PointerPointer(3));
         args.put(0, str);
         args.put(1, value);

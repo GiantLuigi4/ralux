@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
+import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.parse.RaluxParser;
 
 import java.util.Objects;
@@ -137,6 +138,16 @@ public class Type {
             } else throw new RuntimeException("NYI");
         } else if (isFloat())
             return root.fdiv(lh, rh, "compute_quotient");
+        throw new RuntimeException("NYI");
+    }
+
+    public LLVMValueRef compare(BuilderRoot root, ECompOp eCompOp, LLVMValueRef lh, LLVMValueRef rh) {
+        if (isInt) {
+            if (signed) {
+                return root.compareInt(eCompOp, lh, rh, "compute_compare");
+            } else throw new RuntimeException("NYI");
+        } else if (isFloat())
+            return root.compareFloat(eCompOp, lh, rh, "compute_compare");
         throw new RuntimeException("NYI");
     }
 

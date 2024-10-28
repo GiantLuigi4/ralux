@@ -217,7 +217,13 @@ public class Compiler {
 
     public void optimize(int rlx) {
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
-        if (rlx == 4) {
+        if (rlx == 1) {
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+            LLVM.LLVMAddReassociatePass(pass);
+            LLVM.LLVMAddLoopUnrollAndJamPass(pass);
+            LLVM.LLVMAddReassociatePass(pass);
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+        } else if (rlx == 4) {
             root.hyperAggressiveOptimizer(false, pass);
         }
         LLVM.LLVMRunPassManager(pass, root.getModule());

@@ -7,7 +7,7 @@ public class StringUtils {
         if (integer == 0) {
             return "0";
         } else {
-            char[] buf = new char[size];
+            char[] buf = new char[Math.log2(size) + 2];
             boolean condPN = integer < 0;
 
             int index = 0;

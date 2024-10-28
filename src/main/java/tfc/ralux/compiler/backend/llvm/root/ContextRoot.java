@@ -21,4 +21,8 @@ public class ContextRoot {
         keepInMem.add(obj);
         return obj;
     }
+
+    public LLVMContextRef getContext() {
+        return context;
+    }
 }
