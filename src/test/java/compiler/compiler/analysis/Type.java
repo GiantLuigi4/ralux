@@ -151,6 +151,16 @@ public class Type {
         throw new RuntimeException("NYI");
     }
 
+    public LLVMValueRef negate(BuilderRoot root, LLVMValueRef value) {
+        if (isInt) {
+            if (signed) {
+                return root.negate(value);
+            } else throw new RuntimeException("NYI");
+        } else if (isFloat())
+            return root.negateFloat(value);
+        throw new RuntimeException("NYI");
+    }
+
     public LLVMValueRef eqSum(BuilderRoot root, LLVMValueRef lh, Value rh) {
         return sum(root, lh, cast(root, rh));
     }

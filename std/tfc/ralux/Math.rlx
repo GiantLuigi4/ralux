@@ -1,0 +1,14 @@
+pkg tfc.ralux;
+
+public class Math {
+    [+ NumericPrims->T int +]
+    public static T log2(T value) {
+        // TODO: this logic is not optimal
+        int index = 0;
+        while (value != 0) {
+            value = value >> 1;
+            index += 1;
+        }
+        return index;
+    }
+}

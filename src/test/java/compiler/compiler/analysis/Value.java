@@ -56,7 +56,19 @@ public class Value {
                         root, consumer,
                         aType.cast(root, val), aType
                 );
-            } else throw new RuntimeException("TODO");
+            } else if (context.getChildCount() == 2) {
+                if (context.getChild(0).getText().equals("-")) {
+                    if (context.getChild(1) instanceof RaluxParser.ExprContext expr) {
+                        Value nonNegated = compileExpr(expr);
+                        return new Value(
+                                root, consumer,
+                                nonNegated.type.negate(root, nonNegated.llvm),
+                                nonNegated.type
+                        );
+                    }
+                }
+                throw new RuntimeException("TODO");
+            }
         }
         RuleContext ctx = (RuleContext) context.getChild(0);
         return switch (ctx.getRuleIndex()) {

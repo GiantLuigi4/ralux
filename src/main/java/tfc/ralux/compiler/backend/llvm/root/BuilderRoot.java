@@ -120,8 +120,12 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildAlloca(builder, type, name));
     }
 
-    public LLVMValueRef allocA(LLVMTypeRef type, int i, String name) {
-        return track(LLVM.LLVMBuildArrayAlloca(builder, type, integer(i, 32), name));
+    public LLVMValueRef allocA(LLVMTypeRef type, int length, String name) {
+        return track(LLVM.LLVMBuildArrayAlloca(builder, type, integer(length, 32), name));
+    }
+
+    public LLVMValueRef allocA(LLVMTypeRef type, LLVMValueRef length, String name) {
+        return track(LLVM.LLVMBuildArrayAlloca(builder, type, length, name));
     }
 
     public void setValue(LLVMValueRef pointer, LLVMValueRef value) {
@@ -144,8 +148,21 @@ public class BuilderRoot extends ModuleRoot {
         setValue(gep, value);
     }
 
-    public LLVMValueRef getValue(LLVMValueRef index, String name) {
-        return track(LLVM.LLVMBuildLoad(builder, index, name));
+    public LLVMValueRef getValue(LLVMValueRef pointer, String name) {
+        return track(LLVM.LLVMBuildLoad(builder, pointer, name));
+    }
+
+    public LLVMValueRef getValue(LLVMValueRef pointer, LLVMValueRef index, String name) {
+        PointerPointer indices = track(new PointerPointer(2));
+        indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
+                builder, index, getIntType(64), "as_int64"
+        )));
+        LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP(
+                builder, pointer,
+                indices, 1,
+                "get_element_ptr"
+        ));
+        return getValue(gep, name);
     }
 
     public LLVMValueRef compareInt(ECompOp op, LLVMValueRef lh, LLVMValueRef rh, String label) {
@@ -257,6 +274,10 @@ public class BuilderRoot extends ModuleRoot {
 
     public LLVMValueRef negate(LLVMValueRef dig) {
         return track(LLVM.LLVMBuildNeg(builder, dig, "negate"));
+    }
+
+    public LLVMValueRef negateFloat(LLVMValueRef dig) {
+        return track(LLVM.LLVMBuildFNeg(builder, dig, "negate"));
     }
 
     public LLVMValueRef select(LLVMValueRef conditionPN, LLVMValueRef dig, LLVMValueRef negate) {

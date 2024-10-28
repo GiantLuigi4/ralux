@@ -28,7 +28,7 @@ public class CompilerInvoker {
         LLVMInitializeAllTargets();
 
         final int optLLVM = 3;
-        final int optRlx = 1;
+        final int optRlx = 4;
 
         CharStream stream;
         stream = CharStreams.fromString("""
@@ -46,12 +46,10 @@ public class CompilerInvoker {
                         
                         i += test(5, 4);
                         
-                        i = 90;
-                        
                         if (i > 90) {
                             i = 0;
                         }
-                        recursive(0);
+                        recursive(-201);
                         
                         return i;
                     }

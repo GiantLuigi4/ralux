@@ -74,11 +74,24 @@ public class IntToString {
     private void buildBody() {
         BlockBuilder building = root.getBlockBuilding();
 
-        BlockBuilder builder = functionBuilder.block("entry");
-        builder.enableBuilding();
+        BlockBuilder entry = functionBuilder.block("entry");
+        BlockBuilder ifItIs0 = functionBuilder.block("zero");
+        BlockBuilder builder = functionBuilder.block("not_zero");
 
+        entry.enableBuilding();
         LLVMValueRef arg0 = functionBuilder.getArg(0, root.CSTRING_TYPE);
         LLVMValueRef arg1 = functionBuilder.getArg(1, typeRef);
+        {
+            LLVMValueRef isItTrue = root.compareInt(ECompOp.EQ, arg1, zero, "is_it_zero");
+            entry.conditionalJump(isItTrue, ifItIs0, builder);
+
+            ifItIs0.enableBuilding();
+            root.setValue(arg0, root.integer(0, 64), fortyEight);
+            ifItIs0.ret(root.integer(1, 32));
+        }
+
+        builder.enableBuilding();
+
 
         LLVMValueRef conditionPN = root.compareInt(ECompOp.GE, arg1, zero, "comp_val_pos");
 
@@ -147,8 +160,39 @@ public class IntToString {
         }
 
         reverse.enableBuilding();
-        // TODO: reverse string
-        reverse.ret(root.getValue(index, "res_index"));
+        LLVMValueRef ip = root.getValue(index, "get_index");
+        LLVMValueRef ipm1 = root.sisub(ip, one, "index_minus_one");
+        LLVMValueRef ip1 = root.sisum(ip, one, "index_plus_one");
+        LLVMValueRef ip1d2 = root.sidiv(ip1, root.integer(2, 32), "div_by_2");
+        root.setValue(index, root.integer(0, 32));
+
+        BlockBuilder conclusion = functionBuilder.block("conclusion");
+        {
+            BlockBuilder header = functionBuilder.block("loop_header");
+            BlockBuilder body = functionBuilder.block("loop_body");
+            reverse.jump(header);
+
+            header.enableBuilding();
+            LLVMValueRef indx = root.getValue(index, "get_index");
+            LLVMValueRef cond = root.compareInt(ECompOp.LT, indx, ip1d2, "compare_termin");
+            header.conditionalJump(cond, body, conclusion);
+
+            body.enableBuilding();
+            indx = root.getValue(index, "get_indx");
+
+            LLVMValueRef left = root.getValue(arg0, indx, "get_left");
+            LLVMValueRef right_indx = root.sisub(ipm1, indx, "calc_right_indx");
+            LLVMValueRef right = root.getValue(arg0, right_indx, "get_right");
+            root.setValue(arg0, indx, right);
+            root.setValue(arg0, right_indx, left);
+
+            indx = root.sisum(indx, one, "incr_indx");
+            root.setValue(index, indx);
+            body.jump(header);
+        }
+
+        conclusion.enableBuilding();
+        conclusion.ret(root.getValue(index, "res_index"));
 
         building.enableBuilding();
     }

@@ -4,6 +4,7 @@ import Tokens, Typing, Statement, Typing;
 
 // Parser rules
 expr: expr '.#'
+    | '-' expr
     | '(' full_type ')' expr
     | '(' expr ')'
     | expr (
