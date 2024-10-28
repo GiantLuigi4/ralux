@@ -26,12 +26,12 @@ while: while_header (body|(statement semi_truck));
 while_header: WHILE '(' expr ')';
 
 // if
-if: IF '(' expr ')' (body|(statement semi_truck)) (ELSE if)?;
+if: IF '(' expr ')' (body|(flow|(statement semi_truck))) ((ELSE if) | (ELSE (flow|body|(statement semi_truck))));
 
 // for loop
 for: FOR '(' (loop_enhanced|loop_standard) ')' (body|(statement semi_truck));
 loop_enhanced: full_type? WORD ':' expr;
-loop_standard: (statement?) semi_truck (expr) semi_truck (statement?);
+loop_standard: ((flow|statement)?) semi_truck (expr) semi_truck ((flow|statement)?);
 
 //|'+='|'-='|'/='|'*='|'&='|'^='|'%='
 definition: full_type WORD '=' expr;

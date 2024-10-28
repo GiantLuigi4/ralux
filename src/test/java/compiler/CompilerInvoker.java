@@ -49,10 +49,17 @@ public class CompilerInvoker {
                         if (i > 90) {
                             i = 0;
                         }
+                        
+                        for (int a = 0; a < 100; a += 1) {
+                            print(a);
+                        }
+                        
                         recursive(-201);
                         
                         return i;
                     }
+                    
+                    public static int print(int value) {return value;}
                     
                     public static int recursive(int value) {
                         if (value > 200) return value;

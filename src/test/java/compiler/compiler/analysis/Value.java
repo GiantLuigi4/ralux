@@ -189,6 +189,19 @@ public class Value {
                     return var.getValue();
                 throw new RuntimeException("TODO");
             }
+            case RaluxParser.CONSTANT -> {
+                return switch (terminal.getText()) {
+                    case "true" -> new Value(
+                            root, consumer,
+                            root.integer(1, 1), new Type(root.getIntType(1), false, true, true, true)
+                    );
+                    case "false" -> new Value(
+                            root, consumer,
+                            root.integer(0, 1), new Type(root.getIntType(1), false, true, true, true)
+                    );
+                    default -> throw new RuntimeException("TODO");
+                };
+            }
             default -> throw new RuntimeException("TODO");
         }
     }

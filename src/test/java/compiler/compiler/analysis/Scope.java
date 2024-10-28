@@ -19,7 +19,7 @@ public class Scope {
     }
 
     public Variable defineVariable(String name, Type type) {
-        Variable var = variables.get(name);
+        Variable var = getVariable(name);
         if (var != null) throw new RuntimeException("Variable " + name + " already defined.");
 
         variables.put(name, var = new Variable(root, type));
@@ -29,6 +29,11 @@ public class Scope {
 
     public Variable getVariable(String name) {
         Variable var = variables.get(name);
+        if (var == null) {
+            if (parentScope != null) {
+                return parentScope.getVariable(name);
+            }
+        }
         return var;
     }
 }
