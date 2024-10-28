@@ -300,32 +300,21 @@ public class BuilderRoot extends ModuleRoot {
         LLVMAddConstantMergePass(pass);
         LLVMAddTailCallEliminationPass(pass);
 
-        LLVMAddSCCPPass(pass);
-        LLVMAddLICMPass(pass);
-
         // analysis
         LLVMAddTypeBasedAliasAnalysisPass(pass);
         LLVMAddBasicAliasAnalysisPass(pass);
+        LLVMAddAlignmentFromAssumptionsPass(pass);
 
         // erase branches
         LLVMAddLoopIdiomPass(pass);
         LLVMAddLoopRotatePass(pass);
         LLVMAddLoopUnrollAndJamPass(pass);
-        LLVMAddInstructionCombiningPass(pass);
-        LLVMAddReassociatePass(pass);
-        // TODO: does this need to be repeated?
-        LLVMAddCFGSimplificationPass(pass);
-        LLVMAddLoopUnrollAndJamPass(pass);
-        LLVMAddInstructionCombiningPass(pass);
-        LLVMAddReassociatePass(pass);
         LLVMAddCFGSimplificationPass(pass);
         if (!forFunction)
             LLVMAddLoopUnswitchPass(pass);
         LLVMAddLoopDeletionPass(pass);
         LLVMAddLoopRerollPass(pass);
         LLVMAddJumpThreadingPass(pass);
-        LLVMAddAlwaysInlinerPass(pass);
-
         LLVMAddLICMPass(pass);
         LLVMAddSCCPPass(pass);
 
@@ -340,15 +329,12 @@ public class BuilderRoot extends ModuleRoot {
 
         // re-associate
         LLVMAddReassociatePass(pass);
-        LLVMAddIndVarSimplifyPass(pass);
         LLVMAddInstructionCombiningPass(pass);
 
         // finalize
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-        LLVMAddAggressiveInstCombinerPass(pass);
-        LLVMAddAlignmentFromAssumptionsPass(pass);
-        LLVMAddScopedNoAliasAAPass(pass);
         LLVMAddCFGSimplificationPass(pass);
+        LLVMAddAggressiveInstCombinerPass(pass);
+        LLVMAddScopedNoAliasAAPass(pass);
         LLVMAddSLPVectorizePass(pass);
     }
 

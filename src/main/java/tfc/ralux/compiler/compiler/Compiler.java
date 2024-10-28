@@ -1,5 +1,6 @@
 package tfc.ralux.compiler.compiler;
 
+import org.bytedeco.llvm.LLVM.LLVMPassManagerBuilderRef;
 import tfc.ralux.compiler.compiler.analysis.Type;
 import tfc.ralux.compiler.compiler.analysis.Value;
 import org.antlr.v4.runtime.CommonToken;
@@ -213,8 +214,12 @@ public class Compiler {
         root.dump();
     }
 
-    public void optimize(int rlx) {
+    public void optimize(int llvm, int rlx) {
+        LLVMPassManagerBuilderRef builderRef = LLVM.LLVMPassManagerBuilderCreate();
+        LLVM.LLVMPassManagerBuilderSetOptLevel(builderRef, llvm);
+
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
+        LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
         if (rlx >= 4) {
             root.hyperAggressiveOptimizer(false, pass);
         } else if (rlx >= 1) {
@@ -226,6 +231,7 @@ public class Compiler {
         }
         LLVM.LLVMRunPassManager(pass, root.getModule());
         LLVM.LLVMDisposePassManager(pass);
+        LLVM.LLVMPassManagerBuilderDispose(builderRef);
     }
 
     public ModuleRoot getModule() {

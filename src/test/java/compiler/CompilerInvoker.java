@@ -90,7 +90,7 @@ public class CompilerInvoker {
         ModuleRoot moduleRoot = compiler.getModule();
         compiler.dump();
         ((BuilderRoot) moduleRoot).validate();
-        compiler.optimize(optRlx);
+        compiler.optimize(optLLVM, optRlx);
         compiler.dump();
 
         moduleRoot.toTargetMachine(new Target(
@@ -103,7 +103,8 @@ public class CompilerInvoker {
 
         try {
             Process proc = Runtime.getRuntime().exec(
-                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib"
+                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib -opt:ref -opt:icf -opt:lbr"
+//                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib"
             );
             System.out.println(proc.waitFor());
         } catch (Throwable err) {
