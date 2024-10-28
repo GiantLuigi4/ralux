@@ -1,9 +1,9 @@
-package compiler.compiler;
+package tfc.ralux.compiler.compiler;
 
-import compiler.compiler.analysis.Scope;
-import compiler.compiler.analysis.Type;
-import compiler.compiler.analysis.Value;
-import compiler.compiler.analysis.Variable;
+import tfc.ralux.compiler.compiler.analysis.Scope;
+import tfc.ralux.compiler.compiler.analysis.Type;
+import tfc.ralux.compiler.compiler.analysis.Value;
+import tfc.ralux.compiler.compiler.analysis.Variable;
 import org.antlr.v4.runtime.RuleContext;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
@@ -133,6 +133,7 @@ public class RaluxFunctionConsumer {
         RaluxParser.Loop_standardContext statements = (RaluxParser.Loop_standardContext) child.getChild(2);
 
 //        Value cond = new Value(root, this, currentScope, condition);
+        pushScope();
         acceptRule((RuleContext) statements.getChild(0));
 
         BlockBuilder building = root.getBlockBuilding();
@@ -155,7 +156,6 @@ public class RaluxFunctionConsumer {
         bodyBlock.enableBuilding();
         continueTo.push(tail);
         breakTo.push(conclusion);
-        pushScope();
         acceptBlock((RaluxParser.BodyContext) child.getChild(4));
         popScope();
         autoJump(tail);

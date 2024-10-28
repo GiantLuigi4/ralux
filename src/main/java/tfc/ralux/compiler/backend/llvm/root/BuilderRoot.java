@@ -285,77 +285,71 @@ public class BuilderRoot extends ModuleRoot {
     }
 
     public void hyperAggressiveOptimizer(boolean forFunction, LLVMPassManagerRef pass) {
-        LLVMAddAggressiveDCEPass(pass); // dead code elimination
+        // setup
         LLVMAddCFGSimplificationPass(pass);
+        LLVMAddPromoteMemoryToRegisterPass(pass);
+        LLVMAddAggressiveDCEPass(pass);
+        LLVMAddEarlyCSEPass(pass);
         LLVMAddSimplifyLibCallsPass(pass);
         LLVMAddAlwaysInlinerPass(pass);
-        LLVMAddEarlyCSEMemSSAPass(pass);
-        LLVMAddEarlyCSEPass(pass);
-
+        LLVMAddInstructionSimplifyPass(pass);
         LLVMAddReassociatePass(pass);
-        LLVMAddPromoteMemoryToRegisterPass(pass);
+        LLVMAddInstructionCombiningPass(pass);
+        LLVMAddIndVarSimplifyPass(pass);
+        LLVMAddNewGVNPass(pass);
+        LLVMAddConstantMergePass(pass);
+        LLVMAddTailCallEliminationPass(pass);
+
+        LLVMAddSCCPPass(pass);
         LLVMAddLICMPass(pass);
 
-        LLVMAddLoopRotatePass(pass);
+        // analysis
+        LLVMAddTypeBasedAliasAnalysisPass(pass);
+        LLVMAddBasicAliasAnalysisPass(pass);
+
+        // erase branches
         LLVMAddLoopIdiomPass(pass);
-
+        LLVMAddLoopRotatePass(pass);
+        LLVMAddLoopUnrollAndJamPass(pass);
         LLVMAddInstructionCombiningPass(pass);
-
-        LLVMAddScalarizerPass(pass);
-
-        for (int i = 0; i < 2; i++) {
-            LLVMAddCFGSimplificationPass(pass);
-            LLVMAddPromoteMemoryToRegisterPass(pass);
-            LLVMAddLICMPass(pass);
-            LLVMAddLoopRotatePass(pass);
-            LLVMAddInstructionCombiningPass(pass);
-
-            LLVMAddLoopUnrollPass(pass);
-            LLVMAddCFGSimplificationPass(pass);
-
-            if (i != 2 - 1)
-                LLVMAddNewGVNPass(pass);
-        }
-
+        LLVMAddReassociatePass(pass);
+        // TODO: does this need to be repeated?
+        LLVMAddCFGSimplificationPass(pass);
+        LLVMAddLoopUnrollAndJamPass(pass);
+        LLVMAddInstructionCombiningPass(pass);
+        LLVMAddReassociatePass(pass);
+        LLVMAddCFGSimplificationPass(pass);
         if (!forFunction)
             LLVMAddLoopUnswitchPass(pass);
         LLVMAddLoopDeletionPass(pass);
+        LLVMAddLoopRerollPass(pass);
         LLVMAddJumpThreadingPass(pass);
+        LLVMAddAlwaysInlinerPass(pass);
 
-        LLVMAddMemCpyOptPass(pass);
-        if (!forFunction)
-            LLVMAddConstantMergePass(pass);
+        LLVMAddLICMPass(pass);
+        LLVMAddSCCPPass(pass);
 
-        LLVMAddTailCallEliminationPass(pass);
-        LLVMAddConstantPropagationPass(pass);
-
-        LLVMAddNewGVNPass(pass);
-
+        // simplify
+        LLVMAddInstructionSimplifyPass(pass);
+        LLVMAddIndVarSimplifyPass(pass);
+        LLVMAddSLPVectorizePass(pass);
         LLVMAddDeadStoreEliminationPass(pass);
+        LLVMAddStripDeadPrototypesPass(pass);
         LLVMAddMergedLoadStoreMotionPass(pass);
+        LLVMAddMemCpyOptPass(pass);
 
+        // re-associate
         LLVMAddReassociatePass(pass);
         LLVMAddIndVarSimplifyPass(pass);
         LLVMAddInstructionCombiningPass(pass);
 
-        LLVMAddLoopVectorizePass(pass);
+        // finalize
+        LLVM.LLVMAddCFGSimplificationPass(pass);
+        LLVMAddAggressiveInstCombinerPass(pass);
+        LLVMAddAlignmentFromAssumptionsPass(pass);
+        LLVMAddScopedNoAliasAAPass(pass);
+        LLVMAddCFGSimplificationPass(pass);
         LLVMAddSLPVectorizePass(pass);
-        LLVMAddAggressiveDCEPass(pass); // dead code elimination
-
-
-        // go more over the top!
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-        LLVM.LLVMAddPromoteMemoryToRegisterPass(pass);
-        LLVM.LLVMAddInstructionCombiningPass(pass);
-        LLVM.LLVMAddReassociatePass(pass);
-        LLVM.LLVMAddLoopRotatePass(pass);
-        LLVM.LLVMAddLoopUnrollPass(pass);
-        LLVM.LLVMAddLoopVectorizePass(pass);
-        LLVM.LLVMAddLoopVectorizePass(pass);
-        LLVM.LLVMAddGVNPass(pass);
-        LLVM.LLVMAddInstructionCombiningPass(pass);
-        LLVM.LLVMAddReassociatePass(pass);
-        LLVM.LLVMAddCFGSimplificationPass(pass);
     }
 
     public void memSet(LLVMValueRef ptr, LLVMValueRef value, LLVMValueRef len, int alignment) {

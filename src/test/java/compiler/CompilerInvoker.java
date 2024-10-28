@@ -1,9 +1,10 @@
 package compiler;
 
-import compiler.compiler.Compiler;
+import tfc.ralux.compiler.compiler.Compiler;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.ModuleRoot;
 import tfc.ralux.compiler.backend.llvm.target.CPU;
@@ -17,15 +18,13 @@ import tfc.ralux.compiler.parse.RaluxParser;
 
 import java.io.File;
 
-import static org.bytedeco.llvm.global.LLVM.*;
-
 public class CompilerInvoker {
     private static final Compiler compiler = new Compiler();
 
     public static void main(String[] args) {
-        LLVMInitializeNativeTarget();
-        LLVMInitializeNativeAsmPrinter();
-        LLVMInitializeAllTargets();
+        LLVM.LLVMInitializeNativeTarget();
+        LLVM.LLVMInitializeNativeAsmPrinter();
+        LLVM.LLVMInitializeAllTargets();
 
         final int optLLVM = 3;
         final int optRlx = 4;
@@ -54,7 +53,15 @@ public class CompilerInvoker {
                             print(a);
                         }
                         
-                        recursive(-201);
+                        for (int a = 0; a < 100; a += 1) {
+                            recursive(-201);
+                        }
+                        for (int a = 0; a < 100; a += 1) {
+                            i += test(a, 4);
+                        }
+                        for (int a = 0; a < 100; a += 1) {
+                            i += fv * test(a, 4);
+                        }
                         
                         return i;
                     }

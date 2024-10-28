@@ -1,9 +1,8 @@
-package compiler.compiler;
+package tfc.ralux.compiler.compiler;
 
-import compiler.compiler.analysis.Scope;
-import compiler.compiler.analysis.Type;
-import compiler.compiler.analysis.Value;
-import org.antlr.v4.runtime.tree.ParseTree;
+import tfc.ralux.compiler.compiler.analysis.Scope;
+import tfc.ralux.compiler.compiler.analysis.Type;
+import tfc.ralux.compiler.compiler.analysis.Value;
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;

@@ -1,4 +1,4 @@
-package compiler.compiler.analysis;
+package tfc.ralux.compiler.compiler.analysis;
 
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;

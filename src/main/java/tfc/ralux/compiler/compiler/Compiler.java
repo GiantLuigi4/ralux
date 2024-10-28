@@ -1,13 +1,11 @@
-package compiler.compiler;
+package tfc.ralux.compiler.compiler;
 
-import compiler.compiler.analysis.Type;
-import compiler.compiler.analysis.Value;
+import tfc.ralux.compiler.compiler.analysis.Type;
+import tfc.ralux.compiler.compiler.analysis.Value;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
-import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionType;
@@ -217,14 +215,14 @@ public class Compiler {
 
     public void optimize(int rlx) {
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
-        if (rlx == 1) {
+        if (rlx >= 4) {
+            root.hyperAggressiveOptimizer(false, pass);
+        } else if (rlx >= 1) {
             LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddReassociatePass(pass);
             LLVM.LLVMAddLoopUnrollAndJamPass(pass);
             LLVM.LLVMAddReassociatePass(pass);
             LLVM.LLVMAddCFGSimplificationPass(pass);
-        } else if (rlx == 4) {
-            root.hyperAggressiveOptimizer(false, pass);
         }
         LLVM.LLVMRunPassManager(pass, root.getModule());
         LLVM.LLVMDisposePassManager(pass);

@@ -1,4 +1,4 @@
-package compiler.compiler.analysis;
+package tfc.ralux.compiler.compiler.analysis;
 
 import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;

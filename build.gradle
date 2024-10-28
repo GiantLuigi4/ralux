@@ -12,17 +12,26 @@ repositories {
 //    maven { url "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/" }
 }
 
+configurations {
+    extraLibs
+}
+
 dependencies {
     // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
-    implementation group: 'org.antlr', name: 'antlr4-runtime', version: '4.13.2'
+    extraLibs group: 'org.antlr', name: 'antlr4-runtime', version: '4.13.2'
 
     // https://mvnrepository.com/artifact/org.antlr/antlr4
-    implementation group: 'org.antlr', name: 'antlr4', version: '4.13.2'
+    extraLibs group: 'org.antlr', name: 'antlr4', version: '4.13.2'
 
 //    implementation "org.bytedeco:llvm-platform:18.1.8-1.5.11-SNAPSHOT"
     // https://mvnrepository.com/artifact/org.bytedeco/llvm-platform
 //    implementation group: 'org.bytedeco', name: 'llvm-platform', version: '17.0.6-1.5.10'
-    implementation group: 'org.bytedeco', name: 'llvm-platform', version: '8.0.0-1.5.1'
+//    extraLibs group: 'org.bytedeco', name: 'llvm-platform', version: '13.0.1-1.5.7'
+    extraLibs 'org.bytedeco:llvm:13.0.1-1.5.7:windows-x86_64'
+    extraLibs 'org.bytedeco:llvm:windows-x86_64'
+    extraLibs 'org.bytedeco:javacpp:1.5.7:windows-x86_64'
+    extraLibs 'org.bytedeco:javacpp:1.5.7'
+//    implementation group: 'org.bytedeco', name: 'llvm-platform', version: '8.0.0-1.5.1'
 
 
 //    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
@@ -36,4 +45,19 @@ dependencies {
 //    // https://mvnrepository.com/artifact/org.jetbrains.intellij.deps/org-llvm-ir
 //    implementation group: 'org.jetbrains.intellij.deps', name: 'org-llvm-ir', version: '3.9'
 //    implementation group: 'org.jetbrains.intellij.deps', name: 'org-llvm-adtsupport', version: '3.9'
+
+    configurations.implementation.extendsFrom(configurations.extraLibs)
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'compiler.CompilerInvoker'
+    }
+    from {
+        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+tasks.withType(Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

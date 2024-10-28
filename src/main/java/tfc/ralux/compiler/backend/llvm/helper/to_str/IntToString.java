@@ -11,8 +11,6 @@ import tfc.ralux.compiler.backend.llvm.FunctionType;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 
-import static org.bytedeco.llvm.global.LLVM.*;
-
 public class IntToString {
     LLVMTypeRef typeRef;
     BuilderRoot root;
@@ -211,6 +209,7 @@ public class IntToString {
         PointerPointer args = root.track(new PointerPointer(3));
         args.put(0, str);
         args.put(1, value);
+
         root.track(LLVM.LLVMBuildCall(
                 root.getBuilder(),
                 functionBuilder.getDirect(),

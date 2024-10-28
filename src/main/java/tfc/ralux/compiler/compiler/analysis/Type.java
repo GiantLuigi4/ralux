@@ -1,6 +1,6 @@
-package compiler.compiler.analysis;
+package tfc.ralux.compiler.compiler.analysis;
 
-import compiler.compiler.RaluxFunctionConsumer;
+import tfc.ralux.compiler.compiler.RaluxFunctionConsumer;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
