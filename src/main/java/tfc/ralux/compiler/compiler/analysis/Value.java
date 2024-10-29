@@ -1,5 +1,7 @@
 package tfc.ralux.compiler.compiler.analysis;
 
+import tfc.ralux.compiler.backend.llvm.BlockBuilder;
+import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.compiler.CallCompiler;
 import tfc.ralux.compiler.compiler.RaluxFunctionConsumer;
 import org.antlr.v4.runtime.RuleContext;
@@ -142,6 +144,14 @@ public class Value {
                         coercion.cast(root, left),
                         coercion.cast(root, right)
                 );
+
+                // TODO: short circuit eval
+                // don't eval right if left is wrong
+                // this should be done with just a simple branch
+                case "&&" -> val = root.and(left.llvm, right.llvm, "and");
+                case "||" -> val = root.or(left.llvm, right.llvm, "or");
+
+                default -> throw new RuntimeException("NYI");
             }
             coercion = new Type(
                     root.getIntType(1),

@@ -26,13 +26,13 @@ public class CompilerInvoker {
         LLVM.LLVMInitializeNativeAsmPrinter();
         LLVM.LLVMInitializeAllTargets();
 
-        final int optLLVM = 3;
+        final int optLLVM = 0;
         final int optRlx = 4;
 
         CharStream stream;
         stream = CharStreams.fromString("""
                 pkg tfc.test;
-                
+                                
                 public class TestClass {
                     public static int main() {
                         stretch fv = 2;
@@ -49,18 +49,20 @@ public class CompilerInvoker {
                             i = 0;
                         }
                         
-                        for (int a = 0; a < 100; a += 1) {
-                            print(a);
-                        }
-                        
-                        for (int a = 0; a < 100; a += 1) {
-                            recursive(-201);
-                        }
-                        for (int a = 0; a < 100; a += 1) {
-                            i += test(a, 4);
-                        }
-                        for (int a = 0; a < 100; a += 1) {
-                            i += fv * test(a, 4);
+                        for (int l = 0; l < 10; l+=1) {
+                            for (int a = 0; a < 100; a += 1) {
+                                print(a);
+                            }
+                            
+                            for (int a = 0; a < 100; a += 1) {
+                                recursive(-201);
+                            }
+                            for (int a = 0; a < 100; a += 1) {
+                                i += test(a, 4);
+                            }
+                            for (int a = 0; a < 100; a += 1) {
+                                i += fv * test(a, 4);
+                            }
                         }
                         
                         return i;

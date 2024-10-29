@@ -265,7 +265,7 @@ public class BuilderRoot extends ModuleRoot {
         LLVMValueRef long0 = integer(0, 64);
         indices.put(0, long0);
         indices.put(1, long0);
-        return track(LLVM.LLVMBuildGEP(
+        return track(LLVM.LLVMBuildInBoundsGEP(
                 builder, text,
                 indices, 2,
                 "gep_str"
@@ -340,5 +340,13 @@ public class BuilderRoot extends ModuleRoot {
 
     public void memSet(LLVMValueRef ptr, LLVMValueRef value, LLVMValueRef len, int alignment) {
         LLVM.LLVMBuildMemSet(builder, ptr, value, len, alignment);
+    }
+
+    public LLVMValueRef and(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return LLVM.LLVMBuildAnd(builder, lh, rh, name);
+    }
+
+    public LLVMValueRef or(LLVMValueRef lh, LLVMValueRef rh, String name) {
+        return LLVM.LLVMBuildOr(builder, lh, rh, name);
     }
 }

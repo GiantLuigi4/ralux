@@ -281,4 +281,8 @@ public class RaluxFunctionConsumer {
                 )), type
         ));
     }
+
+    public FunctionBuilder getDirect() {
+        return direct;
+    }
 }

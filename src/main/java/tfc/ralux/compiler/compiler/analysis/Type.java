@@ -251,7 +251,7 @@ public class Type {
                     root.getFloatType(Math.max(mySize, otherSize)),
                     false, true, true, false
             );
-        }
+        } else if (this.isBool && type.isBool) return this;
         throw new RuntimeException("NYI");
     }
 

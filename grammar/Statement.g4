@@ -26,7 +26,7 @@ while: while_header (body|(statement semi_truck));
 while_header: WHILE '(' expr ')';
 
 // if
-if: IF '(' expr ')' (body|(flow|(statement semi_truck))) ((ELSE if) | (ELSE (flow|body|(statement semi_truck))));
+if: IF '(' expr ')' (body|(flow|(statement semi_truck))) ((ELSE if) | (ELSE (flow|body|(statement semi_truck))))?;
 
 // for loop
 for: FOR '(' (loop_enhanced|loop_standard) ')' (body|(statement semi_truck));

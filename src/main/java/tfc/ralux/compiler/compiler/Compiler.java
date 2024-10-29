@@ -219,15 +219,37 @@ public class Compiler {
         LLVM.LLVMPassManagerBuilderSetOptLevel(builderRef, llvm);
 
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
-        LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
-        if (rlx >= 4) {
+        if (rlx >= 5) {
+            LLVM.LLVMAddFunctionAttrsPass(pass);
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+            LLVM.LLVMAddDeadArgEliminationPass(pass);
+            LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMAddAlwaysInlinerPass(pass);
+            LLVM.LLVMAddMergeFunctionsPass(pass);
+            LLVM.LLVMAddFunctionInliningPass(pass);
+            LLVM.LLVMAddAggressiveDCEPass(pass);
+            LLVM.LLVMAddGlobalDCEPass(pass);
+            LLVM.LLVMAddArgumentPromotionPass(pass);
+            LLVM.LLVMAddPruneEHPass(pass);
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+            LLVM.LLVMAddCalledValuePropagationPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
-        } else if (rlx >= 1) {
-            LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddReassociatePass(pass);
-            LLVM.LLVMAddLoopUnrollAndJamPass(pass);
-            LLVM.LLVMAddReassociatePass(pass);
-            LLVM.LLVMAddCFGSimplificationPass(pass);
+            LLVM.LLVMAddStripSymbolsPass(pass);
+            LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
+            LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
+        } else {
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+            if (rlx >= 4) {
+                LLVM.LLVMAddFunctionAttrsPass(pass);
+                root.hyperAggressiveOptimizer(false, pass);
+            } else if (rlx >= 1) {
+                LLVM.LLVMAddFunctionAttrsPass(pass);
+                LLVM.LLVMAddCFGSimplificationPass(pass);
+                LLVM.LLVMAddReassociatePass(pass);
+                LLVM.LLVMAddLoopUnrollAndJamPass(pass);
+                LLVM.LLVMAddReassociatePass(pass);
+                LLVM.LLVMAddCFGSimplificationPass(pass);
+            }
         }
         LLVM.LLVMRunPassManager(pass, root.getModule());
         LLVM.LLVMDisposePassManager(pass);
