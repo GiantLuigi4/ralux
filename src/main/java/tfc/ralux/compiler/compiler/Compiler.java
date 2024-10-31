@@ -1,6 +1,8 @@
 package tfc.ralux.compiler.compiler;
 
+import org.bytedeco.llvm.LLVM.LLVMAttributeRef;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerBuilderRef;
+import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import tfc.ralux.compiler.compiler.analysis.Type;
 import tfc.ralux.compiler.compiler.analysis.Value;
 import org.antlr.v4.runtime.CommonToken;
@@ -12,6 +14,8 @@ import tfc.ralux.compiler.backend.llvm.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.FunctionType;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.ModuleRoot;
+import tfc.ralux.compiler.compiler.cache.ClassCache;
+import tfc.ralux.compiler.compiler.cache.ClassFile;
 import tfc.ralux.compiler.parse.RaluxParser;
 import tfc.ralux.compiler.util.Pair;
 
@@ -22,10 +26,18 @@ import java.util.function.Consumer;
 public class Compiler {
     // TODO: module should be named based upon project
     BuilderRoot root = new BuilderRoot("module");
+    ClassFile generating;
+    String pkg = null;
 
     private void acceptHeader(RaluxParser.HeaderContext tree) {
         // TODO
         System.out.println(tree);
+        if (tree.getChild(0).getText().equals("pkg")) {
+            RaluxParser.Named_typeContext pkgName = (RaluxParser.Named_typeContext) tree.getChild(1);
+            pkg = pkgName.getText();
+        } else {
+            throw new RuntimeException("TODO");
+        }
     }
 
     private void acceptClass(RaluxParser.ClassContext tree) {
@@ -42,8 +54,7 @@ public class Compiler {
                         System.out.println(node.getText());
                     }
                     case RaluxParser.WORD -> {
-                        System.out.println("CName");
-                        System.out.println(node.getText());
+                        generating = new ClassFile(this.pkg, node.getText()); // TODO: package
                     }
                     default -> throw new RuntimeException("Unexpected token: " + token);
                 }
@@ -75,10 +86,6 @@ public class Compiler {
     private FunctionBuilder writeFunctionHeader(RaluxParser.Full_typeContext type, String name, RaluxParser.Def_paramsContext params) {
         return writeFunctionHeader(type, name, params, new Type[1], new Consumer[1]);
     }
-
-    // TODO: should account for access, hierarchy, owners, function names, etc
-    //       this is a lazy solution which will be slow
-    List<Pair<Pair<String, List<Type>>, Pair<FunctionBuilder, Type>>> funcsByParams = new ArrayList<>();
 
     private FunctionBuilder writeFunctionHeader(RaluxParser.Full_typeContext type, String name, RaluxParser.Def_paramsContext params, Type[] outType, Consumer<RaluxFunctionConsumer>[] parameterInserter) {
         // TODO: write type&params
@@ -128,15 +135,23 @@ public class Compiler {
             }
         };
 
+        String mName = name;
+        // TODO: should be when cExtern that it does this, not when "main"
+        if (!name.equals("main")) {
+            mName = this.generating.getQualifier() + "::" + name;
+        }
         FunctionBuilder func = root.function(
-                name,
+                mName,
                 funcType
         );
-        funcsByParams.add(Pair.of(Pair.of(name, args), Pair.of(func, typ)));
+        generating.addFuncByParams(
+                func, name,
+                typ, args
+        );
         return func;
     }
 
-    ArrayList<Pair<RaluxParser.BodyContext, RaluxFunctionConsumer>> functions = new ArrayList<>();
+    ClassCache cache = new ClassCache();
 
     private void acceptMethod(RaluxParser.MethodContext tree) {
         RaluxParser.Full_typeContext type = null;
@@ -179,7 +194,7 @@ public class Compiler {
                         );
                         RaluxFunctionConsumer functionConsumer = new RaluxFunctionConsumer(root, builder, this, outType[0]);
                         outParams[0].accept(functionConsumer);
-                        functions.add(Pair.of((RaluxParser.BodyContext) node, functionConsumer));
+                        generating.addFunction(functionConsumer, (RaluxParser.BodyContext) node);
                     }
                     default -> throw new RuntimeException("Unexpected rule: " + node);
                 }
@@ -193,6 +208,9 @@ public class Compiler {
     }
 
     public void accept(RaluxParser.FileContext file) {
+        pkg = null;
+        generating = null;
+
         for (int i = 0; i < file.getChildCount(); i++) {
             ParseTree tree = file.getChild(i);
 
@@ -203,54 +221,111 @@ public class Compiler {
             }
         }
 
-        for (Pair<RaluxParser.BodyContext, RaluxFunctionConsumer> function : functions) {
-            function.getSecond().buildRoot();
-            function.getSecond().acceptBlock(function.getFirst());
-            if (!root.getBlockBuilding().isTerminated()) root.getBlockBuilding().ret();
-        }
+        cache.addFile(generating);
+    }
+
+    public void buildModule() {
+        cache.iterateFiles((classFile) -> {
+            classFile.iterateFunctions((function) -> {
+                function.getSecond().buildRoot();
+                function.getSecond().acceptBlock(function.getFirst());
+                if (!root.getBlockBuilding().isTerminated()) root.getBlockBuilding().ret();
+            });
+        });
     }
 
     public void dump() {
         root.dump();
     }
 
-    public void optimize(int llvm, int rlx) {
+    public void optimize(int llvm, int rlx, boolean noIntrinsics) {
         LLVMPassManagerBuilderRef builderRef = LLVM.LLVMPassManagerBuilderCreate();
         LLVM.LLVMPassManagerBuilderSetOptLevel(builderRef, llvm);
 
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
         if (rlx >= 5) {
-            LLVM.LLVMAddFunctionAttrsPass(pass);
-            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
-            LLVM.LLVMAddDeadArgEliminationPass(pass);
             LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMAddGlobalOptimizerPass(pass);
+            LLVM.LLVMAddFunctionAttrsPass(pass);
+            LLVM.LLVMAddLICMPass(pass);
+            LLVM.LLVMAddDeadArgEliminationPass(pass);
             LLVM.LLVMAddAlwaysInlinerPass(pass);
             LLVM.LLVMAddMergeFunctionsPass(pass);
             LLVM.LLVMAddFunctionInliningPass(pass);
             LLVM.LLVMAddAggressiveDCEPass(pass);
             LLVM.LLVMAddGlobalDCEPass(pass);
+            LLVM.LLVMAddScalarReplAggregatesPass(pass);
             LLVM.LLVMAddArgumentPromotionPass(pass);
             LLVM.LLVMAddPruneEHPass(pass);
-            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
             LLVM.LLVMAddCalledValuePropagationPass(pass);
+            LLVM.LLVMAddCorrelatedValuePropagationPass(pass);
+            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
+            LLVM.LLVMAddCalledValuePropagationPass(pass);
+            LLVM.LLVMAddIPSCCPPass(pass);
+            LLVM.LLVMAddLICMPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
+            LLVM.LLVMAddLICMPass(pass);
             LLVM.LLVMAddStripSymbolsPass(pass);
             LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
             LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+            root.hyperAggressiveOptimizer(false, pass);
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
         } else {
             LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+
             if (rlx >= 4) {
+                LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
                 LLVM.LLVMAddFunctionAttrsPass(pass);
                 root.hyperAggressiveOptimizer(false, pass);
-            } else if (rlx >= 1) {
-                LLVM.LLVMAddFunctionAttrsPass(pass);
+            } else {
+                // passes for cleanup; always used for lower optimization levels
                 LLVM.LLVMAddCFGSimplificationPass(pass);
-                LLVM.LLVMAddReassociatePass(pass);
-                LLVM.LLVMAddLoopUnrollAndJamPass(pass);
-                LLVM.LLVMAddReassociatePass(pass);
+                LLVM.LLVMAddPromoteMemoryToRegisterPass(pass);
+                LLVM.LLVMAddEarlyCSEPass(pass);
+                LLVM.LLVMAddDCEPass(pass);
+                LLVM.LLVMAddConstantMergePass(pass);
+                LLVM.LLVMAddInstructionSimplifyPass(pass);
                 LLVM.LLVMAddCFGSimplificationPass(pass);
+
+                if (rlx >= 1) {
+                    LLVM.LLVMAddFunctionAttrsPass(pass);
+                    LLVM.LLVMAddCFGSimplificationPass(pass);
+                    LLVM.LLVMAddReassociatePass(pass);
+                    LLVM.LLVMAddLoopUnrollAndJamPass(pass);
+                    LLVM.LLVMAddReassociatePass(pass);
+                    LLVM.LLVMAddCFGSimplificationPass(pass);
+
+                    if (rlx >= 2) {
+                        if (rlx == 3) {
+                            LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
+                            LLVM.LLVMAddEarlyCSEPass(pass);
+                            LLVM.LLVMAddReassociatePass(pass);
+                            LLVM.LLVMAddLoopRotatePass(pass);
+                            LLVM.LLVMAddLoopUnrollPass(pass);
+                            LLVM.LLVMAddLoopDeletionPass(pass);
+                            LLVM.LLVMAddLoopIdiomPass(pass);
+                            LLVM.LLVMAddLoopRerollPass(pass);
+                            LLVM.LLVMAddCFGSimplificationPass(pass);
+                            LLVM.LLVMAddAggressiveDCEPass(pass);
+                        }
+
+                        LLVM.LLVMAddJumpThreadingPass(pass);
+                        LLVM.LLVMAddLoopVectorizePass(pass);
+                        LLVM.LLVMAddSLPVectorizePass(pass);
+                        LLVM.LLVMAddNewGVNPass(pass);
+                        LLVM.LLVMAddCFGSimplificationPass(pass);
+                        LLVM.LLVMAddInstructionCombiningPass(pass);
+                    }
+                }
             }
         }
+
+        if (noIntrinsics) {
+            LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+        }
+
         LLVM.LLVMRunPassManager(pass, root.getModule());
         LLVM.LLVMDisposePassManager(pass);
         LLVM.LLVMPassManagerBuilderDispose(builderRef);
@@ -261,24 +336,6 @@ public class Compiler {
     }
 
     public Pair<FunctionBuilder, Type> getFunction(RaluxFunctionConsumer consumer, String funcName, List<Value> args) {
-        loopFuncs:
-        for (Pair<Pair<String, List<Type>>, Pair<FunctionBuilder, Type>> funcByParam : funcsByParams) {
-            if (funcByParam.getFirst().getFirst().equals(funcName)) {
-                List<Type> argTypes = funcByParam.getFirst().getSecond();
-
-                // TODO: var-args
-                if (argTypes.size() != args.size())
-                    continue;
-
-                for (int i = 0; i < args.size(); i++) {
-                    if (!argTypes.get(i).equals(args.get(i).type)) {
-                        continue loopFuncs;
-                    }
-                }
-
-                return funcByParam.getSecond();
-            }
-        }
-        throw new RuntimeException("Method not found " + funcName);
+        return cache.findFunction(generating, funcName, args);
     }
 }

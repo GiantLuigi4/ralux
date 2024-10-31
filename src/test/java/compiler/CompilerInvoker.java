@@ -26,8 +26,8 @@ public class CompilerInvoker {
         LLVM.LLVMInitializeNativeAsmPrinter();
         LLVM.LLVMInitializeAllTargets();
 
-        final int optLLVM = 0;
-        final int optRlx = 4;
+        final int optLLVM = 1;
+        final int optRlx = 0;
 
         CharStream stream;
         stream = CharStreams.fromString("""
@@ -49,26 +49,22 @@ public class CompilerInvoker {
                             i = 0;
                         }
                         
-                        for (int l = 0; l < 10; l+=1) {
-                            for (int a = 0; a < 100; a += 1) {
-                                print(a);
-                            }
-                            
-                            for (int a = 0; a < 100; a += 1) {
-                                recursive(-201);
-                            }
-                            for (int a = 0; a < 100; a += 1) {
-                                i += test(a, 4);
-                            }
-                            for (int a = 0; a < 100; a += 1) {
-                                i += fv * test(a, 4);
-                            }
+                        if (i > 50 && fv > 5) {
+                            print(i);
                         }
                         
                         return i;
                     }
                     
+                    public static int print(byte value) {return value;}
+                    public static int print(short value) {return value;}
                     public static int print(int value) {return value;}
+                    public static int print(long value) {return value;}
+                    public static int print(stretch value) {return value;}
+                    public static int print(half value) {return value;}
+                    public static int print(float value) {return value;}
+                    public static int print(double value) {return value;}
+                    public static int print(quadruple value) {return value;}
                     
                     public static int recursive(int value) {
                         if (value > 200) return value;
@@ -88,11 +84,12 @@ public class CompilerInvoker {
             return;
 
         compiler.accept(tree);
+        compiler.buildModule();
 
         ModuleRoot moduleRoot = compiler.getModule();
         compiler.dump();
         ((BuilderRoot) moduleRoot).validate();
-        compiler.optimize(optLLVM, optRlx);
+        compiler.optimize(optLLVM, optRlx, true);
         compiler.dump();
 
         moduleRoot.toTargetMachine(new Target(
@@ -105,7 +102,8 @@ public class CompilerInvoker {
 
         try {
             Process proc = Runtime.getRuntime().exec(
-                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib -opt:ref -opt:icf -opt:lbr"
+//                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib -opt:ref -opt:icf -opt:lbr"
+                    "lld-link.exe module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:/Program Files/LLVM/lib/clang/8.0.1/lib/windows\" clang_rt.builtins-x86_64.lib -opt:ref -opt:icf -opt:lbr /fixed /cetcompat /release /incremental:no /ltcg /debug:none /subsystem:console"
 //                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib"
             );
             System.out.println(proc.waitFor());

@@ -56,7 +56,7 @@ public class RaluxFunctionConsumer {
     private void acceptAssign(RaluxParser.AssignmentContext node) {
         System.out.println(node);
         String varName = node.getChild(0).getText();
-        if (node.getChildCount() > 1) {
+        if (node.getChildCount() == 3) {
             RaluxParser.OperandContext operand = (RaluxParser.OperandContext) node.getChild(1);
             RaluxParser.ExprContext value = (RaluxParser.ExprContext) node.getChild(2);
             Value val = new Value(root, this, currentScope, value);
@@ -83,6 +83,31 @@ public class RaluxFunctionConsumer {
                         var.getType().eqDiv(root, var.getValue().llvm, val),
                         var.getType()
                 );
+                default -> throw new RuntimeException("Unsupported operand: " + operand.getText());
+            }
+            var.setValue(currentScope, val);
+        } else if (node.getChildCount() == 2) {
+            RaluxParser.DOperandContext operand = (RaluxParser.DOperandContext) node.getChild(1);
+            Variable var = currentScope.getVariable(varName);
+            Value val = new Value(
+                    root, this,
+                    root.integer(1, var.getType().numberSize(root)), var.getType()
+            );
+            switch (operand.getText()) {
+                case "++" -> {
+                    val = new Value(
+                            root, this,
+                            var.getType().eqSum(root, var.getValue().llvm, val),
+                            var.getType()
+                    );
+                }
+                case "--" -> {
+                    val = new Value(
+                            root, this,
+                            var.getType().eqDiff(root, var.getValue().llvm, val),
+                            var.getType()
+                    );
+                }
                 default -> throw new RuntimeException("Unsupported operand: " + operand.getText());
             }
             var.setValue(currentScope, val);
@@ -263,7 +288,6 @@ public class RaluxFunctionConsumer {
 
         LLVMValueRef casted = type.cast(root, val);
 
-        // TODO: auto cast to function return type
         root.stdLib.print(
                 root.stdLib.intToString(type.llvm(), casted)
         );

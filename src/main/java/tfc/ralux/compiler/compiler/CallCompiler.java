@@ -31,6 +31,8 @@ public class CallCompiler {
                         ));
                     }
                 }
+
+                // TODO: support auto cast
                 Pair<FunctionBuilder, Type> toCall = compiler.getFunction(consumer, funcName, args);
                 PointerPointer argsPtrPtr = root.track(new PointerPointer(args.size()));
                 for (int i = 0; i < args.size(); i++)

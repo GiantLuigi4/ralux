@@ -1,0 +1,46 @@
+pkg comptest;
+
+public class TestClass {
+    public static int main() {
+        stretch fv = 2;
+        fv += 2;
+        half i = fv * 10;
+        fv /= 2;
+        fv /= 4;
+        fv *= 100;
+        i += fv;
+
+        i += test(5, 4);
+
+        if (i > 90) {
+            i = 0;
+        }
+
+        if (i > 50 && fv > 5) {
+            print(i);
+        }
+
+        TestClass1.callableFunction();
+
+        return i;
+    }
+
+    public static int print(byte value) {return value;}
+    public static int print(short value) {return value;}
+    public static int print(int value) {return value;}
+    public static int print(long value) {return value;}
+    public static int print(stretch value) {return value;}
+    public static int print(half value) {return value;}
+    public static int print(float value) {return value;}
+    public static int print(double value) {return value;}
+    public static int print(quadruple value) {return value;}
+
+    public static int recursive(int value) {
+        if (value > 200) return value;
+        return recursive(value + 1) - 1;
+    }
+
+    public static int test(int lh, int rh) {
+        return lh + rh;
+    }
+}

@@ -1,0 +1,7 @@
+pkg comptest;
+
+public class TestClass1 {
+    public static void callableFunction() {
+        return 5;
+    }
+}

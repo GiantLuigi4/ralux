@@ -148,7 +148,20 @@ public class Value {
                 // TODO: short circuit eval
                 // don't eval right if left is wrong
                 // this should be done with just a simple branch
-                case "&&" -> val = root.and(left.llvm, right.llvm, "and");
+                case "&&" -> {
+                    BlockBuilder builder = root.getBlockBuilding();
+                    LLVMValueRef valueRef = root.allocA(root.getIntType(1), "branch_dirt");
+                    BlockBuilder branch = consumer.getDirect().block("long_circuit");
+                    BlockBuilder branchShort = consumer.getDirect().block("short_circuit");
+                    root.setValue(valueRef, left.llvm);
+                    builder.conditionalJump(left.llvm, branch, branchShort);
+                    branch.enableBuilding();
+                    root.setValue(valueRef, right.llvm);
+                    branch.jump(branchShort);
+                    branchShort.enableBuilding();
+                    val = root.getValue(valueRef, "get_dirt");
+//                    val = root.and(left.llvm, right.llvm, "and");
+                }
                 case "||" -> val = root.or(left.llvm, right.llvm, "or");
 
                 default -> throw new RuntimeException("NYI");

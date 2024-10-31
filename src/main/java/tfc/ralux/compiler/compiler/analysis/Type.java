@@ -18,6 +18,11 @@ public class Type {
     boolean isInt;
     boolean isBool;
     boolean isVoid;
+    boolean varrg;
+
+    public boolean isVarArg() {
+        return varrg;
+    }
 
     public boolean isVoid() {
         return isVoid;
@@ -267,7 +272,7 @@ public class Type {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Type type = (Type) o;
-        return signed == type.signed && primitive == type.primitive && isInt == type.isInt && Objects.equals(llvm, type.llvm);
+        return this.isVoid == type.isVoid && signed == type.signed && primitive == type.primitive && isInt == type.isInt && Objects.equals(llvm, type.llvm);
     }
 
     @Override
@@ -282,5 +287,15 @@ public class Type {
         if (isInt) return "int" + numberSize(root);
         if (isFloat()) return "fp" + numberSize(root);
         return "unknown_type";
+    }
+
+    public boolean canAutoCast(Type type) {
+        if (isNumber() && type.isNumber()) {
+//            if (numberSize(root) <= type.numberSize(root)) {
+//                return true;
+//            }
+        }
+
+        return this.equals(type);
     }
 }
