@@ -54,9 +54,6 @@ public class STDLib {
         }
 
         LLVMValueRef valueRef = toString.call(intVal);
-//        root.setValue(valueRef, root.integer(0, 32), root.integer(48, 8));
-//        root.setValue(valueRef, root.integer(1, 32), root.integer(49, 8));
-//        root.setValue(valueRef, root.integer(2, 32), root.integer(50, 8));
         return valueRef;
     }
 }

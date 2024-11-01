@@ -6,6 +6,7 @@ import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
+import tfc.ralux.compiler.compiler.cache.ClassFile;
 import tfc.ralux.compiler.parse.RaluxParser;
 
 import java.util.Objects;
@@ -19,6 +20,7 @@ public class Type {
     boolean isBool;
     boolean isVoid;
     boolean varrg;
+    ClassFile cls;
 
     public boolean isVarArg() {
         return varrg;

@@ -12,6 +12,8 @@ import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.parse.RaluxParser;
 
+import java.util.Stack;
+
 public class Value {
     public final LLVMValueRef llvm;
     RaluxParser.ExprContext expr;
@@ -79,97 +81,129 @@ public class Value {
         };
     }
 
+    Stack<BlockBuilder> shortTo = new Stack<>();
+
     private Value compileOperation(RaluxParser.ExprContext context) {
         ParseTree operand = context.getChild(1);
         if (operand instanceof RaluxParser.ExprContext expr) {
             return compileExpr(expr);
         }
         Value left = compileExpr((RaluxParser.ExprContext) context.getChild(0));
-        Value right = compileExpr((RaluxParser.ExprContext) context.getChild(2));
-        Type coercion = left.type.coerce(root, right.type);
+        Type coercion = left.type;
 
-        LLVMValueRef val = switch (operand.getText()) {
-            case "+" -> coercion.sum(
-                    root,
-                    coercion.cast(root, left),
-                    coercion.cast(root, right)
-            );
-            case "-" -> coercion.diff(
-                    root,
-                    coercion.cast(root, left),
-                    coercion.cast(root, right)
-            );
-            case "*" -> coercion.mul(
-                    root,
-                    coercion.cast(root, left),
-                    coercion.cast(root, right)
-            );
-            case "/" -> coercion.div(
-                    root,
-                    coercion.cast(root, left),
-                    coercion.cast(root, right)
-            );
-            default -> null;
+        LLVMValueRef val;
+        switch (operand.getText()) {
+            case "&&" -> {
+                BlockBuilder builder = root.getBlockBuilding();
+                LLVMValueRef valueRef = consumer.getDirtRef();
+                BlockBuilder branchLong = consumer.getDirect().block("long_circuit");
+                BlockBuilder branchJump = consumer.getDirect().block("jump_circuit");
+                BlockBuilder branchShort = consumer.getDirect().block("short_circuit");
+                builder.conditionalJump(left.llvm, branchLong, branchJump);
+
+                branchJump.enableBuilding();
+                root.setValue(valueRef, root.integer(0, 1));
+                branchJump.jump(branchShort);
+
+                branchLong.enableBuilding();
+                Value right = compileExpr((RaluxParser.ExprContext) context.getChild(2));
+                root.setValue(valueRef, right.llvm);
+                root.getBlockBuilding().jump(branchShort);
+
+                branchShort.enableBuilding();
+                val = root.getValue(valueRef, "get_dirt");
+            }
+            case "||" -> {
+                BlockBuilder builder = root.getBlockBuilding();
+                LLVMValueRef valueRef = consumer.getDirtRef();
+                BlockBuilder branchLong = consumer.getDirect().block("long_circuit");
+                BlockBuilder branchJump = consumer.getDirect().block("jump_circuit");
+                BlockBuilder branchShort = consumer.getDirect().block("short_circuit");
+                builder.conditionalJump(left.llvm, branchJump, branchLong);
+
+                branchJump.enableBuilding();
+                root.setValue(valueRef, root.integer(1, 1));
+                branchJump.jump(branchShort);
+
+                branchLong.enableBuilding();
+                Value right = compileExpr((RaluxParser.ExprContext) context.getChild(2));
+                root.setValue(valueRef, right.llvm);
+                root.getBlockBuilding().jump(branchShort);
+
+                branchShort.enableBuilding();
+                val = root.getValue(valueRef, "get_dirt");
+            }
+            default -> val = null;
         };
 
         if (val == null) {
-            switch (operand.getText()) {
-                case "<" -> val = coercion.compare(
-                        root, ECompOp.LT,
-                        coercion.cast(root, left),
-                        coercion.cast(root, right)
-                );
-                case ">" -> val = coercion.compare(
-                        root, ECompOp.GT,
-                        coercion.cast(root, left),
-                        coercion.cast(root, right)
-                );
-                case "<=" -> val = coercion.compare(
-                        root, ECompOp.LE,
-                        coercion.cast(root, left),
-                        coercion.cast(root, right)
-                );
-                case ">=" -> val = coercion.compare(
-                        root, ECompOp.GE,
-                        coercion.cast(root, left),
-                        coercion.cast(root, right)
-                );
-                case "==" -> val = coercion.compare(
-                        root, ECompOp.EQ,
-                        coercion.cast(root, left),
-                        coercion.cast(root, right)
-                );
-                case "!=" -> val = coercion.compare(
-                        root, ECompOp.NE,
-                        coercion.cast(root, left),
-                        coercion.cast(root, right)
-                );
+            Value right = compileExpr((RaluxParser.ExprContext) context.getChild(2));
+            coercion = left.type.coerce(root, right.type);
 
-                // TODO: short circuit eval
-                // don't eval right if left is wrong
-                // this should be done with just a simple branch
-                case "&&" -> {
-                    BlockBuilder builder = root.getBlockBuilding();
-                    LLVMValueRef valueRef = root.allocA(root.getIntType(1), "branch_dirt");
-                    BlockBuilder branch = consumer.getDirect().block("long_circuit");
-                    BlockBuilder branchShort = consumer.getDirect().block("short_circuit");
-                    root.setValue(valueRef, left.llvm);
-                    builder.conditionalJump(left.llvm, branch, branchShort);
-                    branch.enableBuilding();
-                    root.setValue(valueRef, right.llvm);
-                    branch.jump(branchShort);
-                    branchShort.enableBuilding();
-                    val = root.getValue(valueRef, "get_dirt");
-//                    val = root.and(left.llvm, right.llvm, "and");
+            val = switch (operand.getText()) {
+                case "+" -> coercion.sum(
+                        root,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case "-" -> coercion.diff(
+                        root,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case "*" -> coercion.mul(
+                        root,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                case "/" -> coercion.div(
+                        root,
+                        coercion.cast(root, left),
+                        coercion.cast(root, right)
+                );
+                default -> null;
+            };
+
+            if (val == null) {
+                switch (operand.getText()) {
+                    case "<" -> val = coercion.compare(
+                            root, ECompOp.LT,
+                            coercion.cast(root, left),
+                            coercion.cast(root, right)
+                    );
+                    case ">" -> val = coercion.compare(
+                            root, ECompOp.GT,
+                            coercion.cast(root, left),
+                            coercion.cast(root, right)
+                    );
+                    case "<=" -> val = coercion.compare(
+                            root, ECompOp.LE,
+                            coercion.cast(root, left),
+                            coercion.cast(root, right)
+                    );
+                    case ">=" -> val = coercion.compare(
+                            root, ECompOp.GE,
+                            coercion.cast(root, left),
+                            coercion.cast(root, right)
+                    );
+                    case "==" -> val = coercion.compare(
+                            root, ECompOp.EQ,
+                            coercion.cast(root, left),
+                            coercion.cast(root, right)
+                    );
+                    case "!=" -> val = coercion.compare(
+                            root, ECompOp.NE,
+                            coercion.cast(root, left),
+                            coercion.cast(root, right)
+                    );
+
+                    default -> throw new RuntimeException("NYI");
                 }
-                case "||" -> val = root.or(left.llvm, right.llvm, "or");
-
-                default -> throw new RuntimeException("NYI");
+                coercion = new Type(
+                        root.getIntType(1),
+                        false, true, true, true
+                );
             }
-            coercion = new Type(
-                    root.getIntType(1),
-                    false, true, true, true
-            );
         }
 
         return new Value(

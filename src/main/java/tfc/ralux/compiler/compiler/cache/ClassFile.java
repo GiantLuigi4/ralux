@@ -54,4 +54,12 @@ public class ClassFile {
         }
         throw new RuntimeException("Could not find function " + name);
     }
+
+    public String getPackage() {
+        return pkg;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

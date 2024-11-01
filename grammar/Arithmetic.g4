@@ -7,6 +7,7 @@ expr: expr '.#'
     | '-' expr
     | '(' full_type ')' expr
     | '(' expr ')'
+    | expr '<->' expr
     | expr '**' expr
     | expr ('*'|'/') expr
     | expr ('+'|'-') expr

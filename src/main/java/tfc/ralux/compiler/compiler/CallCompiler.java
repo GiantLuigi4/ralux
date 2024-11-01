@@ -48,6 +48,36 @@ public class CallCompiler {
                         root, consumer,
                         valueRef, toCall.getSecond()
                 );
+            } else if (mcall.getChildCount() <= 6) {
+                String clsName = mcall.getChild(0).getText();
+                String funcName = mcall.getChild(2).getText();
+                List<Value> args = new ArrayList<>();
+                if (mcall.getChildCount() == 6) {
+                    RaluxParser.ParamsContext params = (RaluxParser.ParamsContext) mcall.getChild(4);
+                    for (int i = 0; i < params.getChildCount(); i += 2) {
+                        args.add(new Value(
+                                root, consumer, currentScope,
+                                (RaluxParser.ExprContext) params.getChild(i)
+                        ));
+                    }
+                }
+
+                // TODO: support auto cast
+                Pair<FunctionBuilder, Type> toCall = compiler.getFunction(clsName, consumer, funcName, args);
+                PointerPointer argsPtrPtr = root.track(new PointerPointer(args.size()));
+                for (int i = 0; i < args.size(); i++)
+                    argsPtrPtr.put(i, args.get(i).llvm);
+                LLVMValueRef valueRef = root.track(LLVM.LLVMBuildCall(
+                        root.getBuilder(),
+                        toCall.getFirst().getDirect(),
+                        argsPtrPtr,
+                        args.size(),
+                        toCall.getSecond().isVoid() ? "" : ("call_" + funcName)
+                ));
+                return new Value(
+                        root, consumer,
+                        valueRef, toCall.getSecond()
+                );
             }
             throw new RuntimeException("TODO");
         }

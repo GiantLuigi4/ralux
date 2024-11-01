@@ -1,7 +1,11 @@
 pkg comptest;
 
 public class TestClass1 {
-    public static void callableFunction() {
+    public static int callableFunction() {
         return 5;
+    }
+
+    public static boolean boolFunc() {
+        return false;
     }
 }

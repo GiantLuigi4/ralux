@@ -17,65 +17,28 @@ import tfc.ralux.compiler.parse.RaluxLexer;
 import tfc.ralux.compiler.parse.RaluxParser;
 
 import java.io.File;
+import java.io.InputStream;
 
 public class CompilerInvoker {
     private static final Compiler compiler = new Compiler();
 
-    public static void main(String[] args) {
-        LLVM.LLVMInitializeNativeTarget();
-        LLVM.LLVMInitializeNativeAsmPrinter();
-        LLVM.LLVMInitializeAllTargets();
+    protected static String testRes(String pth) {
+        try {
+            InputStream is = CompilerInvoker.class.getClassLoader().getResourceAsStream(pth);
+            byte[] data = is.readAllBytes();
+            try {
+                is.close();
+            } catch (Throwable ignored) {
+            }
+            return new String(data);
+        } catch (Throwable err) {
+            throw new RuntimeException(err);
+        }
+    }
 
-        final int optLLVM = 1;
-        final int optRlx = 0;
-
+    static void feedFile(String data) {
         CharStream stream;
-        stream = CharStreams.fromString("""
-                pkg tfc.test;
-                                
-                public class TestClass {
-                    public static int main() {
-                        stretch fv = 2;
-                        fv += 2;
-                        half i = fv * 10;
-                        fv /= 2;
-                        fv /= 4;
-                        fv *= 100;
-                        i += fv;
-                        
-                        i += test(5, 4);
-                        
-                        if (i > 90) {
-                            i = 0;
-                        }
-                        
-                        if (i > 50 && fv > 5) {
-                            print(i);
-                        }
-                        
-                        return i;
-                    }
-                    
-                    public static int print(byte value) {return value;}
-                    public static int print(short value) {return value;}
-                    public static int print(int value) {return value;}
-                    public static int print(long value) {return value;}
-                    public static int print(stretch value) {return value;}
-                    public static int print(half value) {return value;}
-                    public static int print(float value) {return value;}
-                    public static int print(double value) {return value;}
-                    public static int print(quadruple value) {return value;}
-                    
-                    public static int recursive(int value) {
-                        if (value > 200) return value;
-                        return recursive(value + 1) - 1;
-                    }
-                    
-                    public static int test(int lh, int rh) {
-                        return lh + rh;
-                    }
-                }
-                """);
+        stream = CharStreams.fromString(data);
         RaluxLexer lexer = new RaluxLexer(stream);
         RaluxParser parser = new RaluxParser(new CommonTokenStream(lexer));
 
@@ -84,6 +47,18 @@ public class CompilerInvoker {
             return;
 
         compiler.accept(tree);
+    }
+
+    public static void main(String[] args) {
+        LLVM.LLVMInitializeNativeTarget();
+        LLVM.LLVMInitializeNativeAsmPrinter();
+        LLVM.LLVMInitializeAllTargets();
+
+        final int optLLVM = 3;
+        final int optRlx = 5;
+
+        feedFile(testRes("comptest/TestClass.rlx"));
+        feedFile(testRes("comptest/TestClass1.rlx"));
         compiler.buildModule();
 
         ModuleRoot moduleRoot = compiler.getModule();
@@ -107,6 +82,9 @@ public class CompilerInvoker {
 //                    "lld-link module.obj -entry:main /libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib /libpath:\"C:\\Program Files\\LLVM\\lib\\clang\\8.0.1\\lib\\windows\" clang_rt.builtins-x86_64.lib"
             );
             System.out.println(proc.waitFor());
+
+            System.out.println(new String(proc.getInputStream().readAllBytes()));
+            System.err.println(new String(proc.getErrorStream().readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }

@@ -20,6 +20,10 @@ public class TestClass {
             print(i);
         }
 
+        if ((TestClass1.boolFunc() || true) && (test(5, 4) > 0) && (test(2, 6) > 0)) {
+            print(0);
+        }
+
         TestClass1.callableFunction();
 
         return i;

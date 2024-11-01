@@ -26,6 +26,8 @@ public class RaluxFunctionConsumer {
     private Stack<BlockBuilder> continueTo = new Stack<>();
     private Stack<BlockBuilder> breakTo = new Stack<>();
 
+    LLVMValueRef dirtRef = null;
+
     public RaluxFunctionConsumer(BuilderRoot root, FunctionBuilder direct, Compiler compiler, Type type) {
         this.root = root;
         this.direct = direct;
@@ -34,6 +36,16 @@ public class RaluxFunctionConsumer {
         scopes.push(currentScope);
         (rootBuilder = direct.block("entry")).enableBuilding();
         this.type = type;
+    }
+
+    public LLVMValueRef getDirtRef() {
+        if (dirtRef != null)
+            return dirtRef;
+        BlockBuilder current = root.getBlockBuilding();
+        LLVM.LLVMPositionBuilderBefore(root.getBuilder(), LLVM.LLVMGetFirstInstruction(rootBuilder.getDirect()));
+        dirtRef = root.allocA(root.getIntType(1), "dirt");
+        current.enableBuilding();
+        return dirtRef;
     }
 
     public void buildRoot() {
@@ -165,13 +177,14 @@ public class RaluxFunctionConsumer {
         BlockBuilder head = direct.block("head");
         BlockBuilder bodyBlock = direct.block("body");
         BlockBuilder tail = direct.block("tail");
+        BlockBuilder conclusion = direct.block("conclusion");
         building.jump(head);
 
+        continueTo.push(tail);
+        breakTo.push(conclusion);
         tail.enableBuilding();
         acceptRule((RuleContext) statements.getChild(4));
         autoJump(head);
-
-        BlockBuilder conclusion = direct.block("conclusion");
 
         head.enableBuilding();
         RaluxParser.ExprContext condition = (RaluxParser.ExprContext) statements.getChild(2);
@@ -179,11 +192,10 @@ public class RaluxFunctionConsumer {
         head.conditionalJump(condVal.llvm, bodyBlock, conclusion);
 
         bodyBlock.enableBuilding();
-        continueTo.push(tail);
-        breakTo.push(conclusion);
         acceptBlock((RaluxParser.BodyContext) child.getChild(4));
         popScope();
         autoJump(tail);
+
         breakTo.pop();
         continueTo.pop();
 
@@ -286,6 +298,10 @@ public class RaluxFunctionConsumer {
                 currentScope, expr
         );
 
+//        if (!val.type.canAutoCast(type)) { // TODO: need to get this method working at some point
+        if (type.isVoid()) {
+            throw new RuntimeException("Cannot auto cast from " + val.type + " to " + type + " for return.");
+        }
         LLVMValueRef casted = type.cast(root, val);
 
         root.stdLib.print(

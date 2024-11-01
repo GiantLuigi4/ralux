@@ -3,6 +3,7 @@ package tfc.ralux.compiler.compiler;
 import org.bytedeco.llvm.LLVM.LLVMAttributeRef;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerBuilderRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import tfc.ralux.compiler.backend.llvm.helper.Util;
 import tfc.ralux.compiler.compiler.analysis.Type;
 import tfc.ralux.compiler.compiler.analysis.Value;
 import org.antlr.v4.runtime.CommonToken;
@@ -226,7 +227,10 @@ public class Compiler {
 
     public void buildModule() {
         cache.iterateFiles((classFile) -> {
+            generating = classFile;
+            System.out.println("Compiling: " + classFile.getName());
             classFile.iterateFunctions((function) -> {
+                System.out.println("Function: " + Util.string(LLVM.LLVMGetValueName(function.getSecond().getDirect().getDirect())));
                 function.getSecond().buildRoot();
                 function.getSecond().acceptBlock(function.getFirst());
                 if (!root.getBlockBuilding().isTerminated()) root.getBlockBuilding().ret();
@@ -260,7 +264,6 @@ public class Compiler {
             LLVM.LLVMAddCalledValuePropagationPass(pass);
             LLVM.LLVMAddCorrelatedValuePropagationPass(pass);
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
-            LLVM.LLVMAddCalledValuePropagationPass(pass);
             LLVM.LLVMAddIPSCCPPass(pass);
             LLVM.LLVMAddLICMPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
@@ -272,8 +275,6 @@ public class Compiler {
             root.hyperAggressiveOptimizer(false, pass);
             LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
         } else {
-            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
-
             if (rlx >= 4) {
                 LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
                 LLVM.LLVMAddFunctionAttrsPass(pass);
@@ -319,6 +320,7 @@ public class Compiler {
                     }
                 }
             }
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
         }
 
         if (noIntrinsics) {
@@ -333,6 +335,10 @@ public class Compiler {
 
     public ModuleRoot getModule() {
         return root;
+    }
+
+    public Pair<FunctionBuilder, Type> getFunction(String owner, RaluxFunctionConsumer consumer, String funcName, List<Value> args) {
+        return cache.findFunction(owner, generating, funcName, args);
     }
 
     public Pair<FunctionBuilder, Type> getFunction(RaluxFunctionConsumer consumer, String funcName, List<Value> args) {
