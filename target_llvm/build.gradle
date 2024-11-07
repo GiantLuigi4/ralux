@@ -45,6 +45,7 @@ dependencies {
 //    implementation group: 'org.jetbrains.intellij.deps', name: 'org-llvm-ir', version: '3.9'
 //    implementation group: 'org.jetbrains.intellij.deps', name: 'org-llvm-adtsupport', version: '3.9'
 
+    extraLibs project(':rlxir')
     extraLibs project(":")
 
     configurations.implementation.extendsFrom(configurations.extraLibs)

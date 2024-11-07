@@ -1,6 +1,7 @@
 package tfc.rlxir;
 
 import tfc.rlxir.instr.RlxInstr;
+import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.instr.enumeration.MathOp;
@@ -59,6 +60,9 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
                 MathOp.SUM, coercionType.mathVariant(),
                 lv, rv
         ));
+        if (res.isConst()) {
+            return res.eval();
+        }
         return res;
     }
 
@@ -83,5 +87,29 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         VarInstr instr = makeVar(value.valueType());
         instr.set(value);
         return instr;
+    }
+
+    public void ret(ValueInstr var) {
+        addInstr(new ReturnInstr(var));
+        endBlock();
+    }
+
+    public void ret(VarInstr var) {
+        addInstr(new ReturnInstr());
+        endBlock();
+    }
+
+    public void ret() {
+        addInstr(new ReturnInstr());
+        endBlock();
+    }
+
+    private void endBlock() {
+        // TODO:
+    }
+
+    public List<RlxInstr> getInstructions() {
+        // TODO: read only list
+        return instrs;
     }
 }

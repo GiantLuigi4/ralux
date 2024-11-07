@@ -28,4 +28,15 @@ public class RlxEnclosure {
     public int hashCode() {
         return Objects.hash(result, name, descr);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(result + " " + name + "(");
+        for (RlxType type : descr) {
+            builder.append(type).append(",");
+        }
+        builder.append(")");
+        return builder.toString();
+    }
 }

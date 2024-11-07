@@ -61,4 +61,9 @@ public class MathInstr extends ValueInstr {
         // don't really care to inference this
         return false;
     }
+
+    public MathInstr eval() {
+        // TODO:
+        return this;
+    }
 }

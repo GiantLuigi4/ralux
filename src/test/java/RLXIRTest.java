@@ -11,12 +11,14 @@ import tfc.rlxir.typing.RlxTypes;
 
 public class RLXIRTest {
     public static void main(String[] args) {
-        RlxModule module = new RlxModule();
+        RlxModule module = new RlxModule("module");
         RlxCls cls = new RlxCls("TestClass");
+        module.addClass(cls);
         RlxFunction function = new RlxFunction(
                 3, true, false,
                 new RlxEnclosure(RlxTypes.INT, "main", RlxTypes.EMPTY_LIST)
         );
+        cls.addFunction(function);
         ConstInstr<Integer> CONST_2 = new ConstInstr<>(2, RlxTypes.INT);
         ConstInstr<Integer> CONST_4 = new ConstInstr<>(4, RlxTypes.INT);
 

@@ -62,7 +62,7 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 
     @Override
     public String toString() {
-        if (type == PrimitiveType.PTR) return clazz.nameString();
+        if (type == PrimitiveType.PTR) return clazz.qualifiedName();
         return type.toString();
     }
 

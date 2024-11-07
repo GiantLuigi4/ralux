@@ -1,12 +1,18 @@
 package tfc.rlxir;
 
+import tfc.rlxir.util.CompilerDataHolder;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class RlxCls {
+public class RlxCls extends CompilerDataHolder<RlxCls> {
     public final String name;
     RlxCls parent;
     List<RlxFunction> functions = new ArrayList<>();
+
+    public void addFunction(RlxFunction function) {
+        this.functions.add(function);
+    }
 
     public RlxCls(String name) {
         this.name = name;
@@ -34,7 +40,16 @@ public class RlxCls {
         return false;
     }
 
-    public String nameString() {
+    public String qualifiedName() {
         return name;
+    }
+
+    public RlxCls getParent() {
+        return parent;
+    }
+
+    // TODO: read-only list
+    public List<RlxFunction> getFunctions() {
+        return functions;
     }
 }
