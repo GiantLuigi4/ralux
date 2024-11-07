@@ -29,10 +29,9 @@ public class Test {
         ConstInstr<Integer> CONST_3 = new ConstInstr<>(3, RlxTypes.INT);
         MathInstr sum = function.sum(CONST_5, CONST_3);
 
-//        VarInstr var = function.makeVar(sum);
-//        var.set(function.sum(var.get(), CONST_3));
-//        function.ret(var);
-        function.ret(sum);
+        VarInstr var = function.makeVar(sum);
+        var.set(function.sum(var.get(), CONST_3));
+        function.ret(var);
 
         Compiler compiler = backend.compilerFor(module);
         compiler.verbose();

@@ -10,9 +10,15 @@ import tfc.rlxir.typing.RlxType;
 
 public class VarInstr extends BaseInstr {
     public final RlxType type;
+    String debugName = "var";
 
     public VarInstr(RlxType type) {
         this.type = type;
+    }
+
+    public VarInstr setDebugName(String debugName) {
+        this.debugName = debugName;
+        return this;
     }
 
     public void set(ValueInstr value) {
@@ -23,7 +29,9 @@ public class VarInstr extends BaseInstr {
     }
 
     public ValueInstr get() {
-        return new GetInstr(this);
+        GetInstr instr = new GetInstr(this);
+        function.addInstr(instr);
+        return instr;
     }
 
     @Override
@@ -39,5 +47,9 @@ public class VarInstr extends BaseInstr {
     @Override
     public boolean isConst() {
         return false;
+    }
+
+    public String debugName() {
+        return debugName;
     }
 }

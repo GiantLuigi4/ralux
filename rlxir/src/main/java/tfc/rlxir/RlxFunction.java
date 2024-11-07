@@ -95,7 +95,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     }
 
     public void ret(VarInstr var) {
-        addInstr(new ReturnInstr());
+        addInstr(new ReturnInstr(var.get()));
         endBlock();
     }
 
