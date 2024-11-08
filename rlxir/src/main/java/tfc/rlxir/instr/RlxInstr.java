@@ -5,7 +5,7 @@ import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.util.CompilerDataHolder;
 
-public abstract class RlxInstr extends CompilerDataHolder<RlxInstr> {
+public abstract class RlxInstr extends DebuggerDataHolder<RlxInstr> {
     protected RlxFunction function;
     public abstract boolean hasDependencies();
     public abstract boolean providesValue();

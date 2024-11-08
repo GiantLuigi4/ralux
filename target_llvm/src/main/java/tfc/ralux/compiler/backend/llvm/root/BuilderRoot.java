@@ -80,12 +80,15 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMConstInt(intTypes.get(index), i, 0));
     }
 
+    // TODO: properly deal with this?
     public LLVMValueRef loadFloat(float data, LLVMTypeRef llvmTypeRef) {
-        throw new RuntimeException("NYI");
+        LLVMValueRef vI = integer(Float.floatToIntBits(data), getIntType(32));
+        return bitcast(llvmTypeRef, vI, "convert_floatBits_toFloat");
     }
 
     public LLVMValueRef loadFloat(double data, LLVMTypeRef llvmTypeRef) {
-        throw new RuntimeException("NYI");
+        LLVMValueRef vI = integer(Double.doubleToLongBits(data), getIntType(64));
+        return bitcast(llvmTypeRef, vI, "convert_floatBits_toFloat");
     }
 
     public LLVMTypeRef getIntType(int bits) {

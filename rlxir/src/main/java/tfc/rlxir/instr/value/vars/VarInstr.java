@@ -20,7 +20,7 @@ public class VarInstr extends BaseInstr {
 
     public void set(ValueInstr value) {
         if (!type.isOperable(value.valueType())) {
-            throw new RuntimeException(type + " cannot be set as a " + value.valueType() + ". Are you missing a cast?");
+            throw new RuntimeException(type + " variable cannot be set as a " + value.valueType() + ". Are you missing a cast?");
         }
         function.addInstr(new SetInstr(this, value));
     }

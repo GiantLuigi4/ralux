@@ -16,4 +16,14 @@ public class RlxTypes {
     public static final RlxType DOUBLE = new RlxType(PrimitiveType.DOUBLE);
     public static final RlxType QUADRUPLE = new RlxType(PrimitiveType.QUADRUPLE);
     public static final List<RlxType> EMPTY_LIST = Collections.emptyList();
+
+    public static RlxType FP(int bytes) {
+        return switch (bytes) {
+            case 2 -> HALF;
+            case 4 -> FLOAT;
+            case 8 -> DOUBLE;
+            case 16 -> QUADRUPLE;
+            default -> throw new RuntimeException("Invalid byte count for float: " + bytes);
+        };
+    }
 }

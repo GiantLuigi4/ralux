@@ -86,14 +86,27 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         return instr;
     }
 
+    public ValueInstr autoCast(ValueInstr value, RlxType toType) {
+        ValueInstr lv = value;
+        CastOp op = lv.valueType().valueCastOp(toType);
+        RlxType coercionType = lv.valueType();
+        if (op != CastOp.NONE) {
+            coercionType = lv.valueType().coercionType(toType);
+            if (lv.valueType() != coercionType) {
+                lv = new CastInstr(lv, coercionType, op);
+                addInstr(lv);
+            }
+        }
+        return lv;
+    }
+
     public void ret(ValueInstr var) {
-        addInstr(new ReturnInstr(var));
+        addInstr(new ReturnInstr(autoCast(var, enclosure.result)));
         currentBlock = null;
     }
 
     public void ret(VarInstr var) {
-        addInstr(new ReturnInstr(var.get()));
-        currentBlock = null;
+        ret(var.get());
     }
 
     public void ret() {
@@ -122,18 +135,24 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     public <T, V> MathInstr sum(ValueInstr left, ValueInstr right) {
         ValueInstr lv = left;
         ValueInstr rv = right;
+
+        RlxType coercionType = lv.valueType().coercionType(rv.valueType());
         CastOp op = lv.valueType().valueCastOp(rv.valueType());
-        RlxType coercionType = lv.valueType();
-        if (op != CastOp.NONE) {
-            coercionType = lv.valueType().coercionType(rv.valueType());
-            if (lv.valueType() != coercionType)
-                lv = new CastInstr(lv, coercionType, op);
-            if (rv.valueType() != coercionType)
-                rv = new CastInstr(rv, coercionType, op);
+        if (lv.valueType() != coercionType) {
+            lv = new CastInstr(lv, coercionType, op);
+            addInstr(lv);
         }
+        op = lv.valueType().valueCastOp(rv.valueType());
+        if (rv.valueType() != coercionType) {
+            rv = new CastInstr(rv, coercionType, op);
+            addInstr(rv);
+        }
+
         MathInstr res;
+
         addInstr(res = new MathInstr(
                 MathOp.SUM, coercionType.mathVariant(),
+
                 lv, rv
         ));
 //        if (res.isConst()) {
@@ -145,23 +164,37 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     public CompareInstr compare(CompareOp op, ValueInstr left, ValueInstr right) {
         ValueInstr lv = left;
         ValueInstr rv = right;
-        CastOp cop = lv.valueType().valueCastOp(rv.valueType());
-        RlxType coercionType = lv.valueType();
-        if (cop != CastOp.NONE) {
-            coercionType = lv.valueType().coercionType(rv.valueType());
-            if (lv.valueType() != coercionType)
-                lv = new CastInstr(lv, coercionType, cop);
-            if (rv.valueType() != coercionType)
-                rv = new CastInstr(rv, coercionType, cop);
+
+        RlxType coercionType = lv.valueType().coercionType(rv.valueType());
+        CastOp cop = lv.valueType().valueCastOp(coercionType);
+        if (lv.valueType() != coercionType) {
+            lv = new CastInstr(lv, coercionType, cop);
+            addInstr(lv);
         }
+        cop = rv.valueType().valueCastOp(coercionType);
+        if (rv.valueType() != coercionType) {
+            rv = new CastInstr(rv, coercionType, cop);
+            addInstr(rv);
+        }
+
         CompareInstr res;
+
         addInstr(res = new CompareInstr(
                 op, coercionType.mathVariant(),
+
                 lv, rv
         ));
 //        if (res.isConst()) {
 //            return res.eval();
 //        }
         return res;
+    }
+
+    public ValueInstr cast(ValueInstr value, RlxType toType) {
+        if (value.valueType().equals(toType)) return value;
+
+        CastInstr instr = new CastInstr(value, toType, true);
+        addInstr(instr);
+        return instr;
     }
 }

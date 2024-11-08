@@ -86,7 +86,30 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 
     public RlxType coercionType(RlxType rlxType) {
         if (this == rlxType) return this;
-        else throw new RuntimeException("TODO: type coercions");
+
+        if (rlxType.type.bits >= this.type.bits) {
+            if (this.type.typ == 'f' && rlxType.type.typ == 'f')
+                return rlxType;
+            if (this.type.typ == 'i' && rlxType.type.typ == 'i')
+                return rlxType;
+
+            if (this.type.typ == 'f' && rlxType.type.typ == 'i')
+                return rlxType;
+            if (this.type.typ == 'i' && rlxType.type.typ == 'f')
+                return RlxTypes.FP(rlxType.type.bytes);
+        }
+        if (this.type.bits >= rlxType.type.bits) {
+            if (this.type.typ == 'f' && rlxType.type.typ == 'f')
+                return this;
+            if (this.type.typ == 'i' && rlxType.type.typ == 'i')
+                return this;
+
+            if (this.type.typ == 'f' && rlxType.type.typ == 'i')
+                return this;
+            if (this.type.typ == 'i' && rlxType.type.typ == 'f')
+                return RlxTypes.FP(this.type.bytes);
+        }
+        throw new RuntimeException("Unsupported coercion: " + this + " to " + rlxType);
     }
 
     public MathVariant mathVariant() {

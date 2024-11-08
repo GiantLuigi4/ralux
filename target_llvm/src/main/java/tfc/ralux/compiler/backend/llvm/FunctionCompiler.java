@@ -16,6 +16,7 @@ import tfc.rlxir.instr.action.JumpInstr;
 import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.global.ConstInstr;
+import tfc.rlxir.instr.value.CastInstr;
 import tfc.rlxir.instr.value.CompareInstr;
 import tfc.rlxir.instr.value.MathInstr;
 import tfc.rlxir.instr.value.vars.GetInstr;
@@ -112,6 +113,20 @@ public class FunctionCompiler {
         });
     }
 
+    private void compileCast(CastInstr instr) {
+        ensureData(instr.value);
+        instr.setCompilerData(switch (instr.mode) {
+            case BIT -> root.bitcast(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "bitcast_" + instr.value.valueType() + "_to_" + instr.toType);
+            case INT_FLOAT -> root.castSIToFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_si_fp_" + instr.value.valueType() + "_to_" + instr.toType);
+            case FLOAT_INT -> root.castFPToSI(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_si_" + instr.value.valueType() + "_to_" + instr.toType);
+            case TRUNCATE -> root.truncate(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "trunc_" + instr.value.valueType() + "_to_" + instr.toType);
+            case EXTEND -> root.extend(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "zext_" + instr.value.valueType() + "_to_" + instr.toType);
+            case FLOAT_FLOAT-> root.castFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_fp_" + instr.value.valueType() + "_to_" + instr.toType);
+            case NONE -> (LLVMValueRef) instr.value.getCompilerData();
+            default -> throw new RuntimeException("NYI cast mode: " + instr.mode);
+        });
+    }
+
     LLVMValueRef lastVar = null;
 
     private void compileVarDef(VarInstr instr) {
@@ -178,6 +193,7 @@ public class FunctionCompiler {
                     case CONST -> throw new RuntimeException("Consts shouldn't show up in functions");
                     case MATH -> compileMath((MathInstr) instr);
                     case COMPARISON -> compileComp((CompareInstr) instr);
+                    case CAST -> compileCast((CastInstr) instr);
                     case RETURN_VOID -> root.getBlockBuilding().ret();
                     case RETURN_VALUE -> {
                         ReturnInstr ret = (ReturnInstr) instr;

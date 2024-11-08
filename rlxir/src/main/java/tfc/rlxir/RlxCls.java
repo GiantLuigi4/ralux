@@ -7,6 +7,7 @@ import java.util.List;
 
 public class RlxCls extends CompilerDataHolder<RlxCls> {
     public final String name;
+    public final String pkg;
     RlxCls parent;
     List<RlxFunction> functions = new ArrayList<>();
 
@@ -14,7 +15,8 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
         this.functions.add(function);
     }
 
-    public RlxCls(String name) {
+    public RlxCls(String pkg, String name) {
+        this.pkg = pkg;
         this.name = name;
     }
 
@@ -41,6 +43,8 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
     }
 
     public String qualifiedName() {
+        if (pkg != null)
+            return pkg + "." + name;
         return name;
     }
 
