@@ -5,6 +5,7 @@ import tfc.ralux.compiler.backend.Compiler;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
+import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
@@ -28,8 +29,8 @@ public class LLVMCompiler extends Compiler {
 
     private void compileFunction(RlxCls aClass, RlxFunction function) {
         FunctionBuilder builder = function.getCompilerData();
-        List<RlxInstr> instrs = function.getInstructions();
-        new FunctionCompiler(conversions, root, aClass, function, builder, instrs).compile();
+        List<RlxBlock> blocks = function.getBlocks();
+        new FunctionCompiler(conversions, root, aClass, function, builder, blocks).compile();
     }
 
     private void compileClass(RlxCls aClass) {

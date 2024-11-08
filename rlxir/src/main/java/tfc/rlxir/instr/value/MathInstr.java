@@ -62,7 +62,7 @@ public class MathInstr extends ValueInstr {
         return false;
     }
 
-    public MathInstr eval() {
+    public ValueInstr eval() {
         // TODO:
         return this;
     }

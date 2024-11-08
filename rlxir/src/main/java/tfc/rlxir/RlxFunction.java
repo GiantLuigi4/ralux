@@ -1,13 +1,18 @@
 package tfc.rlxir;
 
 import tfc.rlxir.instr.RlxInstr;
+import tfc.rlxir.instr.action.ConditionalJumpInstr;
+import tfc.rlxir.instr.action.JumpInstr;
 import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.CastOp;
+import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.enumeration.MathOp;
 import tfc.rlxir.instr.value.CastInstr;
+import tfc.rlxir.instr.value.CompareInstr;
 import tfc.rlxir.instr.value.MathInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
+import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.util.CompilerDataHolder;
 
@@ -21,7 +26,18 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     public final boolean isFinal;
     public final RlxEnclosure enclosure;
 
-    List<RlxInstr> instrs = new ArrayList<>();
+    List<RlxBlock> blocks = new ArrayList<>();
+    RlxBlock currentBlock;
+
+    public RlxBlock makeBlock(String name) {
+        RlxBlock block = new RlxBlock(name);
+        blocks.add(block);
+        return block;
+    }
+
+    public void buildBlock(RlxBlock block) {
+        this.currentBlock = block;
+    }
 
     public RlxFunction(int access, boolean isStatic, boolean isFinal, RlxEnclosure enclosure) {
         this.access = access;
@@ -43,31 +59,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         return isStatic || isFinal || access == 0;
     }
 
-    public <T, V> MathInstr sum(ValueInstr left, ValueInstr right) {
-        ValueInstr lv = left;
-        ValueInstr rv = right;
-        CastOp op = lv.valueType().valueCastOp(rv.valueType());
-        RlxType coercionType = lv.valueType();
-        if (op != CastOp.NONE) {
-            coercionType = lv.valueType().coercionType(rv.valueType());
-            if (lv.valueType() != coercionType)
-                lv = new CastInstr(lv, coercionType, op);
-            if (rv.valueType() != coercionType)
-                rv = new CastInstr(rv, coercionType, op);
-        }
-        MathInstr res;
-        addInstr(res = new MathInstr(
-                MathOp.SUM, coercionType.mathVariant(),
-                lv, rv
-        ));
-        if (res.isConst()) {
-            return res.eval();
-        }
-        return res;
-    }
-
     public void addInstr(RlxInstr instr) {
-        instrs.add(instr);
+        if (currentBlock == null) {
+            currentBlock = new RlxBlock("entry");
+            blocks.add(currentBlock);
+        }
+        currentBlock.instrs.add(instr);
         instr.setFunction(this);
     }
 
@@ -91,25 +88,80 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void ret(ValueInstr var) {
         addInstr(new ReturnInstr(var));
-        endBlock();
+        currentBlock = null;
     }
 
     public void ret(VarInstr var) {
         addInstr(new ReturnInstr(var.get()));
-        endBlock();
+        currentBlock = null;
     }
 
     public void ret() {
         addInstr(new ReturnInstr());
-        endBlock();
+        currentBlock = null;
     }
 
-    private void endBlock() {
-        // TODO:
-    }
-
-    public List<RlxInstr> getInstructions() {
+    public List<RlxBlock> getBlocks() {
         // TODO: read only list
-        return instrs;
+        return blocks;
+    }
+
+    public void jump(RlxBlock target) {
+        currentBlock.instrs.add(new JumpInstr(target));
+        currentBlock = target;
+    }
+
+    public void jumpIf(ValueInstr instr, RlxBlock targetTrue, RlxBlock targetFalse) {
+        if (instr.valueType().type != PrimitiveType.BOOLEAN)
+            throw new RuntimeException("A branch condition must be a boolean.");
+
+        currentBlock.instrs.add(new ConditionalJumpInstr(instr, targetTrue, targetFalse));
+        currentBlock = targetFalse;
+    }
+
+    public <T, V> MathInstr sum(ValueInstr left, ValueInstr right) {
+        ValueInstr lv = left;
+        ValueInstr rv = right;
+        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        RlxType coercionType = lv.valueType();
+        if (op != CastOp.NONE) {
+            coercionType = lv.valueType().coercionType(rv.valueType());
+            if (lv.valueType() != coercionType)
+                lv = new CastInstr(lv, coercionType, op);
+            if (rv.valueType() != coercionType)
+                rv = new CastInstr(rv, coercionType, op);
+        }
+        MathInstr res;
+        addInstr(res = new MathInstr(
+                MathOp.SUM, coercionType.mathVariant(),
+                lv, rv
+        ));
+//        if (res.isConst()) {
+//            return res.eval();
+//        }
+        return res;
+    }
+
+    public CompareInstr compare(CompareOp op, ValueInstr left, ValueInstr right) {
+        ValueInstr lv = left;
+        ValueInstr rv = right;
+        CastOp cop = lv.valueType().valueCastOp(rv.valueType());
+        RlxType coercionType = lv.valueType();
+        if (cop != CastOp.NONE) {
+            coercionType = lv.valueType().coercionType(rv.valueType());
+            if (lv.valueType() != coercionType)
+                lv = new CastInstr(lv, coercionType, cop);
+            if (rv.valueType() != coercionType)
+                rv = new CastInstr(rv, coercionType, cop);
+        }
+        CompareInstr res;
+        addInstr(res = new CompareInstr(
+                op, coercionType.mathVariant(),
+                lv, rv
+        ));
+//        if (res.isConst()) {
+//            return res.eval();
+//        }
+        return res;
     }
 }

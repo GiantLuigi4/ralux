@@ -6,6 +6,6 @@ public enum InstrType {
     GET_VAR, SET_VAR,
     RETURN_VOID, RETURN_VALUE,
     NOP,
-    COMPILER_ERROR
-    ;
+    COMPILER_ERROR,
+    CONST_JUMP, COND_JUMP, COMPARISON;
 }

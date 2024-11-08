@@ -1,8 +1,5 @@
 package tfc.rlxir.instr.value.vars;
 
-import tfc.rlxir.RlxBranch;
-import tfc.rlxir.RlxFunction;
-import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
