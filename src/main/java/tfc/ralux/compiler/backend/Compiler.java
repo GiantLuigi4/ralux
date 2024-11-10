@@ -8,4 +8,6 @@ public abstract class Compiler {
     public Compiler verbose() {
         return this;
     }
+
+    public abstract void write();
 }

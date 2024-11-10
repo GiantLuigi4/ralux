@@ -15,6 +15,8 @@ import tfc.rlxir.instr.action.ConditionalJumpInstr;
 import tfc.rlxir.instr.action.JumpInstr;
 import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
+import tfc.rlxir.instr.debug.DebugPrint;
+import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.CastInstr;
 import tfc.rlxir.instr.value.CompareInstr;
@@ -212,6 +214,16 @@ public class FunctionCompiler {
                                 ((ConditionalJumpInstr) instr).targetTrue.getCompilerData(),
                                 ((ConditionalJumpInstr) instr).targetFalse.getCompilerData()
                         );
+                    }
+                    case DEBUG_PRINT -> {
+                        DebugPrint print = (DebugPrint) instr;
+                        ensureData(print.value);
+                        LLVMValueRef str = root.stdLib.intToString(root.getIntType(32), print.value.getCompilerData());
+                        root.stdLib.print(str);
+                    }
+                    case DEBUG_READ_INT -> {
+                        LLVMValueRef value = root.stdLib.readInt();
+                        instr.setCompilerData(value);
                     }
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }

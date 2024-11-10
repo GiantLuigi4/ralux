@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.backend.llvm.util.helper.to_str;
+package tfc.ralux.compiler.backend.llvm.util.helper.str;
 
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
@@ -206,7 +206,7 @@ public class IntToString {
         // +1 for sign
         LLVMValueRef str = root.allocA(root.BYTE_TYPE, baseStrLen + 1, "str_buf");
         root.memSet(str, root.integer(0, 8), root.integer(baseStrLen + 1, 32), 8);
-        PointerPointer args = root.track(new PointerPointer(3));
+        PointerPointer args = root.track(new PointerPointer(2));
         args.put(0, str);
         args.put(1, value);
 

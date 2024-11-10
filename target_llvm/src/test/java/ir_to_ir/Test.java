@@ -4,6 +4,7 @@ import tfc.ralux.compiler.backend.Backend;
 import tfc.ralux.compiler.backend.Compiler;
 import tfc.ralux.compiler.backend.llvm.RLXToLLVM;
 import tfc.rlxir.*;
+import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.CompareInstr;
@@ -21,7 +22,7 @@ public class Test {
         RlxFunction function = new RlxFunction(
                 2, true, false,
                 new RlxEnclosure(RlxTypes.INT, "main", RlxTypes.EMPTY_LIST)
-        );
+        ).exportName("main");
         cls.addFunction(function);
 
         ConstInstr<Integer> CONST_5 = new ConstInstr<>(5, RlxTypes.INT);
@@ -43,8 +44,18 @@ public class Test {
         RlxBlock blockA = function.makeBlock("test0");
         RlxBlock blockB = function.makeBlock("test1");
         function.jumpIf(condition, blockA, blockB);
+        function.print(function.cast(var.get(), RlxTypes.INT));
+        {
+            ValueInstr read = function.readInt();
+            function.print(read);
+        }
         function.ret(var);
         function.buildBlock(blockA);
+        function.print(function.cast(var1.get(), RlxTypes.INT));
+        {
+            ValueInstr read = function.readInt();
+            function.print(read);
+        }
         function.ret(var1.get());
 
         System.out.println(module.asText());
@@ -53,5 +64,6 @@ public class Test {
         compiler.verbose();
         compiler.stub();
         compiler.compile();
+        compiler.write();
     }
 }

@@ -1,22 +1,16 @@
 module:
   name: backend-llvm
+  type: backend
 
-backend:
-  handler: tfc.ralux.compiler.backend.llvm.RLXToLLVM
-  opt-lvls:
-    - 0->3
-  type: native
-  cross-link: native
-  abi-support: true
+  backend:
+    handler: tfc.ralux.compiler.backend.llvm.RLXToLLVM
+    opt-lvls: [ 0->3 ]
+    type: rlx-native
+    cross-link: none
+    abi-mode: "true-native"
 
-flags:
-  cpu:
-    - "[auto]"
-  os:
-    - "[auto]"
-  vendor:
-    - "apple"
-    - "[auto]"
-  environment:
-    - "uclib"
-    - "[auto]"
+  args:
+    architecture: [ "[auto]" ]
+    os: [ "[auto]" ]
+    vendor: [ apple, "[ auto ]" ]
+    environment: [ uclib, "[ auto ]" ]

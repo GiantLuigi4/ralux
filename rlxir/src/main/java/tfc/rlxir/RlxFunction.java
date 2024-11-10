@@ -5,6 +5,8 @@ import tfc.rlxir.instr.action.ConditionalJumpInstr;
 import tfc.rlxir.instr.action.JumpInstr;
 import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
+import tfc.rlxir.instr.debug.DebugPrint;
+import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.enumeration.MathOp;
@@ -37,6 +39,17 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void buildBlock(RlxBlock block) {
         this.currentBlock = block;
+    }
+
+    String exportName;
+
+    public RlxFunction exportName(String name) {
+        this.exportName = name;
+        return this;
+    }
+
+    public String getExportName() {
+        return exportName;
     }
 
     public RlxFunction(int access, boolean isStatic, boolean isFinal, RlxEnclosure enclosure) {
@@ -196,5 +209,16 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         CastInstr instr = new CastInstr(value, toType, true);
         addInstr(instr);
         return instr;
+    }
+
+    public void print(ValueInstr integer) {
+        DebugPrint print = new DebugPrint(integer);
+        addInstr(print);
+    }
+
+    public ValueInstr readInt() {
+        DebugReadInt ri = new DebugReadInt();
+        addInstr(ri);
+        return ri;
     }
 }
