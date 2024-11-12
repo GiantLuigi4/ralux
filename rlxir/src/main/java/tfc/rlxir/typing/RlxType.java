@@ -10,15 +10,39 @@ import java.util.Objects;
 public class RlxType extends CompilerDataHolder<RlxType> {
     public final PrimitiveType type;
     public final RlxCls clazz;
+    public final RlxType arrayOf;
 
     public RlxType(PrimitiveType type) {
         this.type = type;
         this.clazz = null;
+        this.arrayOf = null;
     }
 
     public RlxType(RlxCls cls) {
         this.type = PrimitiveType.PTR;
         this.clazz = cls;
+        this.arrayOf = null;
+    }
+
+    public RlxType(RlxType arrayOf) {
+        this.type = PrimitiveType.PTR;
+        this.clazz = null; // TODO: array class
+        this.arrayOf = arrayOf;
+    }
+
+    public static RlxType array(RlxType baseType) {
+        return new RlxType(baseType);
+    }
+
+    /**
+     * Deboxes an rlx type
+     * Example: array types will get the base type
+     *
+     * @return the deboxed type
+     */
+    public RlxType debox() {
+        if (arrayOf == null) return this;
+        return arrayOf;
     }
 
     public CastOp valueCastOp(RlxType toType) {
@@ -62,6 +86,9 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 
     @Override
     public String toString() {
+        if (isArray()) {
+            return "[" + arrayOf.toString() + "]";
+        }
         if (type == PrimitiveType.PTR) return clazz.qualifiedName();
         return type.toString();
     }
@@ -119,5 +146,9 @@ public class RlxType extends CompilerDataHolder<RlxType> {
             case 'f' -> MathVariant.FLOAT;
             default -> throw new RuntimeException("Math unsupported for " + this);
         };
+    }
+
+    public boolean isArray() {
+        return arrayOf != null;
     }
 }

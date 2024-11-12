@@ -39,6 +39,9 @@ public class LLVMConversions {
     }
 
     public LLVMTypeRef typeFor(RlxType type) {
+        if (type.isArray())
+            return root.pointerType(typeFor(type.debox()));
+
         return switch (type.type) {
             case BYTE -> I8;
             case SHORT -> I16;

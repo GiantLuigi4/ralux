@@ -9,5 +9,7 @@ public abstract class Compiler {
         return this;
     }
 
+    public abstract void optimize(int backend, int rlx, boolean lowerIntrinsics);
+
     public abstract void write();
 }

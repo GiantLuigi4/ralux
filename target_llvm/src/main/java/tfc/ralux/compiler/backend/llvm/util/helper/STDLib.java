@@ -6,6 +6,7 @@ import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
+import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.ralux.compiler.backend.llvm.util.helper.str.IntToString;
@@ -26,7 +27,10 @@ public class STDLib {
     FunctionType typeSeriouslyMicrosoft;
     FunctionBuilder seriouslyMicrosoft;
 
-    LLVMValueRef stdin;
+    FunctionType typei32Ret;
+    FunctionType typeFeof;
+    FunctionBuilder feof;
+    FunctionBuilder _kbhit;
 
     public STDLib(BuilderRoot root) {
         this.root = root;
@@ -52,6 +56,29 @@ public class STDLib {
         ));
     }
 
+    protected LLVMValueRef seriouslyMicrosoft() {
+        if (typeSeriouslyMicrosoft == null) {
+            LLVMTypeRef filePtr = root.pointerType(root.getIntType(8));
+            typeSeriouslyMicrosoft = new FunctionType(
+                    root,
+                    filePtr
+            ).withArgs(root.getIntType(32)).build();
+
+            seriouslyMicrosoft = root.function(
+                    "__acrt_iob_func",
+                    typeSeriouslyMicrosoft
+            );
+        }
+
+        PointerPointer<LLVMValueRef> args0 = root.track(new PointerPointer<>(3));
+        args0.put(0, root.integer(0, 32));
+        return root.track(LLVM.LLVMBuildCall(
+                root.getBuilder(),
+                seriouslyMicrosoft.getDirect(),
+                args0, 1, "seriouslyMicrosoft"
+        ));
+    }
+
     //int fgets(const char *str, int length, );
     public LLVMValueRef readTo(LLVMValueRef text, LLVMValueRef length) {
         if (typeGets == null) {
@@ -68,30 +95,10 @@ public class STDLib {
             fFGetS = root.function("fgets", typeGets);
         }
 
-        if (typeSeriouslyMicrosoft == null) {
-            LLVMTypeRef filePtr = root.pointerType(root.getIntType(8));
-            typeSeriouslyMicrosoft = new FunctionType(
-                    root,
-                    filePtr
-            ).withArgs(root.getIntType(32)).build();
-
-            seriouslyMicrosoft = root.function(
-                    "__acrt_iob_func",
-                    typeSeriouslyMicrosoft
-            );
-        }
-
-        PointerPointer<LLVMValueRef> args0 = root.track(new PointerPointer<>(3));
-        args0.put(0, root.integer(0, 32));
-
         PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(3));
         args.put(0, text);
         args.put(1, length);
-        args.put(2, root.track(LLVM.LLVMBuildCall(
-                root.getBuilder(),
-                seriouslyMicrosoft.getDirect(),
-                args0, 1, "seriouslyMicrosoft"
-        )));
+        args.put(2, seriouslyMicrosoft());
         root.track(LLVM.LLVMBuildCall(
                 root.getBuilder(),
                 fFGetS.getDirect(),
@@ -134,5 +141,65 @@ public class STDLib {
         LLVMValueRef length = root.integer(12, 32);
         readTo(str, length);
         return stringToInt(root.getIntType(32), str);
+    }
+
+    public LLVMValueRef hasInput(FunctionBuilder functionBuilder) {
+//        if (typeFeof == null) {
+//            LLVMTypeRef filePtr = root.pointerType(root.getIntType(8));
+//            typeFeof = new FunctionType(
+//                    root, root.getIntType(32)
+//            ).withArgs(filePtr).build();
+//            feof = root.function(
+//                    "feof",
+//                    typeFeof
+//            );
+//        }
+//        if (_kbhit == null) {
+//            if (typei32Ret == null) {
+//                typei32Ret = new FunctionType(
+//                        root, root.getIntType(32)
+//                ).build();
+//            }
+//            _kbhit = root.function(
+//                    "_kbhit",
+//                    typei32Ret
+//            );
+//        }
+//
+//        BlockBuilder builder = root.getBlockBuilding();
+//        BlockBuilder shortTo = functionBuilder.block("shortTo");
+//        BlockBuilder dst = functionBuilder.block("dst");
+//
+//        LLVMValueRef valueRef = root.allocA(root.getIntType(1), "has_input");
+//
+//        // get i32 feof
+//        PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
+//        args.put(0, seriouslyMicrosoft());
+//        LLVMValueRef feofV = root.track(
+//                LLVM.LLVMBuildCall(
+//                        root.getBuilder(), feof.getDirect(),
+//                        args, 1, "call_feof"
+//                )
+//        );
+//        BlockBuilder falseA = functionBuilder.block("falseA");
+//        builder.conditionalJump(feofV, falseA, shortTo);
+//        falseA.enableBuilding();
+//        args = root.track(new PointerPointer<>(0));
+//        LLVMValueRef kbhitV = root.track(
+//                LLVM.LLVMBuildCall(
+//                        root.getBuilder(), _kbhit.getDirect(),
+//                        args, 0, "call_kbhit"
+//                )
+//        );
+//        // get i32 _kbhit
+//        falseA.conditionalJump(kbhitV, shortTo, dst);
+//
+//        shortTo.enableBuilding();
+//        root.setValue(valueRef, root.integer(1, 1));
+//        shortTo.jump(dst);
+//        dst.enableBuilding();
+//
+//        return root.getValue(valueRef, "get_has_input");
+        return root.integer(1, 1);
     }
 }

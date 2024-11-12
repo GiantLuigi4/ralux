@@ -1,6 +1,9 @@
 package tfc.ralux.compiler.backend.llvm;
 
+import org.bytedeco.llvm.LLVM.LLVMPassManagerBuilderRef;
+import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
+import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.Compiler;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
@@ -109,6 +112,121 @@ public class LLVMCompiler extends Compiler {
     }
 
     @Override
+    public void optimize(int backend, int rlx, boolean lowerIntrinsics) {
+        LLVMPassManagerBuilderRef builderRef = LLVM.LLVMPassManagerBuilderCreate();
+        LLVM.LLVMPassManagerBuilderSetOptLevel(builderRef, backend);
+
+        LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
+        if (rlx >= 5) {
+            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
+            LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMAddGlobalOptimizerPass(pass);
+            LLVM.LLVMAddFunctionAttrsPass(pass);
+            LLVM.LLVMAddLICMPass(pass);
+            LLVM.LLVMAddDeadArgEliminationPass(pass);
+            LLVM.LLVMAddAlwaysInlinerPass(pass);
+            LLVM.LLVMAddMergeFunctionsPass(pass);
+            LLVM.LLVMAddFunctionInliningPass(pass);
+            LLVM.LLVMAddAggressiveDCEPass(pass);
+            LLVM.LLVMAddGlobalDCEPass(pass);
+            LLVM.LLVMAddScalarReplAggregatesPass(pass);
+            LLVM.LLVMAddArgumentPromotionPass(pass);
+            LLVM.LLVMAddPruneEHPass(pass);
+            LLVM.LLVMAddCalledValuePropagationPass(pass);
+            LLVM.LLVMAddCorrelatedValuePropagationPass(pass);
+            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
+            LLVM.LLVMAddIPSCCPPass(pass);
+            LLVM.LLVMAddLICMPass(pass);
+            root.hyperAggressiveOptimizer(false, pass);
+            LLVM.LLVMAddLICMPass(pass);
+            LLVM.LLVMAddStripSymbolsPass(pass);
+            LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
+            LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
+            LLVM.LLVMAddLowerSwitchPass(pass); // h?
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
+            root.hyperAggressiveOptimizer(false, pass);
+            LLVM.LLVMAddReassociatePass(pass);
+            LLVM.LLVMAddGVNPass(pass);
+            LLVM.LLVMAddNewGVNPass(pass);
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+            LLVM.LLVMAddSLPVectorizePass(pass);
+            LLVM.LLVMAddAggressiveInstCombinerPass(pass);
+            LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+            LLVM.LLVMAddStripSymbolsPass(pass);
+        } else {
+            if (rlx >= 4) {
+                LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
+                LLVM.LLVMAddFunctionAttrsPass(pass);
+                root.hyperAggressiveOptimizer(false, pass);
+            } else {
+                // passes for cleanup; always used for lower optimization levels
+                LLVM.LLVMAddCFGSimplificationPass(pass);
+                LLVM.LLVMAddPromoteMemoryToRegisterPass(pass);
+                LLVM.LLVMAddEarlyCSEPass(pass);
+                LLVM.LLVMAddDCEPass(pass);
+                LLVM.LLVMAddConstantMergePass(pass);
+                LLVM.LLVMAddInstructionSimplifyPass(pass);
+                LLVM.LLVMAddCFGSimplificationPass(pass);
+
+                if (rlx >= 1) {
+                    LLVM.LLVMAddFunctionAttrsPass(pass);
+                    LLVM.LLVMAddCFGSimplificationPass(pass);
+                    LLVM.LLVMAddReassociatePass(pass);
+                    LLVM.LLVMAddLoopUnrollAndJamPass(pass);
+                    LLVM.LLVMAddReassociatePass(pass);
+                    LLVM.LLVMAddCFGSimplificationPass(pass);
+
+                    if (rlx >= 2) {
+                        if (rlx == 3) {
+                            LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
+                            LLVM.LLVMAddEarlyCSEPass(pass);
+                            LLVM.LLVMAddReassociatePass(pass);
+                            LLVM.LLVMAddLoopRotatePass(pass);
+                            LLVM.LLVMAddLoopUnrollPass(pass);
+                            LLVM.LLVMAddLoopDeletionPass(pass);
+                            LLVM.LLVMAddLoopIdiomPass(pass);
+                            LLVM.LLVMAddLoopRerollPass(pass);
+                            LLVM.LLVMAddCFGSimplificationPass(pass);
+                            LLVM.LLVMAddAggressiveDCEPass(pass);
+                        }
+
+                        LLVM.LLVMAddJumpThreadingPass(pass);
+                        LLVM.LLVMAddLoopVectorizePass(pass);
+                        LLVM.LLVMAddSLPVectorizePass(pass);
+                        LLVM.LLVMAddNewGVNPass(pass);
+                        LLVM.LLVMAddCFGSimplificationPass(pass);
+                        LLVM.LLVMAddInstructionCombiningPass(pass);
+                    }
+                }
+            }
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+        }
+
+        if (lowerIntrinsics) {
+            LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
+            if (rlx >= 5) {
+                LLVM.LLVMAddSLPVectorizePass(pass);
+                LLVM.LLVMAddAggressiveInstCombinerPass(pass);
+                LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
+                LLVM.LLVMAddCFGSimplificationPass(pass);
+                LLVM.LLVMAddStripSymbolsPass(pass);
+                LLVM.LLVMAddStripSymbolsPass(pass);
+            }
+        }
+
+        LLVM.LLVMAddVerifierPass(pass);
+
+        LLVM.LLVMRunPassManager(pass, root.getModule());
+        LLVM.LLVMDisposePassManager(pass);
+        LLVM.LLVMPassManagerBuilderDispose(builderRef);
+
+        if (enableVerbose) root.dump();
+    }
+
+    @Override
     public void write() {
         root.toTargetMachine(
                 new Target(
@@ -120,17 +238,16 @@ public class LLVMCompiler extends Compiler {
                 CPU.GENERIC,
                 3
         );
-        root.validate();
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
         try {
             Process proc = Runtime.getRuntime().exec(
                     "lld-link.exe module.obj -entry:main " +
-                            "/libpath:\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.37.32822/lib/x64\" msvcrt.lib legacy_stdio_definitions.lib " +
-                            "/libpath:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/ucrt/x64\" ucrt.lib " +
                             "/libpath:\"C:/Program Files/LLVM/lib/clang/8.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
-                            "/defaultlib:msvcrt /defaultlib:ucrt /subsystem:console /verbose"
-//                            "-opt:ref -opt:icf -opt:lbr " +
-//                            "/fixed /cetcompat /release /incremental:no /ltcg /debug:none /subsystem:console"
+                            "/defaultlib:msvcrt " +
+                            "/defaultlib:ucrt " +
+                            "/subsystem:console /verbose " +
+                            "-opt:ref -opt:icf -opt:lbr " +
+                            "/fixed /cetcompat /release /incremental:no /ltcg /debug:none "
             );
             System.out.println(proc.waitFor());
 

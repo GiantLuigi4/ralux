@@ -5,14 +5,19 @@ import tfc.rlxir.instr.action.ConditionalJumpInstr;
 import tfc.rlxir.instr.action.JumpInstr;
 import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
+import tfc.rlxir.instr.debug.DebugHasInput;
 import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.enumeration.MathOp;
+import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.CastInstr;
 import tfc.rlxir.instr.value.CompareInstr;
 import tfc.rlxir.instr.value.MathInstr;
+import tfc.rlxir.instr.value.arrays.ArrayGet;
+import tfc.rlxir.instr.value.arrays.ArraySet;
+import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
@@ -20,6 +25,7 @@ import tfc.rlxir.util.CompilerDataHolder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     // 0: private, 1: protected, 2: public, 3: package protected
@@ -115,6 +121,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void ret(ValueInstr var) {
         addInstr(new ReturnInstr(autoCast(var, enclosure.result)));
+        currentBlock.isTerminated = true;
         currentBlock = null;
     }
 
@@ -124,6 +131,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void ret() {
         addInstr(new ReturnInstr());
+        currentBlock.isTerminated = true;
         currentBlock = null;
     }
 
@@ -134,6 +142,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void jump(RlxBlock target) {
         currentBlock.instrs.add(new JumpInstr(target));
+        currentBlock.isTerminated = true;
         currentBlock = target;
     }
 
@@ -142,10 +151,11 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             throw new RuntimeException("A branch condition must be a boolean.");
 
         currentBlock.instrs.add(new ConditionalJumpInstr(instr, targetTrue, targetFalse));
+        currentBlock.isTerminated = true;
         currentBlock = targetFalse;
     }
 
-    public <T, V> MathInstr sum(ValueInstr left, ValueInstr right) {
+    public <T, V> ValueInstr sum(ValueInstr left, ValueInstr right) {
         ValueInstr lv = left;
         ValueInstr rv = right;
 
@@ -165,7 +175,62 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
         addInstr(res = new MathInstr(
                 MathOp.SUM, coercionType.mathVariant(),
+                lv, rv
+        ));
+//        if (res.isConst()) {
+//            return res.eval();
+//        }
+        return res;
+    }
 
+    public <T, V> ValueInstr sub(ValueInstr left, ValueInstr right) {
+        ValueInstr lv = left;
+        ValueInstr rv = right;
+
+        RlxType coercionType = lv.valueType().coercionType(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        if (lv.valueType() != coercionType) {
+            lv = new CastInstr(lv, coercionType, op);
+            addInstr(lv);
+        }
+        op = lv.valueType().valueCastOp(rv.valueType());
+        if (rv.valueType() != coercionType) {
+            rv = new CastInstr(rv, coercionType, op);
+            addInstr(rv);
+        }
+
+        MathInstr res;
+
+        addInstr(res = new MathInstr(
+                MathOp.DIFF, coercionType.mathVariant(),
+                lv, rv
+        ));
+//        if (res.isConst()) {
+//            return res.eval();
+//        }
+        return res;
+    }
+
+    public ValueInstr mul(ValueInstr left, ValueInstr right) {
+        ValueInstr lv = left;
+        ValueInstr rv = right;
+
+        RlxType coercionType = lv.valueType().coercionType(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        if (lv.valueType() != coercionType) {
+            lv = new CastInstr(lv, coercionType, op);
+            addInstr(lv);
+        }
+        op = lv.valueType().valueCastOp(rv.valueType());
+        if (rv.valueType() != coercionType) {
+            rv = new CastInstr(rv, coercionType, op);
+            addInstr(rv);
+        }
+
+        MathInstr res;
+
+        addInstr(res = new MathInstr(
+                MathOp.PRODUCT, coercionType.mathVariant(),
                 lv, rv
         ));
 //        if (res.isConst()) {
@@ -211,8 +276,8 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         return instr;
     }
 
-    public void print(ValueInstr integer) {
-        DebugPrint print = new DebugPrint(integer);
+    public void print(ValueInstr data) {
+        DebugPrint print = new DebugPrint(data);
         addInstr(print);
     }
 
@@ -220,5 +285,71 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         DebugReadInt ri = new DebugReadInt();
         addInstr(ri);
         return ri;
+    }
+
+    public ValueInstr array(ValueInstr size, RlxType type) {
+        MArrayInstr arrayInstr = new MArrayInstr(size, type);
+        addInstr(arrayInstr);
+        return arrayInstr;
+    }
+
+    public ValueInstr arrayGet(ValueInstr arrayData, ValueInstr index) {
+        ArrayGet get = new ArrayGet(arrayData, index);
+        addInstr(get);
+        return get;
+    }
+
+    public void fori(
+            CompareOp op,
+            VarInstr variable,
+            ValueInstr end,
+            ValueInstr step,
+            Consumer<RlxBlock> bodyBuilder
+    ) {
+        RlxBlock header = makeBlock("header");
+        RlxBlock body = makeBlock("body");
+        RlxBlock exit = makeBlock("exit");
+
+        jump(header);
+        ValueInstr value = variable.get();
+        ValueInstr cmp = compare(op, value, end);
+        jumpIf(cmp, body, exit);
+
+        buildBlock(body);
+        bodyBuilder.accept(body);
+        value = variable.get();
+        variable.set(sum(
+                value, step
+        ));
+        if (!body.isTerminated)
+            jump(header);
+
+        buildBlock(exit);
+    }
+
+    public void ifC(ValueInstr condition, Consumer<RlxBlock> bodyBuilder) {
+        RlxBlock body = makeBlock("body");
+        RlxBlock escape = makeBlock("escape");
+        jumpIf(condition, body, escape);
+        buildBlock(body);
+        bodyBuilder.accept(body);
+        if (!body.isTerminated) jump(escape);
+        else buildBlock(escape);
+    }
+
+    public ValueInstr arraySet(ValueInstr array, ValueInstr index, ValueInstr data) {
+        ArraySet set = new ArraySet(array, index, data);
+        addInstr(set);
+        return set;
+    }
+
+    public RlxBlock currentBlock() {
+        return currentBlock;
+    }
+
+    public ValueInstr hasInput() {
+        DebugHasInput hasInput = new DebugHasInput();
+        addInstr(hasInput);
+        return hasInput;
     }
 }

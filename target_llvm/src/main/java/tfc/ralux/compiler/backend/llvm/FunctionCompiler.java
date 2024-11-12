@@ -21,6 +21,9 @@ import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.CastInstr;
 import tfc.rlxir.instr.value.CompareInstr;
 import tfc.rlxir.instr.value.MathInstr;
+import tfc.rlxir.instr.value.arrays.ArrayGet;
+import tfc.rlxir.instr.value.arrays.ArraySet;
+import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.vars.GetInstr;
 import tfc.rlxir.instr.value.vars.SetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
@@ -61,10 +64,12 @@ public class FunctionCompiler {
                 ConstInstr<?> cst = (ConstInstr<?>) instr;
 
                 cst.setCompilerData(switch (cst.valueType().type) {
-                    case BYTE, SHORT, INT -> root.integer((int) cst.data, conversions.typeFor(cst.type));
-                    case LONG, WIDE -> root.integer((long) cst.data, conversions.typeFor(cst.type));
-                    case HALF, FLOAT -> root.loadFloat((float) cst.data, conversions.typeFor(cst.type));
-                    case DOUBLE, QUADRUPLE -> root.loadFloat((double) cst.data, conversions.typeFor(cst.type));
+                    case BYTE, SHORT, INT ->
+                            root.integer(((Number) cst.data).intValue(), conversions.typeFor(cst.type));
+                    case LONG, WIDE -> root.integer(((Number) cst.data).longValue(), conversions.typeFor(cst.type));
+                    case HALF, FLOAT -> root.loadFloat(((Number) cst.data).floatValue(), conversions.typeFor(cst.type));
+                    case DOUBLE, QUADRUPLE ->
+                            root.loadFloat(((Number) cst.data).doubleValue(), conversions.typeFor(cst.type));
                     default -> throw new RuntimeException("Unsupported constant type: " + cst.valueType().type);
                 });
             }
@@ -79,9 +84,12 @@ public class FunctionCompiler {
         ECompOp ecomp = ECompOp.values()[instr.op.ordinal()];
         instr.setCompilerData(
                 switch (instr.variant) {
-                    case SINT -> root.compareInt(ecomp, instr.left.getCompilerData(), instr.right.getCompilerData(), "si_cmp");
-                    case UINT -> root.compareInt(ecomp, instr.left.getCompilerData(), instr.right.getCompilerData(), "ui_cmp");
-                    case FLOAT -> root.compareFloat(ecomp, instr.left.getCompilerData(), instr.right.getCompilerData(), "fp_cmp");
+                    case SINT ->
+                            root.compareInt(ecomp, instr.left.getCompilerData(), instr.right.getCompilerData(), "si_cmp");
+                    case UINT ->
+                            root.compareInt(ecomp, instr.left.getCompilerData(), instr.right.getCompilerData(), "ui_cmp");
+                    case FLOAT ->
+                            root.compareFloat(ecomp, instr.left.getCompilerData(), instr.right.getCompilerData(), "fp_cmp");
                 }
         );
     }
@@ -118,12 +126,18 @@ public class FunctionCompiler {
     private void compileCast(CastInstr instr) {
         ensureData(instr.value);
         instr.setCompilerData(switch (instr.mode) {
-            case BIT -> root.bitcast(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "bitcast_" + instr.value.valueType() + "_to_" + instr.toType);
-            case INT_FLOAT -> root.castSIToFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_si_fp_" + instr.value.valueType() + "_to_" + instr.toType);
-            case FLOAT_INT -> root.castFPToSI(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_si_" + instr.value.valueType() + "_to_" + instr.toType);
-            case TRUNCATE -> root.truncate(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "trunc_" + instr.value.valueType() + "_to_" + instr.toType);
-            case EXTEND -> root.extend(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "zext_" + instr.value.valueType() + "_to_" + instr.toType);
-            case FLOAT_FLOAT-> root.castFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_fp_" + instr.value.valueType() + "_to_" + instr.toType);
+            case BIT ->
+                    root.bitcast(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "bitcast_" + instr.value.valueType() + "_to_" + instr.toType);
+            case INT_FLOAT ->
+                    root.castSIToFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_si_fp_" + instr.value.valueType() + "_to_" + instr.toType);
+            case FLOAT_INT ->
+                    root.castFPToSI(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_si_" + instr.value.valueType() + "_to_" + instr.toType);
+            case TRUNCATE ->
+                    root.truncate(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "trunc_" + instr.value.valueType() + "_to_" + instr.toType);
+            case EXTEND ->
+                    root.extend(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "zext_" + instr.value.valueType() + "_to_" + instr.toType);
+            case FLOAT_FLOAT ->
+                    root.castFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_fp_" + instr.value.valueType() + "_to_" + instr.toType);
             case NONE -> (LLVMValueRef) instr.value.getCompilerData();
             default -> throw new RuntimeException("NYI cast mode: " + instr.mode);
         });
@@ -157,6 +171,12 @@ public class FunctionCompiler {
         }
     }
 
+    private void compileArrayDef(MArrayInstr instr) {
+        ensureData(instr.size);
+        lastVar = root.allocA(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
+        instr.setCompilerData(lastVar);
+    }
+
     private void compileVarSet(SetInstr instr) {
         ensureData(instr.value);
         LLVMValueRef alloc = instr.var.getCompilerData();
@@ -182,6 +202,27 @@ public class FunctionCompiler {
             block.setCompilerData(builder.block(block.name));
             if (header == null) header = block.getCompilerData();
         }
+    }
+
+    private void compileArrayGet(ArrayGet instr) {
+        ensureData(instr.array);
+        ensureData(instr.index);
+
+        LLVMValueRef array = instr.array.getCompilerData();
+        LLVMValueRef index = instr.index.getCompilerData();
+        instr.setCompilerData(root.getValue(array, index, "get_value"));
+    }
+
+    private void compileArraySet(ArraySet instr) {
+        ensureData(instr.array);
+        ensureData(instr.index);
+        ensureData(instr.value);
+
+        LLVMValueRef array = instr.array.getCompilerData();
+        LLVMValueRef index = instr.index.getCompilerData();
+        LLVMValueRef value = instr.value.getCompilerData();
+        root.setValue(array, index, value);
+        instr.setCompilerData(value);
     }
 
     public void compile() {
@@ -218,13 +259,24 @@ public class FunctionCompiler {
                     case DEBUG_PRINT -> {
                         DebugPrint print = (DebugPrint) instr;
                         ensureData(print.value);
-                        LLVMValueRef str = root.stdLib.intToString(root.getIntType(32), print.value.getCompilerData());
+                        LLVMValueRef str;
+                        if (print.value.valueType().isArray()) {
+                            str = print.value.getCompilerData();
+                        } else str = root.stdLib.intToString(root.getIntType(32), print.value.getCompilerData());
                         root.stdLib.print(str);
                     }
                     case DEBUG_READ_INT -> {
                         LLVMValueRef value = root.stdLib.readInt();
                         instr.setCompilerData(value);
                     }
+                    case DEBUG_HAS_INPUT -> {
+                        instr.setCompilerData(root.stdLib.hasInput(
+                                this.builder
+                        ));
+                    }
+                    case MAKE_ARRAY -> compileArrayDef((MArrayInstr) instr);
+                    case ARRAY_GET -> compileArrayGet((ArrayGet) instr);
+                    case ARRAY_SET -> compileArraySet((ArraySet) instr);
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }

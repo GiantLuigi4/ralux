@@ -9,8 +9,15 @@ public class DebugPrint extends BaseInstr {
     public final ValueInstr value;
 
     public DebugPrint(ValueInstr toPrint) {
-        if (toPrint.valueType().type != PrimitiveType.INT) {
-            throw new RuntimeException("For simplicity reasons, debug print is only available for integers");
+        if (
+                toPrint.valueType().type != PrimitiveType.INT
+        ) {
+            if (
+                    !(toPrint.valueType().isArray() &&
+                            toPrint.valueType().debox().type == PrimitiveType.BYTE)
+            ) {
+                throw new RuntimeException("For simplicity reasons, debug print is only available for integers and byte arrays.");
+            }
         }
         this.value = toPrint;
     }

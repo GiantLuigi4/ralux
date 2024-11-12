@@ -8,6 +8,7 @@ import java.util.List;
 
 public class RlxBlock extends CompilerDataHolder<RlxBlock> {
     public final String name;
+    protected boolean isTerminated;
 
     public RlxBlock(String name) {
         this.name = name;
@@ -18,5 +19,9 @@ public class RlxBlock extends CompilerDataHolder<RlxBlock> {
     public List<RlxInstr> getInstructions() {
         // TODO: read-only list
         return instrs;
+    }
+
+    public boolean isTerminated() {
+        return isTerminated;
     }
 }
