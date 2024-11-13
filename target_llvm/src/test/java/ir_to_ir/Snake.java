@@ -178,6 +178,7 @@ public class Snake {
         function.arraySet(arrayData, CONST_0, CONST_0B);
 
         VarInstr lastInput = function.makeVar(CONST_0);
+        VarInstr growSnek = function.makeVar(CONST_FALSE);
 
         VarInstr fTurn = function.makeVar(RlxTypes.BOOLEAN);
         fTurn.set(CONST_FALSE);
@@ -212,7 +213,7 @@ public class Snake {
             RlxBlock blockUpdateTail = function.makeBlock("update_tail");
             RlxBlock blockContinue = function.makeBlock("continue");
 
-            ValueInstr growCondition = function.compare(CompareOp.EQ, headDir, CONST_5);
+            ValueInstr growCondition = growSnek.get();
 
             function.jumpIf(growCondition, blockContinue, blockUpdateTail);
             {
@@ -240,6 +241,7 @@ public class Snake {
             }
 
             ValueInstr headPos = index(function, headX, headY, size, CONST_2);
+            growSnek.set(CONST_FALSE);
             function.arraySet(arrayDisplay, headPos, function.cast(
                     CONST_o_,
                     RlxTypes.BYTE
@@ -267,6 +269,25 @@ public class Snake {
 
             headPos = index(function, headX, headY, size, CONST_0);
             ValueInstr headTailStatus = function.arrayGet(arrayData, headPos);
+
+            RlxBlock conditionGrow = function.makeBlock("grow");
+            RlxBlock conditionStag = function.makeBlock("stag");
+
+            function.jumpIf(function.compare(CompareOp.EQ, index(
+                    function, appleX, appleY, size, CONST_0
+            ), index(
+                    function, headX, headY, size, CONST_0
+            )), conditionGrow, conditionStag);
+
+            {
+                function.buildBlock(conditionGrow);
+                growSnek.set(CONST_TRUE);
+                appleX.set(function.random(CONST_0, size));
+                appleY.set(function.random(CONST_0, size));
+                function.jump(conditionStag);
+            }
+
+            function.buildBlock(conditionStag);
 
             RlxBlock loss = function.makeBlock("loss");
             RlxBlock notLoss = function.makeBlock("not_loss");
