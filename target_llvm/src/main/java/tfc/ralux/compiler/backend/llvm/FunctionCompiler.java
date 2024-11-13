@@ -17,7 +17,9 @@ import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
+import tfc.rlxir.instr.debug.TwoValueDebug;
 import tfc.rlxir.instr.global.ConstInstr;
+import tfc.rlxir.instr.value.BoolInstr;
 import tfc.rlxir.instr.value.CastInstr;
 import tfc.rlxir.instr.value.CompareInstr;
 import tfc.rlxir.instr.value.MathInstr;
@@ -70,6 +72,7 @@ public class FunctionCompiler {
                     case HALF, FLOAT -> root.loadFloat(((Number) cst.data).floatValue(), conversions.typeFor(cst.type));
                     case DOUBLE, QUADRUPLE ->
                             root.loadFloat(((Number) cst.data).doubleValue(), conversions.typeFor(cst.type));
+                    case BOOLEAN -> root.integer(((Number) cst.data).byteValue(), 1);
                     default -> throw new RuntimeException("Unsupported constant type: " + cst.valueType().type);
                 });
             }
@@ -120,6 +123,16 @@ public class FunctionCompiler {
                 default -> throw new RuntimeException("NYI");
             };
             default -> throw new RuntimeException("NYI");
+        });
+    }
+
+    private void compileBoolOp(BoolInstr instr) {
+        ensureData(instr.left);
+        ensureData(instr.right);
+        instr.setCompilerData(switch (instr.op) {
+            case AND -> root.and(instr.left.getCompilerData(), instr.right.getCompilerData(), "cmp_and");
+            case OR -> root.or(instr.left.getCompilerData(), instr.right.getCompilerData(), "cmp_or");
+            default -> throw new RuntimeException("TODO: " + instr.op);
         });
     }
 
@@ -274,9 +287,18 @@ public class FunctionCompiler {
                                 this.builder
                         ));
                     }
+                    case DEBUG_RANDOM -> {
+                        ensureData(((TwoValueDebug) instr).left);
+                        ensureData(((TwoValueDebug) instr).right);
+                        instr.setCompilerData(root.stdLib.random(
+                                ((TwoValueDebug) instr).left.getCompilerData(),
+                                ((TwoValueDebug) instr).right.getCompilerData()
+                        ));
+                    }
                     case MAKE_ARRAY -> compileArrayDef((MArrayInstr) instr);
                     case ARRAY_GET -> compileArrayGet((ArrayGet) instr);
                     case ARRAY_SET -> compileArraySet((ArraySet) instr);
+                    case BOOLEAN_OP -> compileBoolOp((BoolInstr) instr);
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }

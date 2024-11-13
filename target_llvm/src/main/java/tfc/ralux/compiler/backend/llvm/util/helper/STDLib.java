@@ -32,6 +32,8 @@ public class STDLib {
     FunctionBuilder feof;
     FunctionBuilder _kbhit;
 
+    FunctionBuilder fRandom;
+
     public STDLib(BuilderRoot root) {
         this.root = root;
     }
@@ -143,29 +145,30 @@ public class STDLib {
         return stringToInt(root.getIntType(32), str);
     }
 
+    // TODO:
     public LLVMValueRef hasInput(FunctionBuilder functionBuilder) {
-//        if (typeFeof == null) {
-//            LLVMTypeRef filePtr = root.pointerType(root.getIntType(8));
-//            typeFeof = new FunctionType(
-//                    root, root.getIntType(32)
-//            ).withArgs(filePtr).build();
-//            feof = root.function(
-//                    "feof",
-//                    typeFeof
-//            );
-//        }
-//        if (_kbhit == null) {
-//            if (typei32Ret == null) {
-//                typei32Ret = new FunctionType(
-//                        root, root.getIntType(32)
-//                ).build();
-//            }
-//            _kbhit = root.function(
-//                    "_kbhit",
-//                    typei32Ret
-//            );
-//        }
-//
+        if (typeFeof == null) {
+            LLVMTypeRef filePtr = root.pointerType(root.getIntType(8));
+            typeFeof = new FunctionType(
+                    root, root.getIntType(32)
+            ).withArgs(filePtr).build();
+            feof = root.function(
+                    "feof",
+                    typeFeof
+            );
+        }
+        if (_kbhit == null) {
+            if (typei32Ret == null) {
+                typei32Ret = new FunctionType(
+                        root, root.getIntType(32)
+                ).build();
+            }
+            _kbhit = root.function(
+                    "_kbhit",
+                    typei32Ret
+            );
+        }
+
 //        BlockBuilder builder = root.getBlockBuilding();
 //        BlockBuilder shortTo = functionBuilder.block("shortTo");
 //        BlockBuilder dst = functionBuilder.block("dst");
@@ -201,5 +204,29 @@ public class STDLib {
 //
 //        return root.getValue(valueRef, "get_has_input");
         return root.integer(1, 1);
+    }
+
+    public LLVMValueRef random(LLVMValueRef min, LLVMValueRef max) {
+        if (fRandom == null) {
+            if (typei32Ret == null) {
+                typei32Ret = new FunctionType(
+                        root, root.getIntType(32)
+                ).build();
+            }
+
+            fRandom = root.function("rand", typei32Ret);
+        }
+
+        PointerPointer<LLVMValueRef> noArg = root.track(new PointerPointer<>());
+        LLVMValueRef rand = root.track(LLVM.LLVMBuildCall(
+                root.getBuilder(),
+                fRandom.getDirect(),
+                noArg, 0,
+                "rand"
+        ));
+        LLVMValueRef range = root.sisub(max, min, "calc_range");
+        LLVMValueRef randVal = root.simod(rand, range, "calc_val");
+        LLVMValueRef calcOut = root.sisum(randVal, min, "calc_out");
+        return calcOut;
     }
 }

@@ -8,10 +8,10 @@ import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.debug.DebugHasInput;
 import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
-import tfc.rlxir.instr.enumeration.CastOp;
-import tfc.rlxir.instr.enumeration.CompareOp;
-import tfc.rlxir.instr.enumeration.MathOp;
+import tfc.rlxir.instr.debug.TwoValueDebug;
+import tfc.rlxir.instr.enumeration.*;
 import tfc.rlxir.instr.global.ConstInstr;
+import tfc.rlxir.instr.value.BoolInstr;
 import tfc.rlxir.instr.value.CastInstr;
 import tfc.rlxir.instr.value.CompareInstr;
 import tfc.rlxir.instr.value.MathInstr;
@@ -44,6 +44,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     }
 
     public void buildBlock(RlxBlock block) {
+        if (block.isTerminated) throw new RuntimeException("Block has already been terminated, cannot be continued.");
         this.currentBlock = block;
     }
 
@@ -239,6 +240,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         return res;
     }
 
+    public ValueInstr booleanOp(BooleanOp booleanOp, ValueInstr left, ValueInstr right) {
+        BoolInstr instr = new BoolInstr(booleanOp, left, right);
+        addInstr(instr);
+        return instr;
+    }
+
     public CompareInstr compare(CompareOp op, ValueInstr left, ValueInstr right) {
         ValueInstr lv = left;
         ValueInstr rv = right;
@@ -259,7 +266,6 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
         addInstr(res = new CompareInstr(
                 op, coercionType.mathVariant(),
-
                 lv, rv
         ));
 //        if (res.isConst()) {
@@ -283,6 +289,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public ValueInstr readInt() {
         DebugReadInt ri = new DebugReadInt();
+        addInstr(ri);
+        return ri;
+    }
+
+    public ValueInstr random(ValueInstr min, ValueInstr max) {
+        TwoValueDebug ri = new TwoValueDebug(InstrType.DEBUG_RANDOM, min, max);
         addInstr(ri);
         return ri;
     }

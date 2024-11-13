@@ -117,6 +117,9 @@ public class LLVMCompiler extends Compiler {
         LLVM.LLVMPassManagerBuilderSetOptLevel(builderRef, backend);
 
         LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
+        LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
+        LLVM.LLVMAddTypeBasedAliasAnalysisPass(pass);
+        LLVM.LLVMAddBasicAliasAnalysisPass(pass);
         if (rlx >= 5) {
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
             LLVM.LLVMAddInternalizePass(pass, 1);
@@ -217,7 +220,8 @@ public class LLVMCompiler extends Compiler {
             }
         }
 
-        LLVM.LLVMAddVerifierPass(pass);
+        LLVM.LLVMAddScalarizerPass(pass);
+//        LLVM.LLVMAddVerifierPass(pass);
 
         LLVM.LLVMRunPassManager(pass, root.getModule());
         LLVM.LLVMDisposePassManager(pass);
@@ -242,9 +246,11 @@ public class LLVMCompiler extends Compiler {
         try {
             Process proc = Runtime.getRuntime().exec(
                     "lld-link.exe module.obj -entry:main " +
-                            "/libpath:\"C:/Program Files/LLVM/lib/clang/8.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
+//                            "/libpath:\"C:/Program Files/LLVM/lib/clang/8.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
+                            "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
                             "/defaultlib:msvcrt " +
                             "/defaultlib:ucrt " +
+                            "/defaultlib:libcmt " +
                             "/subsystem:console /verbose " +
                             "-opt:ref -opt:icf -opt:lbr " +
                             "/fixed /cetcompat /release /incremental:no /ltcg /debug:none "
