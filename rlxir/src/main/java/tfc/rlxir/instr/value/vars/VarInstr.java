@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.value.vars;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
@@ -7,10 +8,17 @@ import tfc.rlxir.typing.RlxType;
 
 public class VarInstr extends BaseInstr {
     public final RlxType type;
+    public final int paramFrom;
     String debugName = "var";
 
     public VarInstr(RlxType type) {
         this.type = type;
+        this.paramFrom = -1;
+    }
+
+    public VarInstr(RlxType type, int paramFrom) {
+        this.type = type;
+        this.paramFrom = paramFrom;
     }
 
     public VarInstr setDebugName(String debugName) {
@@ -48,5 +56,15 @@ public class VarInstr extends BaseInstr {
 
     public String debugName() {
         return debugName;
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return true;
+    }
+
+    @Override
+    public boolean canBeOrganized() {
+        return false;
     }
 }

@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.action;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
@@ -44,6 +45,16 @@ public class ReturnInstr extends BaseInstr implements Override {
 
     @Override
     public boolean isConst() {
+        return false;
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return valueInstr == other || valueInstr.dependsOn(other);
+    }
+
+    @Override
+    public boolean canBeOrganized() {
         return false;
     }
 }

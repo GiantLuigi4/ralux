@@ -15,7 +15,7 @@ import testing.compiler.llvm.root.BuilderRoot;
 import testing.compiler.llvm.root.ModuleRoot;
 import testing.compiler.llvm.compiler.cache.ClassCache;
 import testing.compiler.llvm.compiler.cache.ClassFile;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.ralux.compiler.util.Pair;
 
 import java.util.ArrayList;

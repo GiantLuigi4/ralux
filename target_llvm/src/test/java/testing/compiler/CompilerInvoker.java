@@ -13,8 +13,8 @@ import testing.compiler.llvm.target.part.Architecture;
 import testing.compiler.llvm.target.part.Environment;
 import testing.compiler.llvm.target.part.OperatingSystem;
 import testing.compiler.llvm.target.part.Vendor;
-import tfc.ralux.compiler.parse.RaluxLexer;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxLexer;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 
 import java.io.File;
 import java.io.InputStream;

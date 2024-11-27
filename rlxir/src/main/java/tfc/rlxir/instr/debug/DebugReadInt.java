@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.debug;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
@@ -38,6 +39,16 @@ public class DebugReadInt extends ValueInstr {
 
     @Override
     public boolean isConst() {
+        return false;
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return false;
+    }
+
+    @Override
+    public boolean canBeOrganized() {
         return false;
     }
 }

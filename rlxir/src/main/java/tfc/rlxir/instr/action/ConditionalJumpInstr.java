@@ -1,6 +1,7 @@
 package tfc.rlxir.instr.action;
 
 import tfc.rlxir.RlxBlock;
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
@@ -28,6 +29,16 @@ public class ConditionalJumpInstr extends BaseInstr {
 
     @Override
     public boolean isConst() {
+        return false;
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return condition == other || condition.dependsOn(other);
+    }
+
+    @Override
+    public boolean canBeOrganized() {
         return false;
     }
 }

@@ -7,7 +7,7 @@ import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import testing.compiler.llvm.root.BuilderRoot;
 import testing.compiler.llvm.root.enums.ECompOp;
 import testing.compiler.llvm.compiler.cache.ClassFile;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 
 import java.util.Objects;
 

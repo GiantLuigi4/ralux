@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.value;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.instr.enumeration.InstrType;
@@ -62,5 +63,10 @@ public class CastInstr extends ValueInstr {
     @Override
     public boolean isOne() {
         return value.isOne();
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return other == value || value.dependsOn(other);
     }
 }

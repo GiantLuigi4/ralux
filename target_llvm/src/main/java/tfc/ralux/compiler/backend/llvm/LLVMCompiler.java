@@ -121,6 +121,10 @@ public class LLVMCompiler extends Compiler {
         LLVM.LLVMAddTypeBasedAliasAnalysisPass(pass);
         LLVM.LLVMAddBasicAliasAnalysisPass(pass);
         if (rlx >= 5) {
+            LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
+            LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
+            LLVM.LLVMAddLowerSwitchPass(pass); // h?
+
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
             LLVM.LLVMAddInternalizePass(pass, 1);
             LLVM.LLVMAddGlobalOptimizerPass(pass);
@@ -141,11 +145,12 @@ public class LLVMCompiler extends Compiler {
             LLVM.LLVMAddIPSCCPPass(pass);
             LLVM.LLVMAddLICMPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
+            LLVM.LLVMAddDeadArgEliminationPass(pass);
+            LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMAddAlwaysInlinerPass(pass);
+            LLVM.LLVMAddMergeFunctionsPass(pass);
             LLVM.LLVMAddLICMPass(pass);
             LLVM.LLVMAddStripSymbolsPass(pass);
-            LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
-            LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
-            LLVM.LLVMAddLowerSwitchPass(pass); // h?
             LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
@@ -158,6 +163,7 @@ public class LLVMCompiler extends Compiler {
             LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
             LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddStripSymbolsPass(pass);
+            LLVM.LLVMAddAggressiveInstCombinerPass(pass);
         } else {
             if (rlx >= 4) {
                 LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
@@ -202,6 +208,8 @@ public class LLVMCompiler extends Compiler {
                         LLVM.LLVMAddCFGSimplificationPass(pass);
                         LLVM.LLVMAddInstructionCombiningPass(pass);
                     }
+
+                    LLVM.LLVMAddSLPVectorizePass(pass);
                 }
             }
             LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
@@ -216,11 +224,11 @@ public class LLVMCompiler extends Compiler {
                 LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
                 LLVM.LLVMAddCFGSimplificationPass(pass);
                 LLVM.LLVMAddStripSymbolsPass(pass);
-                LLVM.LLVMAddStripSymbolsPass(pass);
+                LLVM.LLVMAddAggressiveInstCombinerPass(pass);
             }
         }
 
-        LLVM.LLVMAddScalarizerPass(pass);
+//        LLVM.LLVMAddScalarizerPass(pass);
 //        LLVM.LLVMAddVerifierPass(pass);
 
         LLVM.LLVMRunPassManager(pass, root.getModule());

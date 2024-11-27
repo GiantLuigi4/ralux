@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.value;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.instr.enumeration.MathOp;
@@ -65,5 +66,10 @@ public class MathInstr extends ValueInstr {
     public ValueInstr eval() {
         // TODO:
         return this;
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return left == other || right == other || left.dependsOn(other) || right.dependsOn(other);
     }
 }

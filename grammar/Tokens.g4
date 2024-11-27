@@ -9,7 +9,7 @@ GENERIC_WILDCARD: QUESTION;
 C_TYPE: CLASS|INTERFACE;
 
 // Primitive types have higher precedence than generic WORDs
-PRIMITIVE_INT: 'byte' | 'int' | 'short' | 'long' | 'stretch';
+PRIMITIVE_INT: 'byte' | 'int' | 'short' | 'long' | 'wide';
 PRIMITIVE_FP: 'half' | 'float' | 'double' | 'quadruple';
 PRIMITIVE_OTHER: 'char' | 'boolean' | 'void';
 MODIFIER: 'public' | 'private' | 'protected' | 'final' | 'abi';
@@ -103,15 +103,17 @@ ENFORCE_STATEMENTS: '%enforce_semicolon%';
 // generic word token
 // words can start with a number, but if they do so, they must also contain a letter (excluding ones that correspond to numeric primitives) or more letters after that
 WORD: ([_$#a-zA-Z] [0-9_$#a-zA-Z]*)
-    | ([0-9]* (([_$#acegjkmnopqrtuvwxyzACEGJKMNOPQRTUVWXYZ] [0-9_$#a-zA-Z]*)|([_$#a-zA-Z] [0-9_$#a-zA-Z]+)))
+    | ([0-9]* (([_$#acegjkmnoprtuvxyzACEGJKMNOPRTUVXYZ] [0-9_$#a-zA-Z]*)|([_$#a-zA-Z] [0-9_$#a-zA-Z]+)))
 ;
 
 // Numeric tokens
-NUMBER: INFERRED_DECIMAL|HALF|FLOAT|DOUBLE|BYTE|SHORT|INT|LONG|INUM;
+NUMBER: INFERRED_DECIMAL|HALF|FLOAT|DOUBLE|QUAD|BYTE|SHORT|INT|LONG|WIDE|INUM;
 INFERRED_DECIMAL: INUM '.' INUM;
 HALF: INUM('h'|('.' INUM 'h'));
 FLOAT: INUM('f'|('.' INUM 'f'));
 DOUBLE: INUM('d'|('.' INUM 'd'));
+QUAD: INUM('q'|('.' INUM 'q'));
+WIDE: INUM'w';
 LONG: INUM'l';
 SHORT: INUM's';
 INT: INUM'i';

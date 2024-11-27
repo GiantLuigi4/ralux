@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.value.arrays;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.typing.RlxType;
@@ -40,6 +41,16 @@ public class MArrayInstr extends ValueInstr {
 
     @Override
     public boolean isOne() {
+        return false;
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return size == other || size.dependsOn(other);
+    }
+
+    @Override
+    public boolean canBeOrganized() {
         return false;
     }
 }

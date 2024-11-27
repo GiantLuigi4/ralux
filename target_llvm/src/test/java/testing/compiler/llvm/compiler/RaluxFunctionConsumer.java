@@ -10,7 +10,7 @@ import org.bytedeco.llvm.global.LLVM;
 import testing.compiler.llvm.BlockBuilder;
 import testing.compiler.llvm.FunctionBuilder;
 import testing.compiler.llvm.root.BuilderRoot;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 
 import java.util.Stack;
 

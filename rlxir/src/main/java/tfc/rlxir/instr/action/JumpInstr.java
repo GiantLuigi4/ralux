@@ -26,4 +26,14 @@ public class JumpInstr extends BaseInstr {
     public boolean isConst() {
         return false;
     }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return false;
+    }
+
+    @Override
+    public boolean canBeOrganized() {
+        return false;
+    }
 }

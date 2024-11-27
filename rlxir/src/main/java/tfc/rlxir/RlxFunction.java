@@ -88,6 +88,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         instr.setFunction(this);
     }
 
+    public VarInstr param(RlxType type, int index) {
+        VarInstr instr = new VarInstr(type, index);
+        addInstr(instr);
+        return instr;
+    }
+
     public VarInstr makeVar(RlxType rlxType) {
         VarInstr instr = new VarInstr(rlxType);
         addInstr(instr);
@@ -166,7 +172,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = lv.valueType().valueCastOp(rv.valueType());
+        op = rv.valueType().valueCastOp(lv.valueType());
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -194,7 +200,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = lv.valueType().valueCastOp(rv.valueType());
+        op = rv.valueType().valueCastOp(lv.valueType());
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -222,7 +228,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = lv.valueType().valueCastOp(rv.valueType());
+        op = rv.valueType().valueCastOp(lv.valueType());
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -232,6 +238,34 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
         addInstr(res = new MathInstr(
                 MathOp.PRODUCT, coercionType.mathVariant(),
+                lv, rv
+        ));
+//        if (res.isConst()) {
+//            return res.eval();
+//        }
+        return res;
+    }
+
+    public ValueInstr div(ValueInstr left, ValueInstr right) {
+        ValueInstr lv = left;
+        ValueInstr rv = right;
+
+        RlxType coercionType = lv.valueType().coercionType(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        if (lv.valueType() != coercionType) {
+            lv = new CastInstr(lv, coercionType, op);
+            addInstr(lv);
+        }
+        op = rv.valueType().valueCastOp(lv.valueType());
+        if (rv.valueType() != coercionType) {
+            rv = new CastInstr(rv, coercionType, op);
+            addInstr(rv);
+        }
+
+        MathInstr res;
+
+        addInstr(res = new MathInstr(
+                MathOp.QUOTIENT, coercionType.mathVariant(),
                 lv, rv
         ));
 //        if (res.isConst()) {

@@ -3,7 +3,7 @@ package testing.compiler.llvm.compiler.cache;
 import testing.compiler.llvm.compiler.RaluxFunctionConsumer;
 import testing.compiler.llvm.compiler.analysis.Type;
 import testing.compiler.llvm.FunctionBuilder;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.ralux.compiler.util.Pair;
 
 import java.util.ArrayList;

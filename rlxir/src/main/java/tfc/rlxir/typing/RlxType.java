@@ -48,6 +48,12 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     public CastOp valueCastOp(RlxType toType) {
         if (type == toType.type) return CastOp.NONE;
 
+        if (type == RlxTypes.BOOLEAN.type) {
+            if (toType.type.typ == 'i') return CastOp.EXTEND;
+            if (toType.type.typ == 'f') return CastOp.INT_FLOAT;
+            throw new RuntimeException("TODO");
+        } else if (toType == RlxTypes.BOOLEAN) return CastOp.NONE;
+
         if (type.typ == toType.type.typ && type.typ == 'i') {
             if (type.bits < toType.type.bits) {
                 return CastOp.EXTEND;
@@ -70,6 +76,12 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 
     public CastOp bitCastOp(RlxType toType) {
         if (type == toType.type) return CastOp.NONE;
+
+        if (type == RlxTypes.BOOLEAN.type) {
+            if (toType.type.typ == 'i') return CastOp.EXTEND;
+            if (toType.type.typ == 'f') return CastOp.BIT;
+            throw new RuntimeException("TODO");
+        } else if (toType == RlxTypes.BOOLEAN) return CastOp.NONE;
 
         if (type.bits < toType.type.bits) {
             return CastOp.EXTEND;
@@ -114,6 +126,10 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     public RlxType coercionType(RlxType rlxType) {
         if (this == rlxType) return this;
 
+        // TODO: incompatibility checking for bools
+        if (this.type == PrimitiveType.BOOLEAN) return rlxType;
+        if (rlxType.type == PrimitiveType.BOOLEAN) return this;
+
         if (rlxType.type.bits >= this.type.bits) {
             if (this.type.typ == 'f' && rlxType.type.typ == 'f')
                 return rlxType;
@@ -121,9 +137,9 @@ public class RlxType extends CompilerDataHolder<RlxType> {
                 return rlxType;
 
             if (this.type.typ == 'f' && rlxType.type.typ == 'i')
-                return rlxType;
+                return RlxTypes.FLOATING_POINT(rlxType.type.bytes);
             if (this.type.typ == 'i' && rlxType.type.typ == 'f')
-                return RlxTypes.FP(rlxType.type.bytes);
+                return RlxTypes.FLOATING_POINT(rlxType.type.bytes);
         }
         if (this.type.bits >= rlxType.type.bits) {
             if (this.type.typ == 'f' && rlxType.type.typ == 'f')
@@ -134,7 +150,7 @@ public class RlxType extends CompilerDataHolder<RlxType> {
             if (this.type.typ == 'f' && rlxType.type.typ == 'i')
                 return this;
             if (this.type.typ == 'i' && rlxType.type.typ == 'f')
-                return RlxTypes.FP(this.type.bytes);
+                return RlxTypes.FLOATING_POINT(this.type.bytes);
         }
         throw new RuntimeException("Unsupported coercion: " + this + " to " + rlxType);
     }

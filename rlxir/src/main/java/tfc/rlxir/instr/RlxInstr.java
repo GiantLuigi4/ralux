@@ -12,6 +12,11 @@ public abstract class RlxInstr extends DebuggerDataHolder<RlxInstr> {
     public abstract RlxType valueType();
     public abstract InstrType type();
     public abstract boolean isConst();
+    public abstract boolean dependsOn(RlxInstr other);
+
+    public boolean canBeOrganized() {
+        return true;
+    }
 
     public RlxInstr setFunction(RlxFunction function) {
         if (this.function != null) throw new RuntimeException("Instructions cannot be reassigned between functions.");

@@ -1,8 +1,8 @@
 package tfc.ralux.compiler.optim;
 
 import org.antlr.v4.runtime.CommonToken;
-import tfc.ralux.compiler.parse.RaluxLexer;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxLexer;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.ralux.compiler.util.TreeNode;
 
 // a quick, context free optimization pass that doesn't risk changing behavior

@@ -159,8 +159,10 @@ public class FunctionCompiler {
     LLVMValueRef lastVar = null;
 
     private void compileVarDef(VarInstr instr) {
+        boolean headerVars = flagHeaderVars() || instr.paramFrom != -1;
+
         BlockBuilder curr = root.getBlockBuilding();
-        if (flagHeaderVars()) {
+        if (headerVars) {
             if (lastVar == null) {
                 LLVMValueRef valueRef = LLVM.LLVMGetFirstInstruction(header.getDirect());
                 if (valueRef != null)
@@ -178,8 +180,17 @@ public class FunctionCompiler {
             }
         }
         lastVar = root.allocA(conversions.typeFor(instr.type), instr.debugName());
+        if (instr.paramFrom != -1) {
+            root.setValue(
+                    lastVar,
+                    builder.getArg(
+                            instr.paramFrom,
+                            conversions.typeFor(instr.type)
+                    )
+            );
+        }
         instr.setCompilerData(lastVar);
-        if (flagHeaderVars()) {
+        if (headerVars) {
             curr.enableBuilding();
         }
     }

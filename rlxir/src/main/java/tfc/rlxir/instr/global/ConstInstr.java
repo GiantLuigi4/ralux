@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.global;
 
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.instr.base.ValueInstr;
@@ -42,5 +43,10 @@ public class ConstInstr<T> extends ValueInstr {
     @Override
     public boolean isOne() {
         return data.equals(1);
+    }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return false;
     }
 }

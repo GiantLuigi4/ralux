@@ -9,7 +9,7 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import testing.compiler.llvm.root.BuilderRoot;
 import testing.compiler.llvm.root.enums.ECompOp;
-import tfc.ralux.compiler.parse.RaluxParser;
+import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 
 import java.util.Stack;
 

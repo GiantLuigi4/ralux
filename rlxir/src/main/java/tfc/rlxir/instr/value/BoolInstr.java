@@ -47,4 +47,9 @@ public class BoolInstr extends ValueInstr {
     public boolean isOne() {
         return false;
     }
+
+    @Override
+    public boolean dependsOn(RlxInstr other) {
+        return left == other || right == other || left.dependsOn(other) || right.dependsOn(other);
+    }
 }
