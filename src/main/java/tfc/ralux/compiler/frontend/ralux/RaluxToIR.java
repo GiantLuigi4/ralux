@@ -33,7 +33,7 @@ public class RaluxToIR extends Translator {
                 if (node.getChild(index) instanceof TerminalNodeImpl terminal) {
                     if (
                             terminal.getSymbol().getType() == type ||
-                                    terminal.getSymbol().getType() == RaluxLexer.STATIC // TODO: more
+                                    terminal.getSymbol().getType() == RaluxLexer.STATIC
                     ) {
                         result.add(terminal);
                         index++;
@@ -49,21 +49,25 @@ public class RaluxToIR extends Translator {
     }
 
     public static RlxType parseType(ParseTree child) {
-        if (child.getChildCount() == 1) {
-            ParseTree element = child.getChild(0);
-            if (element instanceof RaluxParser.TypeContext typeContext) {
-                if (typeContext.getChildCount() == 1) {
-                    element = typeContext.getChild(0);
-                    if (element instanceof TerminalNodeImpl terminal) {
-                        return RlxTypes.typeByName(terminal.getText());
-                    }
-                    throw new RuntimeException("TODO");
-                }
-                throw new RuntimeException("TODO");
-            }
-            throw new RuntimeException("TODO");
+        RlxType type;
+        ParseTree element = child.getChild(0);
+        if (element instanceof RaluxParser.TypeContext typeContext) {
+            if (typeContext.getChildCount() == 1) {
+                element = typeContext.getChild(0);
+                if (element instanceof TerminalNodeImpl terminal) {
+                    type = RlxTypes.typeByName(terminal.getText());
+                } else throw new RuntimeException("TODO");
+            } else throw new RuntimeException("TODO");
+        } else throw new RuntimeException("TODO");
+
+        if (child.getChildCount() == 2) {
+            element = child.getChild(1);
+            if (element instanceof RaluxParser.ArrayContext) {
+                type = RlxType.array(type);
+            } else throw new RuntimeException("TODO");
         }
-        throw new RuntimeException("TODO");
+
+        return type;
     }
 
     private Params parseParams(ParseTree child) {
@@ -94,11 +98,40 @@ public class RaluxToIR extends Translator {
                     index++; // (
                     Params params = parseParams(context.getChild(index++));
                     index++; // )
-                    MethodParser parser = new MethodParser(trees, type, name, params, this);
-                    parser.parseBody(
-                            clazz,
-                            (RaluxParser.BodyContext) context.getChild(index)
+
+                    boolean isStub = false;
+                    boolean isAbi = false;
+                    for (ParseTree parseTree : trees) {
+                        if (
+                                parseTree.getText().equals("stub")
+                        ) {
+                            isStub = true;
+                            break;
+                        } else if (
+                                parseTree.getText().equals("abi")
+                        ) {
+                            isAbi = true;
+                            break;
+                        }
+                    }
+
+                    MethodParser parser = new MethodParser(
+                            clazz, trees,
+                            type, name,
+                            params, this,
+                            isStub, isAbi
                     );
+                    if (!isStub && !isAbi) {
+                        parser.parseBody(
+                                clazz,
+                                (RaluxParser.BodyContext) context.getChild(index)
+                        );
+                    } else if (isAbi) {
+                        parser.makeAbi();
+                    } else {
+                        // though this should be a field
+                        parser.makeStub();
+                    }
                     clazz.addFunction(parser.function);
                 }
             } else throw new RuntimeException("huh?");
@@ -150,6 +183,11 @@ public class RaluxToIR extends Translator {
         public void addParam(ParseTree type, ParseTree name) {
             types.add(parseType(type));
             names.add(name.getText());
+        }
+
+        public void makeInstance(RlxCls cls) {
+            types.add(0, cls.getType());
+            names.add(0, "this");
         }
 
         public List<RlxType> toList() {

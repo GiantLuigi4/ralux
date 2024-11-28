@@ -1,0 +1,5 @@
+pkg comptest;
+
+public class ABITest {
+//    public static abi int puts(byte[] chars);
+}

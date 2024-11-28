@@ -6,11 +6,17 @@ import java.util.List;
 import java.util.Objects;
 
 public class RlxEnclosure {
+    public final boolean isStub;
     public final RlxType result;
     public final String name;
     public final List<RlxType> descr;
 
     public RlxEnclosure(RlxType result, String name, List<RlxType> descr) {
+        this(false, result, name, descr);
+    }
+
+    public RlxEnclosure(boolean isStub, RlxType result, String name, List<RlxType> descr) {
+        this.isStub = isStub;
         this.result = result;
         this.name = name;
         this.descr = descr;

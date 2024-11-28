@@ -25,21 +25,32 @@ public class MethodParser {
     RaluxToIR raluxToRlx;
 
     public MethodParser(
+            RlxCls cls,
             List<ParseTree> modifiers,
             RlxType type,
             ParseTree name,
             RaluxToIR.Params params,
-            RaluxToIR raluxToRlx
+            RaluxToIR raluxToRlx,
+            boolean isStub, boolean isAbi
     ) {
+        boolean isStatic = false;
+        for (ParseTree modifier : modifiers) {
+            if (modifier.getText().equals("static")) {
+                isStatic = true;
+            }
+        }
         // TODO: deal with modifiers
         this.type = type;
         this.name = name.getText();
         this.params = params;
+
+        if (!isStatic) params.makeInstance(cls);
         function = new RlxFunction(
-                0, true, false,
+                0, isStatic, false,
                 new RlxEnclosure(type, this.name, params.toList())
         );
-        currentScope.parameterize(this.function, params);
+
+        if (!isAbi && !isStub) currentScope.parameterize(this.function, params);
         this.raluxToRlx = raluxToRlx;
     }
 
@@ -332,5 +343,14 @@ public class MethodParser {
         block.insertInstruction(0, dirt);
         dirt.setFunction(function);
         return dirt;
+    }
+
+    public void makeAbi() {
+        function.exportName(
+                function.enclosure.name
+        );
+    }
+
+    public void makeStub() {
     }
 }

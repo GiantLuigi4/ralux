@@ -17,6 +17,7 @@ public class CompilerTest {
 //            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
             translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
             translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
+            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }

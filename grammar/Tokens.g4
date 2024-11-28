@@ -12,7 +12,7 @@ C_TYPE: CLASS|INTERFACE;
 PRIMITIVE_INT: 'byte' | 'int' | 'short' | 'long' | 'wide';
 PRIMITIVE_FP: 'half' | 'float' | 'double' | 'quadruple';
 PRIMITIVE_OTHER: 'char' | 'boolean' | 'void';
-MODIFIER: 'public' | 'private' | 'protected' | 'final' | 'abi';
+MODIFIER: 'public' | 'private' | 'protected' | 'final' | 'abi' | 'stub';
 STATIC: 'static';
 
 CONSTANT: TRUE | FALSE | NULL;

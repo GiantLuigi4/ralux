@@ -1,5 +1,6 @@
 package tfc.rlxir;
 
+import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.util.CompilerDataHolder;
 
 import java.util.ArrayList;
@@ -55,5 +56,11 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
     // TODO: read-only list
     public List<RlxFunction> getFunctions() {
         return functions;
+    }
+
+    final RlxType type = new RlxType(this);
+
+    public RlxType getType() {
+        return type;
     }
 }
