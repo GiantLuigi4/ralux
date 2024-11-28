@@ -13,9 +13,10 @@ public class CompilerTest {
 
         RlxModule module = new RlxModule("module");
         try {
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/SmallTest.rlx").readAllBytes()));
-//            translator.parse(module, new String(Compiler.class.getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
-//            translator.parse(module, new String(Compiler.class.getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/AssortedTests.rlx").readAllBytes()));
+//            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
+            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
+            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }

@@ -1,0 +1,11 @@
+pkg comptest;
+
+public class BranchTest {
+    public static int main(int i) {
+        if (i < 10) i = 15;
+        else if (i < 15) i = 20;
+        else if (i < 20) i = 30;
+        else if (i < 30) i = 40;
+        return i;
+    }
+}

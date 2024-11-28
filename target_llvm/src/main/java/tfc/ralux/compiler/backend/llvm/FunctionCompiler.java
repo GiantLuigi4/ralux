@@ -223,8 +223,17 @@ public class FunctionCompiler {
 
     protected void stubBlocks() {
         for (RlxBlock block : blocks) {
-            block.setCompilerData(builder.block(block.name));
-            if (header == null) header = block.getCompilerData();
+            if (block.getCompilerData() != null)
+                continue;
+
+            RlxBlock target = block.getRedir();
+            if (target.getCompilerData() != null) {
+                block.setCompilerData(target.getCompilerData());
+            } else {
+                block.setCompilerData(builder.block(target.name));
+                target.setCompilerData(block.getCompilerData());
+                if (header == null) header = block.getCompilerData();
+            }
         }
     }
 
@@ -253,6 +262,10 @@ public class FunctionCompiler {
         stubBlocks();
 
         for (RlxBlock block : blocks) {
+            // block has no purpose
+            if (block.getRedir() != block)
+                continue;
+
             BlockBuilder builder = block.getCompilerData();
             builder.enableBuilding();
             for (RlxInstr instr : block.getInstructions()) {

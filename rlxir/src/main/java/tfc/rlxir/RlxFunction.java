@@ -44,7 +44,8 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     }
 
     public void buildBlock(RlxBlock block) {
-        if (block.isTerminated) throw new RuntimeException("Block has already been terminated, cannot be continued.");
+        if (block.isTerminated())
+            throw new RuntimeException("Block has already been terminated, cannot be continued.");
         this.currentBlock = block;
     }
 
@@ -128,7 +129,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void ret(ValueInstr var) {
         addInstr(new ReturnInstr(autoCast(var, enclosure.result)));
-        currentBlock.isTerminated = true;
+        currentBlock.terminate();
         currentBlock = null;
     }
 
@@ -138,7 +139,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void ret() {
         addInstr(new ReturnInstr());
-        currentBlock.isTerminated = true;
+        currentBlock.terminate();
         currentBlock = null;
     }
 
@@ -149,7 +150,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public void jump(RlxBlock target) {
         currentBlock.instrs.add(new JumpInstr(target));
-        currentBlock.isTerminated = true;
+        currentBlock.terminate();
         currentBlock = target;
     }
 
@@ -158,7 +159,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             throw new RuntimeException("A branch condition must be a boolean.");
 
         currentBlock.instrs.add(new ConditionalJumpInstr(instr, targetTrue, targetFalse));
-        currentBlock.isTerminated = true;
+        currentBlock.terminate();
         currentBlock = targetFalse;
     }
 
@@ -367,7 +368,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         variable.set(sum(
                 value, step
         ));
-        if (!body.isTerminated)
+        if (!body.isTerminated())
             jump(header);
 
         buildBlock(exit);
@@ -379,7 +380,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         jumpIf(condition, body, escape);
         buildBlock(body);
         bodyBuilder.accept(body);
-        if (!body.isTerminated) jump(escape);
+        if (!body.isTerminated()) jump(escape);
         else buildBlock(escape);
     }
 
@@ -397,5 +398,15 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         DebugHasInput hasInput = new DebugHasInput();
         addInstr(hasInput);
         return hasInput;
+    }
+
+    public RlxBlock firstBlock() {
+        return blocks.get(0);
+    }
+
+    public void ensureEntry() {
+        if (blocks.isEmpty()) {
+            buildBlock(makeBlock("entry"));
+        }
     }
 }

@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RaluxToIR extends Translator {
+    boolean debugMode = true;
+
     private String parsePackage(RaluxParser.HeaderContext context) {
         System.out.println(context);
         return context.getChild(1).getText();
@@ -92,10 +94,12 @@ public class RaluxToIR extends Translator {
                     index++; // (
                     Params params = parseParams(context.getChild(index++));
                     index++; // )
-                    new MethodParser(trees, type, name, params).parse(
+                    MethodParser parser = new MethodParser(trees, type, name, params, this);
+                    parser.parseBody(
                             clazz,
                             (RaluxParser.BodyContext) context.getChild(index)
                     );
+                    clazz.addFunction(parser.function);
                 }
             } else throw new RuntimeException("huh?");
         }

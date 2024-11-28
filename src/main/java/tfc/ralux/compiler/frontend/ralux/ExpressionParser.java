@@ -4,10 +4,13 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
+import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxFunction;
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.global.ConstInstr;
+import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
@@ -62,8 +65,59 @@ public class ExpressionParser {
             case ">" -> {
                 return function.compare(CompareOp.GT, leftV, rightV);
             }
+            case "<=" -> {
+                return function.compare(CompareOp.LE, leftV, rightV);
+            }
+            case ">=" -> {
+                return function.compare(CompareOp.GE, leftV, rightV);
+            }
+            case "==" -> {
+                return function.compare(CompareOp.EQ, leftV, rightV);
+            }
+            case "!=" -> {
+                return function.compare(CompareOp.NE, leftV, rightV);
+            }
         }
-        throw new RuntimeException("TODO");
+        throw new RuntimeException("TODO: " + operand);
+    }
+
+    private static ValueInstr makeBooleanOp(MethodParser parser, ParseTree left, ParseTree right, String operator) {
+        VarInstr dirtVar = parser.getDirt();
+        ValueInstr leftV = parseValue(parser, left);
+        switch (operator) {
+            case "&&" -> {
+                RlxBlock shortB = parser.function.makeBlock("short_branch_and");
+                RlxBlock longB = parser.function.makeBlock("long_branch_and");
+                RlxBlock exitB = parser.function.makeBlock("exit_branch_and");
+                parser.function.jumpIf(leftV, longB, shortB);
+
+                parser.function.buildBlock(longB);
+                ValueInstr rightV = parseValue(parser, right);
+                dirtVar.set(rightV);
+                parser.function.jump(exitB);
+
+                parser.function.buildBlock(shortB);
+                dirtVar.set(leftV);
+                parser.function.jump(exitB);
+                return dirtVar.get();
+            }
+            case "||" -> {
+                RlxBlock shortB = parser.function.makeBlock("short_branch_or");
+                RlxBlock longB = parser.function.makeBlock("long_branch_or");
+                RlxBlock exitB = parser.function.makeBlock("exit_branch_or");
+                parser.function.jumpIf(leftV, shortB, longB);
+
+                ValueInstr rightV = parseValue(parser, right);
+                dirtVar.set(rightV);
+                parser.function.jump(exitB);
+
+                parser.function.buildBlock(shortB);
+                dirtVar.set(leftV);
+                parser.function.jump(exitB);
+                return dirtVar.get();
+            }
+            default -> throw new RuntimeException("TODO");
+        }
     }
 
     public static ValueInstr parseValue(MethodParser parser, ParseTree exprNode) {
@@ -80,6 +134,15 @@ public class ExpressionParser {
                         ParseTree left = exprNode.getChild(0);
                         ParseTree right = exprNode.getChild(2);
                         ParseTree operator = exprNode.getChild(1);
+                        switch (operator.getText()) {
+                            case "&&", "||" -> {
+                                return makeBooleanOp(
+                                        parser,
+                                        left, right,
+                                        operator.getText()
+                                );
+                            }
+                        }
 
                         ValueInstr leftV = parseValue(parser, left);
                         ValueInstr rightV = parseValue(parser, right);
