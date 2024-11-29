@@ -1,5 +1,6 @@
 package tfc.ralux.compiler.backend.llvm;
 
+import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
@@ -19,10 +20,7 @@ import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.debug.TwoValueDebug;
 import tfc.rlxir.instr.global.ConstInstr;
-import tfc.rlxir.instr.value.BoolInstr;
-import tfc.rlxir.instr.value.CastInstr;
-import tfc.rlxir.instr.value.CompareInstr;
-import tfc.rlxir.instr.value.MathInstr;
+import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArraySet;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
@@ -38,6 +36,7 @@ public class FunctionCompiler {
     RlxFunction function;
     FunctionBuilder builder;
     List<RlxBlock> blocks;
+    LLVMCompiler compiler;
     LLVMConversions conversions;
 
     protected boolean flagHeaderVars() {
@@ -45,11 +44,13 @@ public class FunctionCompiler {
     }
 
     public FunctionCompiler(
+            LLVMCompiler compiler,
             LLVMConversions conversions,
             BuilderRoot root, RlxCls aClass,
             RlxFunction function, FunctionBuilder builder,
             List<RlxBlock> blocks
     ) {
+        this.compiler = compiler;
         this.conversions = conversions;
         this.root = root;
         this.aClass = aClass;
@@ -258,6 +259,49 @@ public class FunctionCompiler {
         instr.setCompilerData(value);
     }
 
+    private void compileNegation(NegInstr instr) {
+        ensureData(instr.source);
+        LLVMValueRef valueRef = instr.source.getCompilerData();
+        if (instr.valueType().type.isFloat()) {
+            instr.setCompilerData(LLVM.LLVMBuildFNeg(
+                    root.getBuilder(),
+                    valueRef,
+                    "negate_float"
+            ));
+        } else {
+            instr.setCompilerData(LLVM.LLVMBuildNeg(
+                    root.getBuilder(),
+                    valueRef,
+                    "negate_int"
+            ));
+        }
+    }
+
+    private void compileCall(CallInstr instr) {
+        FunctionBuilder builder1 = instr.toCall.getCompilerData();
+        // TODO: non-static calls
+
+        String callName = null;
+        if (!instr.toCall.enclosure.isVoid())
+            callName = "call_" + compiler.exportNameFor(instr.owner, instr.toCall);
+
+        int argC = instr.params.size();
+        PointerPointer<LLVMValueRef> args = new PointerPointer<>(argC);
+        for (int i = 0; i < argC; i++) {
+            ValueInstr param = instr.params.get(i);
+            ensureData(param);
+            args.put(i, param.getCompilerData());
+        }
+        LLVMValueRef callVal = LLVM.LLVMBuildCall(
+                root.getBuilder(),
+                builder1.getDirect(),
+                args, argC,
+                callName
+        );
+
+        instr.setCompilerData(callVal);
+    }
+
     public void compile() {
         stubBlocks();
 
@@ -323,6 +367,8 @@ public class FunctionCompiler {
                     case ARRAY_GET -> compileArrayGet((ArrayGet) instr);
                     case ARRAY_SET -> compileArraySet((ArraySet) instr);
                     case BOOLEAN_OP -> compileBoolOp((BoolInstr) instr);
+                    case NEGATE -> compileNegation((NegInstr) instr);
+                    case CALL -> compileCall((CallInstr) instr);
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }

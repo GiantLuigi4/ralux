@@ -165,7 +165,15 @@ public class ExpressionParser {
                 }
                 throw new RuntimeException("TODO");
             } else {
-                throw new RuntimeException("TODO");
+                if (exprNode.getChildCount() == 2) {
+                    ParseTree left = exprNode.getChild(0);
+                    ParseTree right = exprNode.getChild(1);
+                    if (left.getText().equals("-")) {
+                        ValueInstr instr = parseValue(parser, right);
+                        instr = parser.function.negate(instr);
+                        return instr;
+                    } else throw new RuntimeException("TODO");
+                }
             }
         }
 
@@ -187,6 +195,8 @@ public class ExpressionParser {
                     } else throw new RuntimeException("TODO");
                 } else if (node instanceof RaluxParser.AssignmentContext) {
                     return parser.parseAssign((RaluxParser.AssignmentContext) node, true);
+                } else if (node instanceof RaluxParser.CallContext) {
+                    return parser.parseCall((RaluxParser.CallContext) node);
                 } else throw new RuntimeException("TODO");
             } else throw new RuntimeException("TODO");
         }

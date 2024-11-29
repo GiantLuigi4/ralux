@@ -1,7 +1,6 @@
 import org.antlr.v4.gui.Trees;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import tfc.ralux.compiler.optim.QuickPass;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxLexer;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.ralux.compiler.util.TreeNode;
@@ -100,8 +99,6 @@ public class ParserTest {
             }
 
             TreeNode root = new TreeNode(tree);
-            QuickPass pass = new QuickPass();
-            pass.optimize(root);
 
             StringBuilder textify = new StringBuilder();
             root.forEachRecursive(t -> {

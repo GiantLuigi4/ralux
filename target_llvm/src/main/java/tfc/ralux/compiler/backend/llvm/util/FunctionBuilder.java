@@ -8,13 +8,15 @@ import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 public class FunctionBuilder {
     BuilderRoot root;
     LLVMValueRef function;
+    LLVMTypeRef type;
     String name;
 
-    public FunctionBuilder(BuilderRoot root, LLVMValueRef function, String name) {
+    public FunctionBuilder(BuilderRoot root, LLVMValueRef function, String name, LLVMTypeRef type) {
         root.trackFunction(this);
         this.root = root;
         this.function = function;
         this.name = name;
+        this.type = type;
     }
 
     public FunctionBuilder(BuilderRoot root, String name, FunctionType type) {
@@ -24,6 +26,7 @@ public class FunctionBuilder {
                 root.getModule(), name, type.getDirect()
         );
         this.name = name;
+        this.type = type.getBuilt();
     }
 
     public BlockBuilder block(String name) {

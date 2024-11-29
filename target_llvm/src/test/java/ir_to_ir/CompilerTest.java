@@ -13,14 +13,16 @@ public class CompilerTest {
 
         RlxModule module = new RlxModule("module");
         try {
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/CallTest.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/AssortedTests.rlx").readAllBytes()));
-//            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
-            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
-            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
-            translator.parse(module, new String(Compiler.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }
+        translator.prepare();
 
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);

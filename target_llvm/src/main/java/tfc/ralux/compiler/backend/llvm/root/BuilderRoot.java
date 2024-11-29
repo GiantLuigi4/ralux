@@ -123,7 +123,7 @@ public class BuilderRoot extends ModuleRoot {
     ) {
         return new FunctionBuilder(this, LLVM.LLVMAddFunction(
                 module, functionName, type.getDirect()
-        ), functionName);
+        ), functionName, type.getDirect());
     }
 
     public LLVMBuilderRef getBuilder() {

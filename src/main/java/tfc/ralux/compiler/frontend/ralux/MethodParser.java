@@ -3,28 +3,30 @@ package tfc.ralux.compiler.frontend.ralux;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
-import tfc.rlxir.RlxBlock;
-import tfc.rlxir.RlxCls;
-import tfc.rlxir.RlxEnclosure;
-import tfc.rlxir.RlxFunction;
+import tfc.rlxir.*;
 import tfc.rlxir.instr.base.ValueInstr;
+import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class MethodParser {
     RlxType type;
     String name;
+    RlxModule module;
+    RlxCls owner;
     RaluxToIR.Params params;
     RlxFunction function;
     Scope currentScope = new Scope();
     RaluxToIR raluxToRlx;
 
     public MethodParser(
+            RlxModule module,
             RlxCls cls,
             List<ParseTree> modifiers,
             RlxType type,
@@ -33,6 +35,8 @@ public class MethodParser {
             RaluxToIR raluxToRlx,
             boolean isStub, boolean isAbi
     ) {
+        this.module = module;
+        this.owner = cls;
         boolean isStatic = false;
         for (ParseTree modifier : modifiers) {
             if (modifier.getText().equals("static")) {
@@ -93,21 +97,20 @@ public class MethodParser {
         ValueInstr val = currentScope.getCached(name);
         String op = statement.getChild(1).getText();
         ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(2));
-        var.set(switch (op) {
+        var.set(function.cast(switch (op) {
             case "=" -> instr;
             case "+=" -> function.sum(val, instr);
             case "-=" -> function.sub(val, instr);
             case "*=" -> function.mul(val, instr);
             case "/=" -> function.div(val, instr);
             default -> throw new RuntimeException("Unsupported assignment operation " + op);
-        });
+        }, var.type));
         currentScope.dirtyVar(name);
         if (raluxToRlx.debugMode) function.print(currentScope.getCached(name));
         return forExpr ? currentScope.getCached(name) : null;
     }
 
     private void parseStatement(
-            RlxCls clazz,
             RuleContext statement
     ) {
         switch (statement.getRuleIndex()) {
@@ -116,6 +119,7 @@ public class MethodParser {
                     function.ret();
                 } else {
                     ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(1));
+                    instr = function.cast(instr, function.enclosure.result);
                     function.ret(instr);
                 }
             }
@@ -126,12 +130,16 @@ public class MethodParser {
                 if (statement.getChildCount() > 2) {
                     String op = statement.getChild(2).getText();
                     if (!op.equals("=")) throw new RuntimeException("Variable must be using =.");
+
                     ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(3));
+                    instr = function.assignmentCast(instr, var.type);
+
                     var.set(instr);
                 }
             }
-            case RaluxParser.RULE_assignment -> {
-                parseAssign((RaluxParser.AssignmentContext) statement, false);
+            case RaluxParser.RULE_assignment -> parseAssign((RaluxParser.AssignmentContext) statement, false);
+            case RaluxParser.RULE_call -> {
+                parseCall((RaluxParser.CallContext) statement);
             }
             default -> {
                 throw new RuntimeException("TODO");
@@ -139,7 +147,7 @@ public class MethodParser {
         }
     }
 
-    private void parseIf(RlxCls clazz, RaluxParser.IfContext ifCtx, RlxBlock termin) {
+    private void parseIf(RaluxParser.IfContext ifCtx, RlxBlock termin) {
         ParseTree tree = ifCtx.getChild(2);
         ValueInstr instr = ExpressionParser.parseValue(this, tree);
         ParseTree bdy = ifCtx.getChild(4);
@@ -157,18 +165,18 @@ public class MethodParser {
         if (bdy instanceof RaluxParser.BodyContext body) {
             Scope par = currentScope;
             currentScope = new Scope(currentScope);
-            parseBody(clazz, body);
+            parseBody(body);
             currentScope = par;
 
-            if (!function.currentBlock().isTerminated())
+            if (function.isBlockActive())
                 function.jump(conclusion);
         } else if (bdy instanceof RaluxParser.StatementContext statementContext) {
             Scope par = currentScope;
             currentScope = new Scope(currentScope);
-            parseStatement(clazz, (RuleContext) statementContext.getChild(0));
+            parseStatement((RuleContext) statementContext.getChild(0));
             currentScope = par;
 
-            if (!function.currentBlock().isTerminated())
+            if (function.isBlockActive())
                 function.jump(conclusion);
         } else throw new RuntimeException("What.");
 
@@ -178,23 +186,23 @@ public class MethodParser {
             if (elseData instanceof RaluxParser.BodyContext body) {
                 Scope par = currentScope;
                 currentScope = new Scope(currentScope);
-                parseBody(clazz, body);
+                parseBody(body);
                 currentScope = par;
 
-                if (!function.currentBlock().isTerminated())
+                if (function.isBlockActive())
                     function.jump(conclusion);
             } else if (elseData instanceof RaluxParser.StatementContext statementContext) {
                 Scope par = currentScope;
                 currentScope = new Scope(currentScope);
-                parseStatement(clazz, (RuleContext) statementContext.getChild(0));
+                parseStatement((RuleContext) statementContext.getChild(0));
                 currentScope = par;
 
-                if (!function.currentBlock().isTerminated())
+                if (function.isBlockActive())
                     function.jump(conclusion);
             } else if (elseData instanceof RaluxParser.IfContext childIf) {
-                parseIf(clazz, childIf, conclusion);
+                parseIf(childIf, conclusion);
 
-                if (!function.currentBlock().isTerminated())
+                if (function.isBlockActive())
                     function.jump(conclusion);
             } else throw new RuntimeException("What.");
         }
@@ -202,7 +210,7 @@ public class MethodParser {
         function.buildBlock(conclusion);
     }
 
-    private void parseWhile(RlxCls clazz, RaluxParser.WhileContext ctx) {
+    private void parseWhile(RaluxParser.WhileContext ctx) {
         RaluxParser.While_headerContext header = (RaluxParser.While_headerContext) ctx.getChild(0);
         RuleContext bdy = (RuleContext) ctx.getChild(1);
         ParseTree tree = header.getChild(2);
@@ -221,25 +229,25 @@ public class MethodParser {
         if (bdy instanceof RaluxParser.BodyContext body) {
             Scope par = currentScope;
             currentScope = new Scope(currentScope);
-            parseBody(clazz, body);
+            parseBody(body);
             currentScope = par;
 
-            if (!function.currentBlock().isTerminated())
+            if (function.isBlockActive())
                 function.jump(headerB);
         } else if (bdy instanceof RaluxParser.StatementContext statement) {
             Scope par = currentScope;
             currentScope = new Scope(currentScope);
-            parseStatement(clazz, (RuleContext) statement.getChild(0));
+            parseStatement((RuleContext) statement.getChild(0));
             currentScope = par;
 
-            if (!function.currentBlock().isTerminated())
+            if (function.isBlockActive())
                 function.jump(headerB);
         } else throw new RuntimeException("What.");
 
         function.buildBlock(exitB);
     }
 
-    private void parseFor(RlxCls clazz, RaluxParser.ForContext ctx) {
+    private void parseFor( RaluxParser.ForContext ctx) {
         ParseTree configuration = ctx.getChild(2);
         ParseTree bdy = ctx.getChild(4);
 
@@ -250,11 +258,11 @@ public class MethodParser {
         Supplier<ValueInstr> createCondition;
         Runnable createLoopRep;
         if (configuration instanceof RaluxParser.Loop_standardContext) {
-            parseStatement(clazz, (RuleContext) configuration.getChild(0).getChild(0));
+            parseStatement((RuleContext) configuration.getChild(0).getChild(0));
 
             createCondition = () -> ExpressionParser.parseValue(this, configuration.getChild(2));
             createLoopRep = () -> {
-                parseStatement(clazz, (RuleContext) configuration.getChild(4).getChild(0));
+                parseStatement((RuleContext) configuration.getChild(4).getChild(0));
             };
         } else throw new RuntimeException("TODO");
 
@@ -268,40 +276,40 @@ public class MethodParser {
         if (bdy instanceof RaluxParser.BodyContext body) {
             Scope par = currentScope;
             currentScope = new Scope(currentScope);
-            parseBody(clazz, body);
+            parseBody(body);
             createLoopRep.run();
             currentScope = par;
 
-            if (!function.currentBlock().isTerminated())
+            if (function.isBlockActive())
                 function.jump(header);
         } else if (bdy instanceof RaluxParser.StatementContext statement) {
             Scope par = currentScope;
             currentScope = new Scope(currentScope);
-            parseStatement(clazz, (RuleContext) statement.getChild(0));
+            parseStatement((RuleContext) statement.getChild(0));
             createLoopRep.run();
             currentScope = par;
 
-            if (!function.currentBlock().isTerminated())
+            if (function.isBlockActive())
                 function.jump(header);
         } else throw new RuntimeException("What.");
 
         function.buildBlock(exit);
     }
 
-    private void parseFlow(RlxCls clazz, RaluxParser.FlowContext list) {
+    private void parseFlow(RaluxParser.FlowContext list) {
         ParseTree chld = list.getChild(0);
         if (chld instanceof RaluxParser.IfContext) {
-            parseIf(clazz, (RaluxParser.IfContext) chld, null);
+            parseIf((RaluxParser.IfContext) chld, null);
             return;
         }
         if (chld instanceof RaluxParser.LoopContext) {
             ParseTree tree = chld.getChild(0);
             if (tree instanceof RaluxParser.WhileContext) {
-                parseWhile(clazz, (RaluxParser.WhileContext) tree);
+                parseWhile((RaluxParser.WhileContext) tree);
                 return;
             }
             if (tree instanceof RaluxParser.ForContext) {
-                parseFor(clazz, (RaluxParser.ForContext) tree);
+                parseFor((RaluxParser.ForContext) tree);
                 return;
             }
             throw new RuntimeException("TODO");
@@ -310,7 +318,6 @@ public class MethodParser {
     }
 
     public void parseBody(
-            RlxCls clazz,
             RaluxParser.BodyContext body
     ) {
         function.ensureEntry();
@@ -321,10 +328,10 @@ public class MethodParser {
                     ParseTree list = chld.getChild(i1);
                     if (list instanceof RaluxParser.StatementContext) {
                         if (list.getChildCount() == 1) {
-                            parseStatement(clazz, (RuleContext) list.getChild(0));
+                            parseStatement((RuleContext) list.getChild(0));
                         } else throw new RuntimeException("what?");
                     } else if (list instanceof RaluxParser.FlowContext) {
-                        parseFlow(clazz, (RaluxParser.FlowContext) list);
+                        parseFlow((RaluxParser.FlowContext) list);
                     } else if (!(list instanceof RaluxParser.Semi_truckContext)) {
                         throw new RuntimeException("TODO");
                     }
@@ -352,5 +359,30 @@ public class MethodParser {
     }
 
     public void makeStub() {
+    }
+
+    public ValueInstr parseCall(RaluxParser.CallContext node) {
+        RaluxParser.Method_callContext mCall = (RaluxParser.Method_callContext) node.getChild(0);
+        RlxType ownerType = owner.getType();
+        String name;
+        ParseTree paramsTree;
+        if (mCall.getChild(0) instanceof RaluxParser.Named_typeContext) {
+            ownerType = raluxToRlx.resolveClass(module, owner, mCall.getChild(0), currentScope);
+            name = mCall.getChild(2).getText();
+            paramsTree = mCall.getChild(4);
+        } else {
+            name = mCall.getChild(0).getText();
+            paramsTree = mCall.getChild(2);
+        }
+        List<ValueInstr> params = new ArrayList<>();
+        if (paramsTree instanceof RaluxParser.ParamsContext) {
+            for (int i = 0; i < paramsTree.getChildCount(); i += 2) {
+                params.add(ExpressionParser.parseValue(
+                        this, paramsTree.getChild(i)
+                ));
+            }
+        }
+        // TODO: explicit owner specification
+        return function.call(module, ownerType.clazz, name, params);
     }
 }

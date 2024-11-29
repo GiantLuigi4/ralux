@@ -61,4 +61,9 @@ public class FunctionType {
     public LLVMTypeRef getDirect() {
         return direct;
     }
+
+    public LLVMTypeRef getBuilt() {
+        if (direct != null) return direct;
+        return build().direct;
+    }
 }

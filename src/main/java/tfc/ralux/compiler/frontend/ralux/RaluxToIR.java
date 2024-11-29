@@ -10,6 +10,8 @@ import tfc.ralux.compiler.frontend.ralux.parse.RaluxLexer;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxModule;
+import tfc.rlxir.instr.value.vars.VarInstr;
+import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
@@ -17,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RaluxToIR extends Translator {
-    boolean debugMode = true;
+    boolean debugMode = false;
 
     private String parsePackage(RaluxParser.HeaderContext context) {
         System.out.println(context);
@@ -56,7 +58,9 @@ public class RaluxToIR extends Translator {
                 element = typeContext.getChild(0);
                 if (element instanceof TerminalNodeImpl terminal) {
                     type = RlxTypes.typeByName(terminal.getText());
-                } else throw new RuntimeException("TODO");
+                } else {
+                    throw new RuntimeException("TODO");
+                }
             } else throw new RuntimeException("TODO");
         } else throw new RuntimeException("TODO");
 
@@ -83,6 +87,8 @@ public class RaluxToIR extends Translator {
         }
         return new Params();
     }
+
+    List<Runnable> delayedParse = new ArrayList<>();
 
     private void parseClass(RlxCls clazz, RlxModule module, RaluxParser.C_bodyContext tree) {
         for (int i = 1; i < tree.children.size() - 1; i++) {
@@ -116,22 +122,27 @@ public class RaluxToIR extends Translator {
                     }
 
                     MethodParser parser = new MethodParser(
-                            clazz, trees,
+                            module, clazz, trees,
                             type, name,
                             params, this,
                             isStub, isAbi
                     );
-                    if (!isStub && !isAbi) {
-                        parser.parseBody(
-                                clazz,
-                                (RaluxParser.BodyContext) context.getChild(index)
-                        );
-                    } else if (isAbi) {
-                        parser.makeAbi();
-                    } else {
-                        // though this should be a field
-                        parser.makeStub();
-                    }
+
+                    final boolean finalIsStub = isStub;
+                    final boolean finalIsAbi = isAbi;
+                    final int finalIndex = index;
+                    delayedParse.add(() -> {
+                        if (!finalIsStub && !finalIsAbi) {
+                            parser.parseBody(
+                                    (RaluxParser.BodyContext) context.getChild(finalIndex)
+                            );
+                        } else if (finalIsAbi) {
+                            parser.makeAbi();
+                        } else {
+                            // though this should be a field
+                            parser.makeStub();
+                        }
+                    });
                     clazz.addFunction(parser.function);
                 }
             } else throw new RuntimeException("huh?");
@@ -193,5 +204,41 @@ public class RaluxToIR extends Translator {
         public List<RlxType> toList() {
             return types;
         }
+    }
+
+    @Override
+    public void prepare() {
+        for (Runnable runnable : delayedParse) {
+            runnable.run();
+        }
+    }
+
+    public RlxType resolveClass(RlxModule module, RlxCls owner, ParseTree child, Scope scope) {
+        String pkg = owner.pkg;
+        String text = child.getText().toString();
+        if (text.contains(".")) {
+            // TODO: what about var access chains?
+            RlxCls clz = module.getClass(text);
+            if (clz != null) return clz.getType();
+        } else {
+            VarInstr instr = scope.getVar(text);
+            if (instr != null) {
+                RlxType type = instr.valueType();
+                return type;
+            }
+
+            RlxCls clz;
+
+            // TODO: resolve from imports
+
+            clz = module.getClass(pkg + "." + text);
+            if (clz != null) return clz.getType();
+
+            // TODO: resolve from wildcard imports
+
+            clz = module.getClass(text);
+            if (clz != null) return clz.getType();
+        }
+        throw new RuntimeException("TODO");
     }
 }

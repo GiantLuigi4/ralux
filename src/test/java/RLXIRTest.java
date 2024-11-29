@@ -12,7 +12,7 @@ import tfc.rlxir.typing.RlxTypes;
 public class RLXIRTest {
     public static void main(String[] args) {
         RlxModule module = new RlxModule("module");
-        RlxCls cls = new RlxCls("TestClass");
+        RlxCls cls = new RlxCls(null, "TestClass");
         module.addClass(cls);
         RlxFunction function = new RlxFunction(
                 3, true, false,
@@ -22,11 +22,11 @@ public class RLXIRTest {
         ConstInstr<Integer> CONST_2 = new ConstInstr<>(2, RlxTypes.INT);
         ConstInstr<Integer> CONST_4 = new ConstInstr<>(4, RlxTypes.INT);
 
-        MathInstr sum = function.sum(CONST_2, CONST_4);
+        ValueInstr sum = function.sum(CONST_2, CONST_4);
         VarInstr var = function.makeVar(sum.valueType(), sum);
 
         ValueInstr val = var.get();
-        MathInstr sum1 = function.sum(val, CONST_4);
+        ValueInstr sum1 = function.sum(val, CONST_4);
         var.set(sum1);
 
         System.out.println(function);

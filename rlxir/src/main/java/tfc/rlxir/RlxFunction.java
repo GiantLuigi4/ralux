@@ -11,10 +11,7 @@ import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.debug.TwoValueDebug;
 import tfc.rlxir.instr.enumeration.*;
 import tfc.rlxir.instr.global.ConstInstr;
-import tfc.rlxir.instr.value.BoolInstr;
-import tfc.rlxir.instr.value.CastInstr;
-import tfc.rlxir.instr.value.CompareInstr;
-import tfc.rlxir.instr.value.MathInstr;
+import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArraySet;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
@@ -116,7 +113,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     public ValueInstr autoCast(ValueInstr value, RlxType toType) {
         ValueInstr lv = value;
         CastOp op = lv.valueType().valueCastOp(toType);
-        RlxType coercionType = lv.valueType();
+        RlxType coercionType;
         if (op != CastOp.NONE) {
             coercionType = lv.valueType().coercionType(toType);
             if (lv.valueType() != coercionType) {
@@ -168,12 +165,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         ValueInstr rv = right;
 
         RlxType coercionType = lv.valueType().coercionType(rv.valueType());
-        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(coercionType);
         if (lv.valueType() != coercionType) {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = rv.valueType().valueCastOp(lv.valueType());
+        op = rv.valueType().valueCastOp(coercionType);
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -196,12 +193,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         ValueInstr rv = right;
 
         RlxType coercionType = lv.valueType().coercionType(rv.valueType());
-        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(coercionType);
         if (lv.valueType() != coercionType) {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = rv.valueType().valueCastOp(lv.valueType());
+        op = rv.valueType().valueCastOp(coercionType);
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -224,12 +221,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         ValueInstr rv = right;
 
         RlxType coercionType = lv.valueType().coercionType(rv.valueType());
-        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(coercionType);
         if (lv.valueType() != coercionType) {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = rv.valueType().valueCastOp(lv.valueType());
+        op = rv.valueType().valueCastOp(coercionType);
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -252,12 +249,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         ValueInstr rv = right;
 
         RlxType coercionType = lv.valueType().coercionType(rv.valueType());
-        CastOp op = lv.valueType().valueCastOp(rv.valueType());
+        CastOp op = lv.valueType().valueCastOp(coercionType);
         if (lv.valueType() != coercionType) {
             lv = new CastInstr(lv, coercionType, op);
             addInstr(lv);
         }
-        op = rv.valueType().valueCastOp(lv.valueType());
+        op = rv.valueType().valueCastOp(coercionType);
         if (rv.valueType() != coercionType) {
             rv = new CastInstr(rv, coercionType, op);
             addInstr(rv);
@@ -313,6 +310,14 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         if (value.valueType().equals(toType)) return value;
 
         CastInstr instr = new CastInstr(value, toType, true);
+        if (instr.mode == CastOp.NONE) return value;
+        addInstr(instr);
+        return instr;
+    }
+    public ValueInstr cast(ValueInstr value, RlxType toType, CastOp op) {
+        if (value.valueType().equals(toType)) return value;
+
+        CastInstr instr = new CastInstr(value, toType, op);
         addInstr(instr);
         return instr;
     }
@@ -390,8 +395,20 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         return set;
     }
 
+    public ValueInstr negate(ValueInstr instr) {
+        NegInstr neg = new NegInstr(instr);
+        addInstr(neg);
+        return neg;
+    }
+
     public RlxBlock currentBlock() {
         return currentBlock;
+    }
+
+    public boolean isBlockActive() {
+        if (currentBlock == null) return false;
+        if (currentBlock.isTerminated()) return false;
+        return true;
     }
 
     public ValueInstr hasInput() {
@@ -408,5 +425,31 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         if (blocks.isEmpty()) {
             buildBlock(makeBlock("entry"));
         }
+    }
+
+    public ValueInstr call(
+            RlxModule module, RlxCls owner,
+            String name, List<ValueInstr> params
+    ) {
+        RlxFunction candidate = module.findMethod(owner, name, params);
+        params = candidate.enclosure.castArgs(this, params);
+        CallInstr instr = new CallInstr(module, candidate, owner, name, params);
+        addInstr(instr);
+        return instr;
+    }
+
+    public ValueInstr assignmentCast(ValueInstr instr, RlxType type) {
+        if (instr.valueType().equals(type)) return instr;
+
+        // coerce types
+        if (type.isAssignableFrom(instr.valueType())) {
+            CastOp cast = instr.valueType().valueCastOp(type);
+            if (cast != CastOp.NONE) {
+                instr = cast(instr, type, cast);
+                return instr;
+            }
+            return instr;
+        }
+        throw new RuntimeException(instr.valueType() + " cannot be assigned to " + type.type);
     }
 }

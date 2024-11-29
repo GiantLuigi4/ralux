@@ -109,16 +109,36 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     public boolean equals(Object object) {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
-        RlxType rlxType = (RlxType) object;
-        return type == rlxType.type && Objects.equals(clazz, rlxType.clazz);
+        RlxType type1 = (RlxType) object;
+        return type == type1.type && Objects.equals(clazz, type1.clazz) && Objects.equals(arrayOf, type1.arrayOf);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, clazz);
+        return Objects.hash(type, clazz, arrayOf);
     }
 
     public boolean isAssignableFrom(RlxType rlxType) {
+        if (rlxType.type.typ == 'i' && type.typ == 'i') {
+            if (rlxType.type.bits <= type.bits) {
+                return true;
+            }
+        }
+        if (rlxType.type.typ == 'f' && type.typ == 'f') {
+            if (rlxType.type.bits <= type.bits) {
+                return true;
+            }
+        }
+        if (rlxType.type.typ == 'i' && type.typ == 'f') {
+            if (rlxType.type.bits <= type.bits) {
+                return true;
+            }
+        }
+        if (rlxType.type.typ == 'f' && type.typ == 'i') {
+            if (rlxType.type.bits <= type.bits) {
+                return true;
+            }
+        }
         // TODO:
         return this == rlxType;
     }

@@ -35,4 +35,12 @@ public enum PrimitiveType {
             default -> throw new RuntimeException("qhat");
         };
     }
+
+    public boolean isInt() {
+        return typ == 'i';
+    }
+
+    public boolean isFloat() {
+        return typ == 'f';
+    }
 }

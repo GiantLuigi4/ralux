@@ -40,7 +40,7 @@ public class LLVMCompiler extends Compiler {
     private void compileFunction(RlxCls aClass, RlxFunction function) {
         FunctionBuilder builder = function.getCompilerData();
         List<RlxBlock> blocks = function.getBlocks();
-        new FunctionCompiler(conversions, root, aClass, function, builder, blocks).compile();
+        new FunctionCompiler(this, conversions, root, aClass, function, builder, blocks).compile();
     }
 
     private void compileClass(RlxCls aClass) {
@@ -85,12 +85,17 @@ public class LLVMCompiler extends Compiler {
             funcType.withArgs(conversions.typeFor(rlxType));
         }
 
-        String exportName = function.getExportName();
-        if (exportName == null) exportName = cls.qualifiedName() + "#" + function.enclosure.name;
+        String exportName = exportNameFor(cls, function);
         function.setCompilerData(root.function(
                 exportName,
                 funcType.build()
         ));
+    }
+
+    public String exportNameFor(RlxCls owner, RlxFunction function) {
+        String exportName = function.getExportName();
+        if (exportName == null) exportName = owner.qualifiedName() + "#" + function.enclosure.name;
+        return exportName;
     }
 
     private void stubClass(RlxCls cls) {

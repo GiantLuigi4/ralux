@@ -2,6 +2,7 @@ package tfc.rlxir;
 
 import tfc.rlxir.enumeration.LinkMode;
 import tfc.rlxir.instr.RlxInstr;
+import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.instr.value.vars.GetInstr;
 import tfc.rlxir.instr.value.vars.SetInstr;
@@ -116,5 +117,17 @@ public class RlxModule {
             builder.append("}\n");
         }
         return builder.toString();
+    }
+
+    public RlxFunction findMethod(RlxCls owner, String name, List<ValueInstr> params) {
+        for (RlxFunction function : owner.getFunctions()) {
+            if (function.enclosure.name.equals(name)) {
+                if (function.enclosure.isApplicable(params)) {
+                    return function;
+                }
+            }
+        }
+        // TODO: display arg types
+        throw new RuntimeException("Could not find method " + name + " on class " + owner);
     }
 }

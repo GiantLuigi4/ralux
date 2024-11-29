@@ -2,9 +2,9 @@ pkg comptest;
 
 public class TestClass {
     public static int main() {
-        stretch fv = 2;
+        wide fv = 2;
         fv += 2;
-        half i = fv * 10;
+        half i = (half) (fv * 10);
         fv /= 2;
         fv /= 4;
         fv *= 100;
@@ -33,7 +33,7 @@ public class TestClass {
     public static int print(short value) {return value;}
     public static int print(int value) {return value;}
     public static int print(long value) {return value;}
-    public static int print(stretch value) {return value;}
+    public static int print(wide value) {return value;}
     public static int print(half value) {return value;}
     public static int print(float value) {return value;}
     public static int print(double value) {return value;}
