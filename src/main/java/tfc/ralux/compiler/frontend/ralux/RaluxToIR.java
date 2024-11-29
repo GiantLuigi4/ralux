@@ -149,11 +149,22 @@ public class RaluxToIR extends Translator {
         }
     }
 
+    private String parseUse(RaluxParser.HeaderContext context) {
+        if (context.getChildCount() > 3) throw new RuntimeException("TODO");
+        // TODO: more specific stuff?
+        return context.getChild(1).getText();
+    }
+
     private void accept(RlxModule module, RaluxParser.FileContext tree) {
         String pkg = null;
+        List<String> using = new ArrayList<>();
         for (ParseTree child : tree.children) {
             if (child instanceof RaluxParser.HeaderContext context) {
-                pkg = parsePackage(context);
+                if (context.getChild(0).getText().equals("pkg")) {
+                    pkg = parsePackage(context);
+                } else {
+                    using.add(parseUse(context));
+                }
             } else if (child instanceof RaluxParser.ClassContext context) {
                 List<ParseTree> trees = new ArrayList<>();
                 int index = 0;
@@ -164,6 +175,7 @@ public class RaluxToIR extends Translator {
                 RlxCls cls = new RlxCls(
                         pkg, name.getText()
                 );
+                cls.addUsings(using);
                 // TODO: add in type of class
                 // TODO: add in modifiers
                 module.addClass(cls);
@@ -229,7 +241,8 @@ public class RaluxToIR extends Translator {
 
             RlxCls clz;
 
-            // TODO: resolve from imports
+            clz = module.resolveImport(owner, text);
+            if (clz != null) return clz.getType();
 
             clz = module.getClass(pkg + "." + text);
             if (clz != null) return clz.getType();

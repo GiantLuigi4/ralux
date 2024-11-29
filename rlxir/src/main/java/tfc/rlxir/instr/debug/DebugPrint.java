@@ -5,13 +5,14 @@ import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.typing.PrimitiveType;
+import tfc.rlxir.typing.RlxType;
 
 public class DebugPrint extends BaseInstr {
     public final ValueInstr value;
 
     public DebugPrint(ValueInstr toPrint) {
         if (
-                toPrint.valueType().type != PrimitiveType.INT
+                toPrint.valueType().type.typ != 'i'
         ) {
             if (
                     !(toPrint.valueType().isArray() &&
@@ -21,6 +22,10 @@ public class DebugPrint extends BaseInstr {
             }
         }
         this.value = toPrint;
+    }
+
+    public RlxType printType() {
+        return value.valueType();
     }
 
     @Override

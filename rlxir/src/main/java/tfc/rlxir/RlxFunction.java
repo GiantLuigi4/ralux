@@ -18,6 +18,7 @@ import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.typing.RlxTypes;
 import tfc.rlxir.util.CompilerDataHolder;
 
 import java.util.ArrayList;
@@ -25,6 +26,11 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class RlxFunction extends CompilerDataHolder<RlxFunction> {
+    public static final int ACC_PRIVATE = 0;
+    public static final int ACC_PROTECTED = 1;
+    public static final int ACC_PUBLIC = 2;
+    public static final int ACC_PKG_PROTECTED = 3;
+
     // 0: private, 1: protected, 2: public, 3: package protected
     public final int access;
     public final boolean isStatic;
@@ -314,6 +320,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         addInstr(instr);
         return instr;
     }
+
     public ValueInstr cast(ValueInstr value, RlxType toType, CastOp op) {
         if (value.valueType().equals(toType)) return value;
 
@@ -327,10 +334,14 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         addInstr(print);
     }
 
-    public ValueInstr readInt() {
-        DebugReadInt ri = new DebugReadInt();
+    public ValueInstr readInt(RlxType type) {
+        DebugReadInt ri = new DebugReadInt(type);
         addInstr(ri);
         return ri;
+    }
+
+    public ValueInstr readInt() {
+        return readInt(RlxTypes.INT);
     }
 
     public ValueInstr random(ValueInstr min, ValueInstr max) {

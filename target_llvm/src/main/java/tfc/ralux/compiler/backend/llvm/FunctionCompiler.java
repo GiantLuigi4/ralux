@@ -281,23 +281,23 @@ public class FunctionCompiler {
         FunctionBuilder builder1 = instr.toCall.getCompilerData();
         // TODO: non-static calls
 
-        String callName = null;
+        String callName = "";
         if (!instr.toCall.enclosure.isVoid())
             callName = "call_" + compiler.exportNameFor(instr.owner, instr.toCall);
 
         int argC = instr.params.size();
-        PointerPointer<LLVMValueRef> args = new PointerPointer<>(argC);
+        PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(argC));
         for (int i = 0; i < argC; i++) {
             ValueInstr param = instr.params.get(i);
             ensureData(param);
             args.put(i, param.getCompilerData());
         }
-        LLVMValueRef callVal = LLVM.LLVMBuildCall(
+        LLVMValueRef callVal = root.track(LLVM.LLVMBuildCall(
                 root.getBuilder(),
                 builder1.getDirect(),
                 args, argC,
                 callName
-        );
+        ));
 
         instr.setCompilerData(callVal);
     }
@@ -306,6 +306,9 @@ public class FunctionCompiler {
         stubBlocks();
 
         for (RlxBlock block : blocks) {
+            if (compiler.enableVerbose)
+                System.out.println("- " + block.name);
+
             // block has no purpose
             if (block.getRedir() != block)
                 continue;
@@ -343,11 +346,11 @@ public class FunctionCompiler {
                         LLVMValueRef str;
                         if (print.value.valueType().isArray()) {
                             str = print.value.getCompilerData();
-                        } else str = root.stdLib.intToString(root.getIntType(32), print.value.getCompilerData());
+                        } else str = root.stdLib.intToString(root.getIntType(print.printType().type.bits), print.value.getCompilerData());
                         root.stdLib.print(str);
                     }
                     case DEBUG_READ_INT -> {
-                        LLVMValueRef value = root.stdLib.readInt();
+                        LLVMValueRef value = root.stdLib.readInt(((DebugReadInt) instr).type.type.bits);
                         instr.setCompilerData(value);
                     }
                     case DEBUG_HAS_INPUT -> {

@@ -11,6 +11,7 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
     public final String pkg;
     RlxCls parent;
     List<RlxFunction> functions = new ArrayList<>();
+    List<String> using = new ArrayList<>();
 
     public void addFunction(RlxFunction function) {
         this.functions.add(function);
@@ -62,5 +63,10 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
 
     public RlxType getType() {
         return type;
+    }
+
+
+    public void addUsings(List<String> using) {
+        this.using.addAll(using);
     }
 }

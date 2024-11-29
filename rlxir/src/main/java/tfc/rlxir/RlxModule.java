@@ -7,8 +7,11 @@ import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.instr.value.vars.GetInstr;
 import tfc.rlxir.instr.value.vars.SetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
+import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.typing.RlxTypes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -129,5 +132,60 @@ public class RlxModule {
         }
         // TODO: display arg types
         throw new RuntimeException("Could not find method " + name + " on class " + owner);
+    }
+
+    public void withDebugUtils() {
+        RlxCls cls = new RlxCls("ralux.debug", "Debug");
+
+        for (RlxType anInt : RlxTypes.INTS) {
+            RlxFunction writeInt = new RlxFunction(
+                    RlxFunction.ACC_PUBLIC,
+                    true, true,
+                    new RlxEnclosure(
+                            RlxTypes.VOID,
+                            "write",
+                            Arrays.asList(anInt)
+                    )
+            );
+            VarInstr arg0 = writeInt.param(anInt, 0);
+            writeInt.print(arg0.get());
+            writeInt.ret();
+            cls.addFunction(writeInt);
+
+            RlxFunction readInt = new RlxFunction(
+                    RlxFunction.ACC_PUBLIC,
+                    true, true,
+                    new RlxEnclosure(
+                            anInt,
+                            "readInt" + anInt.type.bits,
+                            RlxTypes.EMPTY_LIST
+                    )
+            );
+            readInt.ret(readInt.readInt(anInt));
+            cls.addFunction(readInt);
+        }
+
+        addClass(cls);
+    }
+
+    RlxFunction mainFunction;
+
+    public void setMain(RlxFunction rlxFunction) {
+        this.mainFunction = rlxFunction;
+    }
+
+    public RlxFunction getMainFunction() {
+        return mainFunction;
+    }
+
+    public RlxCls resolveImport(RlxCls owner, String text) {
+        for (String s : owner.using) {
+            if (s.endsWith("." + text)) {
+                RlxCls cls = getClass(s);
+                if (cls == null) throw new RuntimeException("Could not resolve class: " + s);
+                return cls;
+            }
+        }
+        return null;
     }
 }

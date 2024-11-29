@@ -1,11 +1,14 @@
 package tfc.ralux.compiler.backend.llvm;
 
+import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerBuilderRef;
 import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
+import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.Compiler;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
+import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.CPU;
@@ -19,6 +22,7 @@ import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
 import tfc.rlxir.instr.RlxInstr;
+import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
 
 import java.io.File;
@@ -37,10 +41,12 @@ public class LLVMCompiler extends Compiler {
         conversions = new LLVMConversions(root);
     }
 
-    private void compileFunction(RlxCls aClass, RlxFunction function) {
+    private void compileFunction(RlxCls cls, RlxFunction function) {
         FunctionBuilder builder = function.getCompilerData();
         List<RlxBlock> blocks = function.getBlocks();
-        new FunctionCompiler(this, conversions, root, aClass, function, builder, blocks).compile();
+        if (enableVerbose)
+            System.out.println("Compiling function " + function.enclosure + " for class " + cls.qualifiedName());
+        new FunctionCompiler(this, conversions, root, cls, function, builder, blocks).compile();
     }
 
     private void compileClass(RlxCls aClass) {
@@ -55,15 +61,41 @@ public class LLVMCompiler extends Compiler {
             compileClass(aClass);
         }
 
+        if (compiling.getMainFunction() != null) {
+            RlxFunction function = compiling.getMainFunction();
+            FunctionBuilder builder = root.function("main", new FunctionType(
+                    root, root.getIntType(32)
+            ).build());
+            BlockBuilder blockBuilder = builder.block("entry");
+            root.buildBlock(blockBuilder);
+            PointerPointer<LLVMValueRef> args = new PointerPointer<>(0);
+            root.track(args);
+            LLVMValueRef valOut = root.integer(0, 32);
+
+            if (function.enclosure.result.type == PrimitiveType.INT) {
+                root.track(valOut = LLVM.LLVMBuildCall(
+                        root.getBuilder(),
+                        ((FunctionBuilder) function.getCompilerData()).getDirect(),
+                        args, 0,
+                        ""
+                ));
+            } else {
+                root.track(LLVM.LLVMBuildCall(
+                        root.getBuilder(),
+                        ((FunctionBuilder) function.getCompilerData()).getDirect(),
+                        args, 0,
+                        null
+                ));
+            }
+
+            blockBuilder.ret(valOut);
+        }
+
         if (enableVerbose) {
             root.dump();
         }
 
         root.validate();
-
-        if (enableVerbose) {
-            root.dump();
-        }
     }
 
     @Override
@@ -257,17 +289,20 @@ public class LLVMCompiler extends Compiler {
         );
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
         try {
-            Process proc = Runtime.getRuntime().exec(
-                    "lld-link.exe module.obj -entry:main " +
+            String linkCmd = "lld-link.exe module.obj -entry:main " +
 //                            "/libpath:\"C:/Program Files/LLVM/lib/clang/8.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
-                            "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
-                            "/defaultlib:msvcrt " +
-                            "/defaultlib:ucrt " +
-                            "/defaultlib:libcmt " +
-                            "/subsystem:console /verbose " +
-                            "-opt:ref -opt:icf -opt:lbr " +
-                            "/fixed /cetcompat /release /incremental:no /ltcg /debug:none "
-            );
+                    "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
+                    "/defaultlib:msvcrt " +
+                    "/defaultlib:libcmt " +
+                    "/defaultlib:ucrt " +
+                    "/defaultlib:kernel32.lib " +
+                    "/subsystem:console /verbose " +
+                    "-opt:ref -opt:icf -opt:lbr " +
+                    "/fixed /cetcompat /release /incremental:no /ltcg /debug:none ";
+
+            System.out.println("Linking using:");
+            System.out.println(linkCmd);
+            Process proc = Runtime.getRuntime().exec(linkCmd);
             System.out.println(proc.waitFor());
 
             System.out.println(new String(proc.getInputStream().readAllBytes()));

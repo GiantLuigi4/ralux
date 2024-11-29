@@ -13,10 +13,12 @@ import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 
 public class StringToInt {
     LLVMTypeRef typeRef;
+    LLVMTypeRef i32;
     BuilderRoot root;
     FunctionType funcType;
     FunctionBuilder functionBuilder;
     LLVMValueRef zero;
+    LLVMValueRef zeroI32;
     LLVMValueRef zero_byte;
     LLVMValueRef one;
     LLVMValueRef ten;
@@ -27,6 +29,7 @@ public class StringToInt {
 
     public StringToInt(BuilderRoot root, LLVMTypeRef typeRef) {
         this.typeRef = typeRef;
+        this.i32 = root.getIntType(32);
         this.root = root;
 
         funcType = new FunctionType(
@@ -38,8 +41,9 @@ public class StringToInt {
         );
 
         zero = root.integer(0, typeRef);
+        zeroI32 = root.integer(0, i32);
         zero_byte = root.integer(10, root.getIntType(8)); // new line char
-        one = root.integer(1, root.getIntType(32));
+        one = root.integer(1, i32);
         ten = root.integer(10, typeRef);
         fortyEight = root.integer(48, typeRef);
         fortyEight_byte = root.integer(48, root.getIntType(8));
@@ -81,11 +85,11 @@ public class StringToInt {
 
         LLVMValueRef str = functionBuilder.getArg(0, root.CSTRING_TYPE);
         // vars
-        LLVMValueRef index = root.allocA(typeRef, "index");
+        LLVMValueRef index = root.allocA(i32, "index");
         LLVMValueRef interm = root.allocA(typeRef, "interm");
 
         // set initials
-        root.setValue(index, zero);
+        root.setValue(index, zeroI32);
         root.setValue(interm, zero);
 
         // blocks
@@ -114,7 +118,7 @@ public class StringToInt {
 
             LLVMValueRef itemp = root.getValue(interm, "get_interm");
             itemp = root.simul(itemp, ten, "mul_by_10");
-            itemp = root.sisum(itemp, root.extend(typeRef, dig,"cast_to_type"), "add_digit");
+            itemp = root.sisum(itemp, root.bitcastTruncOrExt(typeRef, dig,"cast_to_type"), "add_digit");
             root.setValue(interm, itemp);
 
             body.jump(header);

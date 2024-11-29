@@ -9,7 +9,10 @@ import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
 public class DebugReadInt extends ValueInstr {
-    public DebugReadInt() {
+    public final RlxType type;
+
+    public DebugReadInt(RlxType type) {
+        this.type = type;
     }
 
     @Override
@@ -19,7 +22,7 @@ public class DebugReadInt extends ValueInstr {
 
     @Override
     public RlxType valueType() {
-        return RlxTypes.INT;
+        return type;
     }
 
     @Override

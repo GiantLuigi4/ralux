@@ -137,12 +137,18 @@ public class STDLib {
     }
 
     public LLVMValueRef readInt() {
+        return readInt(32);
+    }
+
+    public LLVMValueRef readInt(int bits) {
+        int baseStrLen = (int) Math.floor(bits * Math.log10(2)) + 1;
+
         // technically 11 chars is enough to store the string, but I'm allocating 11 to ensure space for the new line character
-        LLVMValueRef str = root.allocA(root.BYTE_TYPE, 12, "str_buf");
-        root.memSet(str, root.integer(0, 8), root.integer(12, 32), 8);
-        LLVMValueRef length = root.integer(12, 32);
+        LLVMValueRef str = root.allocA(root.BYTE_TYPE, baseStrLen, "str_buf");
+        root.memSet(str, root.integer(0, 8), root.integer(baseStrLen, 32), 8);
+        LLVMValueRef length = root.integer(baseStrLen, 32);
         readTo(str, length);
-        return stringToInt(root.getIntType(32), str);
+        return stringToInt(root.getIntType(bits), str);
     }
 
     // TODO:

@@ -1,10 +1,7 @@
 package tfc.ralux.compiler.backend.llvm.root;
 
 import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.llvm.LLVM.LLVMBuilderRef;
-import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
-import org.bytedeco.llvm.LLVM.LLVMTypeRef;
-import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.LLVM.*;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
@@ -369,5 +366,18 @@ public class BuilderRoot extends ModuleRoot {
 
     public LLVMValueRef or(LLVMValueRef lh, LLVMValueRef rh, String name) {
         return LLVM.LLVMBuildOr(builder, lh, rh, name);
+    }
+
+    public LLVMValueRef bitcastTruncOrExt(LLVMTypeRef toType, LLVMValueRef value, String name) {
+        int sizeTo = getIntSize(toType);
+        LLVMTypeRef typeRef2 = LLVM.LLVMTypeOf(value);
+        LLVMTargetDataRef targetData = LLVM.LLVMCreateTargetData("");
+        int sizeFrom = (int) LLVM.LLVMSizeOfTypeInBits(targetData, typeRef2);
+        if (sizeFrom < sizeTo) {
+            return extend(toType, value, name);
+        } else if (sizeFrom > sizeTo) {
+            return truncate(toType, value, name);
+        }
+        return value;
     }
 }

@@ -12,6 +12,8 @@ public class CompilerTest {
         Translator translator = new RaluxToIR();
 
         RlxModule module = new RlxModule("module");
+        module.withDebugUtils();
+
         try {
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
@@ -19,17 +21,19 @@ public class CompilerTest {
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/AssortedTests.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/IOViaDebug.rlx").readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }
         translator.prepare();
+        module.setMain(module.getClass("comptest.IOViaDebug").getFunctions().get(0));
 
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);
         compiler.verbose();
         compiler.stub();
         compiler.compile();
-        compiler.optimize(3, 4, false);
+        compiler.optimize(3, 5, true);
         compiler.write();
     }
 }
