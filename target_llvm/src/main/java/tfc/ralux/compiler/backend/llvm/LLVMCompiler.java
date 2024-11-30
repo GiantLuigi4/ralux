@@ -21,9 +21,9 @@ import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
-import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.util.rt.RlxRt;
 
 import java.io.File;
 import java.util.List;
@@ -72,19 +72,26 @@ public class LLVMCompiler extends Compiler {
             root.track(args);
             LLVMValueRef valOut = root.integer(0, 32);
 
+            root.track(LLVM.LLVMBuildCall(
+                    root.getBuilder(),
+                    ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getDirect(),
+                    args, 0,
+                    ""
+            ));
+
             if (function.enclosure.result.type == PrimitiveType.INT) {
                 root.track(valOut = LLVM.LLVMBuildCall(
                         root.getBuilder(),
                         ((FunctionBuilder) function.getCompilerData()).getDirect(),
                         args, 0,
-                        ""
+                        "call_main"
                 ));
             } else {
                 root.track(LLVM.LLVMBuildCall(
                         root.getBuilder(),
                         ((FunctionBuilder) function.getCompilerData()).getDirect(),
                         args, 0,
-                        null
+                        ""
                 ));
             }
 
@@ -291,20 +298,25 @@ public class LLVMCompiler extends Compiler {
         try {
             System.out.flush();
             System.err.flush();
-            Thread.sleep(2000);
+//            Thread.sleep(2000);
 
-            String linkCmd = "lld-link.exe module.obj -entry:main " +
+            String linkCmd = "lld-link.exe " +
                     "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" " +
                     "/libpath:lib " +
                     "/defaultlib:clang_rt.builtins-x86_64.lib " +
-                    "/defaultlib:RlxRuntime " +
+                    "/defaultlib:RlxRt " +
                     "/defaultlib:msvcrt " +
                     "/defaultlib:libcmt " +
                     "/defaultlib:ucrt " +
+                    "/defaultlib:user32 " +
                     "/defaultlib:kernel32 " +
-                    "/subsystem:console /verbose " +
+                    "/defaultlib:vcruntime " +
+                    "/subsystem:console " +
+                    "/fixed /cetcompat /incremental:no /ltcg " +
+                    "/release /debug:none /verbose " +
+                    "/merge:.text=.text " +
                     "-opt:ref -opt:icf -opt:lbr " +
-                    "/fixed /cetcompat /release /incremental:no /ltcg /debug:none ";
+                    "-entry:main module.obj /out:module.exe";
 
             System.out.println("Linking using:");
             System.out.println(linkCmd);

@@ -1,4 +1,4 @@
-#include "RlxRuntime.h"
+#include "RlxRt.h"
 #include "pch.h"
 
 namespace ralux {
@@ -52,8 +52,8 @@ namespace ralux {
 
     extern "C" {
         // gc functions
-        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, uint32_t size) {
-            return calloc(size, 1);
+        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size) {
+            return calloc(std::_Bit_cast<uint32_t>(size), 1);
         }
 
         EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
@@ -78,6 +78,7 @@ namespace ralux {
         EXPORT EXPORT_FUNC void __rlxrt_free_obj(const RlxObj obj) {
             obj->clazz->__rlxrt_gc_free(obj);
             free(obj->gc_info);
+            free(obj);
         }
 
         EXPORT EXPORT_FUNC void __rlxrt_obj_created(const RlxObj obj) {
@@ -87,8 +88,11 @@ namespace ralux {
             gc_data->gc->allObjs.insert(obj);
         }
 
-        EXPORT EXPORT_FUNC RlxGC __rlxrt_get_global_gc() {
+        EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC {
             return tfc_ralux_runtime_GC_GLOBAL_GC;
+        }
+
+        EXPORT EXPORT_FUNC void __rlxrt_init() {
         }
     }
 }

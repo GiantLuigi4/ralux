@@ -15,12 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RlxRuntime.cpp">
+    <ClCompile Include="RlxRt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="intrinsics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RlxRuntime.h">
+    <ClInclude Include="RlxRt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="intrinsics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

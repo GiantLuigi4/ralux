@@ -5,22 +5,22 @@ import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.enumeration.LinkMode;
 import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
-import tfc.rlxir.instr.enumeration.InstrType;
-import tfc.rlxir.instr.value.vars.GetInstr;
-import tfc.rlxir.instr.value.vars.SetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
+import tfc.rlxir.util.rt.RlxGc;
+import tfc.rlxir.util.rt.RlxRt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Function;
 
 public class RlxModule {
     public LinkMode preferredLinkMode = LinkMode.PROGRAM;
     final String name;
+    public RlxRt rt;
+    public RlxGc gc;
     List<RlxCls> classes = new ArrayList<>();
     HashMap<String, RlxPackage> packages = new HashMap<>();
     HashMap<String, RlxCls> classesByName = new HashMap<>();
@@ -137,7 +137,7 @@ public class RlxModule {
         throw new RuntimeException("Could not find method " + name + " on class " + owner);
     }
 
-    public void withDebugUtils() {
+    public RlxModule withDebugUtils() {
         RlxCls cls = new RlxCls("ralux.debug", "Debug");
 
         for (RlxType anInt : RlxTypes.INTS) {
@@ -169,6 +169,8 @@ public class RlxModule {
         }
 
         addClass(cls);
+
+        return this;
     }
 
     RlxFunction mainFunction;
@@ -216,5 +218,11 @@ public class RlxModule {
                 }
             }
         }
+    }
+
+    public RlxModule withRuntime() {
+        gc = RlxGc.inject(this);
+        rt = RlxRt.inject(this, gc);
+        return this;
     }
 }

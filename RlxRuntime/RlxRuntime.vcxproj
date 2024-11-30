@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{9279B1A2-4B95-475D-BCB6-4625652C988B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>RlxRuntime</RootNamespace>
+    <RootNamespace>RlxRt</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -84,6 +84,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>RlxRt</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -153,6 +154,14 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <GuardEHContMetadata>false</GuardEHContMetadata>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
+      <ShowIncludes>true</ShowIncludes>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <AdditionalOptions>/OPT:REF /OPT:ICF %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,10 +171,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="RlxRuntime.cpp" />
+    <ClCompile Include="RlxRt.cpp" />
+    <ClCompile Include="intrinsics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RlxRuntime.h" />
+    <ClInclude Include="RlxRt.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="intrinsics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

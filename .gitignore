@@ -12,6 +12,7 @@
 # execution outputs
 /*.obj
 /*.exe
+/module.lib
 /dmp/
 
 # subproject ide files

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "intrinsics.h"
 
 namespace ralux {
     extern "C++" {
@@ -26,8 +27,11 @@ namespace ralux {
         EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
 
         // gc class functions
-        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, uint32_t size);
+        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size);
         EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc);
-        EXPORT EXPORT_FUNC RlxGC __rlxrt_get_global_gc();
+        EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC;
+
+        // initialization functions
+        EXPORT EXPORT_FUNC void __rlxrt_init();
     }
 }
