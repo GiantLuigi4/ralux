@@ -3,6 +3,8 @@ package tfc.ralux.compiler.frontend.ralux;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import tfc.ralux.compiler.frontend.Translator;
@@ -10,6 +12,7 @@ import tfc.ralux.compiler.frontend.ralux.parse.RaluxLexer;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxModule;
+import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
@@ -62,7 +65,9 @@ public class RaluxToIR extends Translator {
                     throw new RuntimeException("TODO");
                 }
             } else throw new RuntimeException("TODO");
-        } else throw new RuntimeException("TODO");
+        } else {
+            throw new RuntimeException("TODO");
+        }
 
         if (child.getChildCount() == 2) {
             element = child.getChild(1);
@@ -90,6 +95,28 @@ public class RaluxToIR extends Translator {
 
     List<Runnable> delayedParse = new ArrayList<>();
 
+    private <T> void parseAnnotation(
+            RaluxParser.AnnotationContext annotationContext,
+            List<T> compHints,
+            List<Object> annotations
+    ) {
+        String asText = annotationContext.getText();
+        if (asText.startsWith("[+") && asText.endsWith("+]")) {
+            Token from = annotationContext.start;
+            Token to = annotationContext.stop;
+
+            asText = from.getInputStream().getText(new Interval(
+                    from.getStartIndex(), to.getStopIndex()
+            ));
+            asText = asText.substring(2, asText.length() - 2).trim();
+
+            CompilerHints.parseCompHint(compHints, asText);
+        } else {
+            asText = asText.substring(1, asText.length() - 1).trim();
+            throw new RuntimeException("TODO");
+        }
+    }
+
     private void parseClass(RlxCls clazz, RlxModule module, RaluxParser.C_bodyContext tree) {
         for (int i = 1; i < tree.children.size() - 1; i++) {
             ParseTree element = tree.children.get(i);
@@ -98,6 +125,14 @@ public class RaluxToIR extends Translator {
                 if (context instanceof RaluxParser.MethodContext methodContext) {
                     List<ParseTree> trees = new ArrayList<>();
                     int index = 0;
+
+                    List<FunctionCompilerHint> compilerHints = new ArrayList<>();
+                    List<Object> annotations = new ArrayList<>();
+                    while (context.getChild(index) instanceof RaluxParser.AnnotationContext annotationContext) {
+                        parseAnnotation(annotationContext, compilerHints, annotations);
+                        index++;
+                    }
+
                     index = getNodesOfType(trees, index, context, RaluxLexer.MODIFIER);
                     RlxType type = parseType(context.getChild(index++));
                     ParseTree name = context.getChild(index++);
@@ -127,6 +162,8 @@ public class RaluxToIR extends Translator {
                             params, this,
                             isStub, isAbi
                     );
+                    if (!annotations.isEmpty()) throw new RuntimeException("NYI: annotations");
+                    parser.function.addHints(clazz, compilerHints);
 
                     final boolean finalIsStub = isStub;
                     final boolean finalIsAbi = isAbi;

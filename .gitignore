@@ -1,5 +1,26 @@
-/gen/
-/dmp/
-/build/
+# ide files
 /.idea/
+/*.iml
+/.vs/
+/*.vcxproj.user
+
+# project files
+/build/
 /.gradle/
+/gen/
+
+# execution outputs
+/*.obj
+/*.exe
+/dmp/
+
+# subproject ide files
+/*/.idea/
+/*/.vs/
+/*/*.vcxproj.user
+
+# subproject build files
+/*/Release/
+/*/Debug/
+/*/x64/
+/*/build/

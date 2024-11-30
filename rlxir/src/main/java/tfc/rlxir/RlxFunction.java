@@ -1,5 +1,6 @@
 package tfc.rlxir;
 
+import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.action.ConditionalJumpInstr;
 import tfc.rlxir.instr.action.JumpInstr;
@@ -16,6 +17,7 @@ import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArraySet;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
+import tfc.rlxir.typing.GenericType;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
@@ -38,6 +40,8 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     public final RlxEnclosure enclosure;
 
     List<RlxBlock> blocks = new ArrayList<>();
+    List<FunctionCompilerHint> compilerHints = new ArrayList<>();
+    List<FunctionCompilerHint> processedCompilerHints = new ArrayList<>();
     RlxBlock currentBlock;
 
     public RlxBlock makeBlock(String name) {
@@ -462,5 +466,16 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             return instr;
         }
         throw new RuntimeException(instr.valueType() + " cannot be assigned to " + type.type);
+    }
+
+    public void defineGeneric(String generic, GenericType type) {
+        throw new RuntimeException("TODO");
+    }
+
+    public void addHints(RlxCls owner, List<FunctionCompilerHint> compilerHints) {
+        for (FunctionCompilerHint compilerHint : compilerHints) {
+            compilerHint.preprocess(owner, this);
+            this.compilerHints.add(compilerHint);
+        }
     }
 }

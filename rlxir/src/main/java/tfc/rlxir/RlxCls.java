@@ -1,5 +1,7 @@
 package tfc.rlxir;
 
+import tfc.rlxir.comphints.ClassCompilerHint;
+import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.util.CompilerDataHolder;
 
@@ -12,6 +14,7 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
     RlxCls parent;
     List<RlxFunction> functions = new ArrayList<>();
     List<String> using = new ArrayList<>();
+    List<ClassCompilerHint> compilerHints = new ArrayList<>();
 
     public void addFunction(RlxFunction function) {
         this.functions.add(function);

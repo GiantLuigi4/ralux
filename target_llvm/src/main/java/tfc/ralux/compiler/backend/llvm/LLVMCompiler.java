@@ -289,13 +289,19 @@ public class LLVMCompiler extends Compiler {
         );
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
         try {
+            System.out.flush();
+            System.err.flush();
+            Thread.sleep(2000);
+
             String linkCmd = "lld-link.exe module.obj -entry:main " +
-//                            "/libpath:\"C:/Program Files/LLVM/lib/clang/8.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
-                    "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" clang_rt.builtins-x86_64.lib " +
+                    "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" " +
+                    "/libpath:lib " +
+                    "/defaultlib:clang_rt.builtins-x86_64.lib " +
+                    "/defaultlib:RlxRuntime " +
                     "/defaultlib:msvcrt " +
                     "/defaultlib:libcmt " +
                     "/defaultlib:ucrt " +
-                    "/defaultlib:kernel32.lib " +
+                    "/defaultlib:kernel32 " +
                     "/subsystem:console /verbose " +
                     "-opt:ref -opt:icf -opt:lbr " +
                     "/fixed /cetcompat /release /incremental:no /ltcg /debug:none ";
@@ -303,10 +309,12 @@ public class LLVMCompiler extends Compiler {
             System.out.println("Linking using:");
             System.out.println(linkCmd);
             Process proc = Runtime.getRuntime().exec(linkCmd);
-            System.out.println(proc.waitFor());
-
-            System.out.println(new String(proc.getInputStream().readAllBytes()));
-            System.err.println(new String(proc.getErrorStream().readAllBytes()));
+            while (proc.isAlive()) {
+                while (proc.inputReader().ready()) System.out.println(proc.inputReader().readLine());
+                while (proc.errorReader().ready()) System.out.println(proc.errorReader().readLine());
+            }
+            while (proc.inputReader().ready()) System.out.println(proc.inputReader().readLine());
+            while (proc.errorReader().ready()) System.out.println(proc.errorReader().readLine());
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }

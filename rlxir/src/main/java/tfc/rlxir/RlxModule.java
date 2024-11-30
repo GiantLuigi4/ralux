@@ -1,5 +1,7 @@
 package tfc.rlxir;
 
+import tfc.rlxir.comphints.ClassCompilerHint;
+import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.enumeration.LinkMode;
 import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Function;
 
 public class RlxModule {
     public LinkMode preferredLinkMode = LinkMode.PROGRAM;
@@ -187,5 +190,31 @@ public class RlxModule {
             }
         }
         return null;
+    }
+
+    public void processHints() {
+        for (RlxCls aClass : classes) {
+            for (ClassCompilerHint compilerHint : aClass.compilerHints) {
+                compilerHint.process(aClass);
+            }
+        }
+
+        for (RlxCls aClass : classes) {
+            boolean anyHadHints = true;
+            while (anyHadHints) {
+                anyHadHints = true;
+
+                List<RlxFunction> functionsCpy = new ArrayList<>(aClass.functions);
+                for (RlxFunction function : functionsCpy) {
+                    if (!function.compilerHints.isEmpty()) anyHadHints = true;
+                    else continue;
+
+                    FunctionCompilerHint compilerHint = function.compilerHints.remove(0);
+                    function.processedCompilerHints.add(compilerHint);
+                    if (compilerHint.process(aClass, function))
+                        break;
+                }
+            }
+        }
     }
 }
