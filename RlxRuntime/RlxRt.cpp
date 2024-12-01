@@ -55,6 +55,13 @@ namespace ralux {
         EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size) {
             return calloc(std::_Bit_cast<uint32_t>(size), 1);
         }
+        
+        // gc functions
+        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size) {
+            void* data = tfc_ralux_runtime_GC_allocate(gc, size);
+            __rlxrt_obj_created((RlxObj) data, gc);
+            return data;
+        }
 
         EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
             std::unordered_set<RlxObj> refd;
@@ -81,9 +88,9 @@ namespace ralux {
             free(obj);
         }
 
-        EXPORT EXPORT_FUNC void __rlxrt_obj_created(const RlxObj obj) {
+        EXPORT EXPORT_FUNC void __rlxrt_obj_created(const RlxObj obj, RlxGC gc) {
             rlxStandardGCData* gc_data = new rlxStandardGCData();
-            gc_data->gc = tfc_ralux_runtime_GC_GLOBAL_GC;
+            gc_data->gc = gc;
             obj->gc_info = gc_data;
             gc_data->gc->allObjs.insert(obj);
         }

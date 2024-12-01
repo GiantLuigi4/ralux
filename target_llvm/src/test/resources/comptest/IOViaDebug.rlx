@@ -12,6 +12,67 @@ public class IOViaDebug {
         } else if (lng < 50) Debug.write(0);
         else Debug.write(3);
 
+        Debug.write(
+            AssortedTests.max(
+                Debug.readInt32(),
+                Debug.readInt32(),
+                Debug.readInt32(),
+                Debug.readInt32(),
+                Debug.readInt32(),
+                Debug.readInt32(),
+                Debug.readInt32(),
+                Debug.readInt32()
+            )
+        );
+        Debug.write(
+            AssortedTests.max(
+                AssortedTests.max(
+                    AssortedTests.max(
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32()
+                    ),
+                    AssortedTests.max(
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32()
+                    )
+                ),
+                AssortedTests.max(
+                    AssortedTests.max(
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32()
+                    ),
+                    AssortedTests.max(
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32(),
+                        Debug.readInt32()
+                    )
+                )
+            )
+        );
+
         return 0;
     }
 }

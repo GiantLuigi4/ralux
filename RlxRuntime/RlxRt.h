@@ -23,11 +23,12 @@ namespace ralux {
     extern "C" {
         // runtime methods
         EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(std::unordered_set<RlxObj> refd, RlxObj obj);
-        EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj);
+        EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc);
         EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
 
         // gc class functions
         EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size);
+        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size);
         EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc);
         EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC;
 

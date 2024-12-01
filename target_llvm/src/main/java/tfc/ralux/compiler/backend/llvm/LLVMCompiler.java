@@ -164,20 +164,26 @@ public class LLVMCompiler extends Compiler {
         LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
         LLVM.LLVMAddTypeBasedAliasAnalysisPass(pass);
         LLVM.LLVMAddBasicAliasAnalysisPass(pass);
+        LLVM.LLVMAddScopedNoAliasAAPass(pass);
+
         if (rlx >= 5) {
+            LLVM.LLVMPassManagerBuilderAddCoroutinePassesToExtensionPoints(builderRef);
+            LLVM.LLVMPassManagerBuilderSetDisableUnrollLoops(builderRef, 1);
+            LLVM.LLVMPassManagerBuilderSetDisableSimplifyLibCalls(builderRef, 1);
+
+            // lower intrinsics
+            LLVM.LLVMAddStripSymbolsPass(pass);
             LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
             LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
             LLVM.LLVMAddLowerSwitchPass(pass); // h?
 
+            // prepare
+            LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
-            LLVM.LLVMAddInternalizePass(pass, 1);
             LLVM.LLVMAddGlobalOptimizerPass(pass);
             LLVM.LLVMAddFunctionAttrsPass(pass);
             LLVM.LLVMAddLICMPass(pass);
             LLVM.LLVMAddDeadArgEliminationPass(pass);
-            LLVM.LLVMAddAlwaysInlinerPass(pass);
-            LLVM.LLVMAddMergeFunctionsPass(pass);
-            LLVM.LLVMAddFunctionInliningPass(pass);
             LLVM.LLVMAddAggressiveDCEPass(pass);
             LLVM.LLVMAddGlobalDCEPass(pass);
             LLVM.LLVMAddScalarReplAggregatesPass(pass);
@@ -189,25 +195,55 @@ public class LLVMCompiler extends Compiler {
             LLVM.LLVMAddIPSCCPPass(pass);
             LLVM.LLVMAddLICMPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
-            LLVM.LLVMAddDeadArgEliminationPass(pass);
+
+            // force inline
+            LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddInternalizePass(pass, 1);
+            LLVM.LLVMAddPartiallyInlineLibCallsPass(pass);
             LLVM.LLVMAddAlwaysInlinerPass(pass);
             LLVM.LLVMAddMergeFunctionsPass(pass);
+            LLVM.LLVMAddFunctionInliningPass(pass);
+
+            // simplify
+            LLVM.LLVMAddCalledValuePropagationPass(pass);
+            LLVM.LLVMAddCorrelatedValuePropagationPass(pass);
+            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
+            LLVM.LLVMAddScalarReplAggregatesPass(pass);
+            LLVM.LLVMAddFunctionAttrsPass(pass);
+            LLVM.LLVMAddIPSCCPPass(pass);
             LLVM.LLVMAddLICMPass(pass);
+            LLVM.LLVMAddDeadArgEliminationPass(pass);
+
+            // another round
             LLVM.LLVMAddStripSymbolsPass(pass);
             LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
+
             LLVM.LLVMAddReassociatePass(pass);
             LLVM.LLVMAddGVNPass(pass);
             LLVM.LLVMAddNewGVNPass(pass);
+            LLVM.LLVMAddGlobalOptimizerPass(pass);
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+            LLVM.LLVMAddLoopUnrollAndJamPass(pass);
+            LLVM.LLVMAddTailCallEliminationPass(pass);
+
+            LLVM.LLVMAddFunctionAttrsPass(pass);
+
+            LLVM.LLVMAddPartiallyInlineLibCallsPass(pass);
+            LLVM.LLVMAddReassociatePass(pass);
+            LLVM.LLVMAddMemCpyOptPass(pass);
+            LLVM.LLVMAddFunctionAttrsPass(pass);
+
             LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
             LLVM.LLVMAddSLPVectorizePass(pass);
             LLVM.LLVMAddAggressiveInstCombinerPass(pass);
+            LLVM.LLVMAddFunctionAttrsPass(pass);
             LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
             LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddStripSymbolsPass(pass);
             LLVM.LLVMAddAggressiveInstCombinerPass(pass);
+            LLVM.LLVMAddSLPVectorizePass(pass);
+            LLVM.LLVMAddStripSymbolsPass(pass);
         } else {
             if (rlx >= 4) {
                 LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);

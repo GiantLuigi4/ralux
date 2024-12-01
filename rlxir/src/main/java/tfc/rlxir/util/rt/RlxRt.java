@@ -51,12 +51,23 @@ public class RlxRt {
                     RlxTypes.EMPTY_LIST
             )
     ).exportName("__rlxrt_get_global_gc");
+    public final RlxFunction rtMarkObj = new RlxFunction(
+            RlxFunction.ACC_PUBLIC,
+            true, true,
+            new RlxEnclosure(
+                    true,
+                    RlxTypes.BOOLEAN,
+                    "__rlxrt_mark_obj",
+                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.VOID_PTR)
+            )
+    ).exportName("__rlxrt_mark_obj");
 
     public RlxRt(RlxCls rt) {
         this.cls = rt;
         rt.addFunction(rtInit);
         rt.addFunction(rtGlobalGC);
         rt.addFunction(rtObjCreated);
+        rt.addFunction(rtMarkObj);
         rt.addFunction(rtFree);
     }
 
