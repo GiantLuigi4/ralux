@@ -1,4 +1,4 @@
-package tfc.rlxir.instr.value;
+package tfc.rlxir.instr.value.obj;
 
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;

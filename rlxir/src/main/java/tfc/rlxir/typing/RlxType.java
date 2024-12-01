@@ -187,4 +187,17 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     public boolean isArray() {
         return arrayOf != null;
     }
+
+    public int getByteSizeObj() {
+        if (isArray()) return 8;
+        if (type == PrimitiveType.PTR) {
+            // TODO: should be total size of instance fields (and function ptrs)
+            return 0;
+        }
+        return type.bytes;
+    }
+
+    public int getByteSize() {
+        return type.bytes;
+    }
 }

@@ -25,6 +25,8 @@ namespace ralux {
         EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(std::unordered_set<RlxObj> refd, RlxObj obj);
         EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc);
         EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
+        EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj);
+        EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj);
 
         // gc class functions
         EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size);

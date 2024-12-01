@@ -11,11 +11,12 @@ import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.debug.TwoValueDebug;
 import tfc.rlxir.instr.enumeration.*;
-import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArraySet;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
+import tfc.rlxir.instr.value.obj.AllocInstr;
+import tfc.rlxir.instr.value.obj.CallInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.GenericType;
 import tfc.rlxir.typing.PrimitiveType;
@@ -477,5 +478,11 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             compilerHint.preprocess(owner, this);
             this.compilerHints.add(compilerHint);
         }
+    }
+
+    public ValueInstr alloc(RlxType type1) {
+        AllocInstr instr = new AllocInstr(type1);
+        addInstr(instr);
+        return instr;
     }
 }

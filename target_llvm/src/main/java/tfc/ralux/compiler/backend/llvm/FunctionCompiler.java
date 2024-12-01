@@ -1,7 +1,6 @@
 package tfc.ralux.compiler.backend.llvm;
 
 import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
@@ -24,9 +23,12 @@ import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArraySet;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
+import tfc.rlxir.instr.value.obj.AllocInstr;
+import tfc.rlxir.instr.value.obj.CallInstr;
 import tfc.rlxir.instr.value.vars.GetInstr;
 import tfc.rlxir.instr.value.vars.SetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
+import tfc.rlxir.typing.RlxType;
 
 import java.util.List;
 
@@ -277,9 +279,33 @@ public class FunctionCompiler {
         }
     }
 
-    private void compileCall(CallInstr instr) {
+    private LLVMValueRef extractFunctionPtr(CallInstr instr, RlxFunction toCall) {
+        if (!toCall.isStatic) {
+            ValueInstr valueInstr = instr.params.get(0);
+            LLVMValueRef obj = valueInstr.getCompilerData();
+            obj  = root.ptrCast(
+                    obj, root.pointerType(root.pointerType(root.VOID)), "voidptrptr"
+            );
+            FunctionBuilder builder1 = toCall.getCompilerData();
+            // TODO: super calls
+            LLVMValueRef valueRef;
+            if (toCall.getExportName().equals("tfc_ralux_runtime_Object_hashCode")) {
+                valueRef = root.getElement(obj, root.integer(
+                        3,
+                        32
+                ), "get_function_hc");
+            } else {
+                throw new RuntimeException("TODO");
+            }
+            valueRef = root.ptrCast(valueRef, root.pointerType(root.pointerType(builder1.getType())), "ptr_to_func");
+            return root.getValue(valueRef, "get_function");
+        }
         FunctionBuilder builder1 = instr.toCall.getCompilerData();
-        // TODO: non-static calls
+        return builder1.getDirect();
+    }
+
+    private void compileCall(CallInstr instr) {
+        LLVMValueRef valueRef = extractFunctionPtr(instr, instr.toCall);
 
         String callName = "";
         if (!instr.toCall.enclosure.isVoid())
@@ -294,12 +320,38 @@ public class FunctionCompiler {
         }
         LLVMValueRef callVal = root.track(LLVM.LLVMBuildCall(
                 root.getBuilder(),
-                builder1.getDirect(),
+                valueRef,
                 args, argC,
                 callName
         ));
 
         instr.setCompilerData(callVal);
+    }
+
+    private void compileAlloc(AllocInstr instr) {
+        RlxType type = instr.type;
+        type.getByteSize();
+        PointerPointer<LLVMValueRef> noArg = new PointerPointer<>(0);
+        PointerPointer<LLVMValueRef> args = new PointerPointer<>(2);
+        root.track(args);
+        root.track(noArg);
+
+        LLVMValueRef gc = root.track(LLVM.LLVMBuildCall(
+                root.getBuilder(),
+                ((FunctionBuilder) compiler.compiling.rt.rtGlobalGC.getCompilerData()).getDirect(),
+                noArg, 0,
+                "getGC"
+        ));
+        args.put(0, gc);
+        args.put(1, root.integer(type.getByteSizeObj(), 32));
+
+        LLVMValueRef valueRef = root.track(LLVM.LLVMBuildCall(
+                root.getBuilder(),
+                ((FunctionBuilder) compiler.compiling.gc.gcAllocObj.getCompilerData()).getDirect(),
+                args, 2,
+                "gcAllocObj"
+        ));
+        instr.setCompilerData(valueRef);
     }
 
     public void compile() {
@@ -346,7 +398,8 @@ public class FunctionCompiler {
                         LLVMValueRef str;
                         if (print.value.valueType().isArray()) {
                             str = print.value.getCompilerData();
-                        } else str = root.stdLib.intToString(root.getIntType(print.printType().type.bits), print.value.getCompilerData());
+                        } else
+                            str = root.stdLib.intToString(root.getIntType(print.printType().type.bits), print.value.getCompilerData());
                         root.stdLib.print(str);
                     }
                     case DEBUG_READ_INT -> {
@@ -372,6 +425,7 @@ public class FunctionCompiler {
                     case BOOLEAN_OP -> compileBoolOp((BoolInstr) instr);
                     case NEGATE -> compileNegation((NegInstr) instr);
                     case CALL -> compileCall((CallInstr) instr);
+                    case ALLOC -> compileAlloc((AllocInstr) instr);
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }

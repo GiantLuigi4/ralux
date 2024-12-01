@@ -124,7 +124,7 @@ public class MethodParser {
                 }
             }
             case RaluxParser.RULE_definition -> {
-                RlxType type = RaluxToIR.parseType(statement.getChild(0));
+                RlxType type = RaluxToIR.parseType(module, owner, statement.getChild(0), currentScope);
                 String name = statement.getChild(1).getText();
                 VarInstr var = currentScope.makeVar(function, name, type);
                 if (statement.getChildCount() > 2) {
@@ -247,7 +247,7 @@ public class MethodParser {
         function.buildBlock(exitB);
     }
 
-    private void parseFor( RaluxParser.ForContext ctx) {
+    private void parseFor(RaluxParser.ForContext ctx) {
         ParseTree configuration = ctx.getChild(2);
         ParseTree bdy = ctx.getChild(4);
 
@@ -353,36 +353,44 @@ public class MethodParser {
     }
 
     public void makeAbi() {
-        function.exportName(
-                function.enclosure.name
-        );
+        if (function.getExportName() == null) {
+            function.exportName(
+                    function.enclosure.name
+            );
+        }
     }
 
     public void makeStub() {
     }
 
     public ValueInstr parseCall(RaluxParser.CallContext node) {
-        RaluxParser.Method_callContext mCall = (RaluxParser.Method_callContext) node.getChild(0);
-        RlxType ownerType = owner.getType();
-        String name;
-        ParseTree paramsTree;
-        if (mCall.getChild(0) instanceof RaluxParser.Named_typeContext) {
-            ownerType = raluxToRlx.resolveClass(module, owner, mCall.getChild(0), currentScope);
-            name = mCall.getChild(2).getText();
-            paramsTree = mCall.getChild(4);
-        } else {
-            name = mCall.getChild(0).getText();
-            paramsTree = mCall.getChild(2);
-        }
-        List<ValueInstr> params = new ArrayList<>();
-        if (paramsTree instanceof RaluxParser.ParamsContext) {
-            for (int i = 0; i < paramsTree.getChildCount(); i += 2) {
-                params.add(ExpressionParser.parseValue(
-                        this, paramsTree.getChild(i)
-                ));
+        if (node.getChild(0) instanceof RaluxParser.Method_callContext mCall) {
+            RlxType ownerType = owner.getType();
+            String name;
+            ParseTree paramsTree;
+            if (mCall.getChild(0) instanceof RaluxParser.Named_typeContext) {
+                ownerType = raluxToRlx.resolveClass(module, owner, mCall.getChild(0), currentScope);
+                name = mCall.getChild(2).getText();
+                paramsTree = mCall.getChild(4);
+            } else {
+                name = mCall.getChild(0).getText();
+                paramsTree = mCall.getChild(2);
             }
-        }
-        // TODO: explicit owner specification
-        return function.call(module, ownerType.clazz, name, params);
+            List<ValueInstr> params = new ArrayList<>();
+            if (paramsTree instanceof RaluxParser.ParamsContext) {
+                for (int i = 0; i < paramsTree.getChildCount(); i += 2) {
+                    params.add(ExpressionParser.parseValue(
+                            this, paramsTree.getChild(i)
+                    ));
+                }
+            }
+            // TODO: explicit owner specification
+            return function.call(module, ownerType.clazz, name, params);
+        } else if (node.getChild(0) instanceof RaluxParser.CtorContext ctor) {
+            RlxType type1 = RaluxToIR.parseType(module, owner, ctor.getChild(1), currentScope);
+            ValueInstr val = function.alloc(type1);
+            // TODO: call constructor
+            return val;
+        } else throw new RuntimeException("TODO");
     }
 }

@@ -1,0 +1,10 @@
+pkg tfc.ralux.runtime;
+
+public class Object {
+    [+ Extern tfc_ralux_runtime_Object_hashCode +]
+    public abi int hashCode();
+
+    // public String toString() {
+    //     return "Object[" + this.# "]";
+    // }
+}

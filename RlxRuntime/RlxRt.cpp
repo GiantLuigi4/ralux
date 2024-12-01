@@ -58,8 +58,9 @@ namespace ralux {
         
         // gc functions
         EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size) {
-            void* data = tfc_ralux_runtime_GC_allocate(gc, size);
+            void* data = tfc_ralux_runtime_GC_allocate(gc, size + sizeof(rlxObj));
             __rlxrt_obj_created((RlxObj) data, gc);
+            static_cast<RlxObj>(data)->tfc_ralux_runtime_Object_hashCode = __rlxrt_default_hash;
             return data;
         }
 
@@ -88,6 +89,10 @@ namespace ralux {
             free(obj);
         }
 
+        EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj) {
+            return reinterpret_cast<long long>(obj);
+        }
+
         EXPORT EXPORT_FUNC void __rlxrt_obj_created(const RlxObj obj, RlxGC gc) {
             rlxStandardGCData* gc_data = new rlxStandardGCData();
             gc_data->gc = gc;
@@ -100,6 +105,10 @@ namespace ralux {
         }
 
         EXPORT EXPORT_FUNC void __rlxrt_init() {
+        }
+
+        EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj) {
+            return static_cast<int>(reinterpret_cast<long long>(obj));
         }
     }
 }

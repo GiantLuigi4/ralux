@@ -1,0 +1,14 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+
+public class ObjectOrientation {
+    public static int main() {
+        ObjectOrientation o = new ObjectOrientation();
+        long ptr = (long) o;
+        Debug.write(ptr);
+        int hc = o.#;
+        Debug.write(hc);
+        return hc;
+    }
+}

@@ -20,6 +20,16 @@ public class RlxGc {
                     Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.INT)
             )
     ).exportName("tfc_ralux_runtime_GC_allocate");
+    public final RlxFunction gcAllocObj = new RlxFunction(
+            RlxFunction.ACC_PUBLIC,
+            false, false,
+            new RlxEnclosure(
+                    true,
+                    RlxTypes.VOID_PTR,
+                    "allocate",
+                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.INT)
+            )
+    ).exportName("tfc_ralux_runtime_GC_allocateObj");
     public final RlxFunction gcCollect = new RlxFunction(
             RlxFunction.ACC_PUBLIC,
             false, false,
@@ -34,6 +44,7 @@ public class RlxGc {
     public RlxGc(RlxCls cls) {
         this.cls = cls;
         cls.addFunction(gcAlloc);
+        cls.addFunction(gcAllocObj);
         cls.addFunction(gcCollect);
     }
 

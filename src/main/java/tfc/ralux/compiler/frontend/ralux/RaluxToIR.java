@@ -53,16 +53,21 @@ public class RaluxToIR extends Translator {
         }
     }
 
-    public static RlxType parseType(ParseTree child) {
+    public static RlxType parseType(RlxModule module, RlxCls cls, ParseTree child, Scope scope) {
         RlxType type;
-        ParseTree element = child.getChild(0);
+        ParseTree element;
+
+        if (child instanceof RaluxParser.TypeContext) element = child;
+        else element = child.getChild(0);
+
         if (element instanceof RaluxParser.TypeContext typeContext) {
             if (typeContext.getChildCount() == 1) {
                 element = typeContext.getChild(0);
                 if (element instanceof TerminalNodeImpl terminal) {
                     type = RlxTypes.typeByName(terminal.getText());
                 } else {
-                    throw new RuntimeException("TODO");
+                    // TODO: check for other cases?
+                    return resolveClass(module, cls, child, scope);
                 }
             } else throw new RuntimeException("TODO");
         } else {
@@ -79,11 +84,12 @@ public class RaluxToIR extends Translator {
         return type;
     }
 
-    private Params parseParams(ParseTree child) {
+    private Params parseParams(RlxCls cls, RlxModule module, ParseTree child) {
         if (child.getChildCount() != 0) {
             Params res = new Params();
             for (int i = 0; i < child.getChildCount(); i += 3) {
                 res.addParam(
+                        cls, module,
                         child.getChild(i),
                         child.getChild(i + 1)
                 );
@@ -134,10 +140,10 @@ public class RaluxToIR extends Translator {
                     }
 
                     index = getNodesOfType(trees, index, context, RaluxLexer.MODIFIER);
-                    RlxType type = parseType(context.getChild(index++));
+                    RlxType type = parseType(module, clazz, context.getChild(index++), null);
                     ParseTree name = context.getChild(index++);
                     index++; // (
-                    Params params = parseParams(context.getChild(index++));
+                    Params params = parseParams(clazz, module, context.getChild(index++));
                     index++; // )
 
                     boolean isStub = false;
@@ -236,12 +242,12 @@ public class RaluxToIR extends Translator {
         accept(module, tree);
     }
 
-    public static class Params {
+    public class Params {
         List<RlxType> types = new ArrayList<>();
         List<String> names = new ArrayList<>();
 
-        public void addParam(ParseTree type, ParseTree name) {
-            types.add(parseType(type));
+        public void addParam(RlxCls cls, RlxModule module, ParseTree type, ParseTree name) {
+            types.add(parseType(module, cls, type, null));
             names.add(name.getText());
         }
 
@@ -256,13 +262,14 @@ public class RaluxToIR extends Translator {
     }
 
     @Override
-    public void prepare() {
+    public void prepare(RlxModule module) {
+        module.processHints();
         for (Runnable runnable : delayedParse) {
             runnable.run();
         }
     }
 
-    public RlxType resolveClass(RlxModule module, RlxCls owner, ParseTree child, Scope scope) {
+    public static RlxType resolveClass(RlxModule module, RlxCls owner, ParseTree child, Scope scope) {
         String pkg = owner.pkg;
         String text = child.getText().toString();
         if (text.contains(".")) {

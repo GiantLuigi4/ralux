@@ -7,6 +7,8 @@ import tfc.ralux.compiler.frontend.Translator;
 import tfc.ralux.compiler.frontend.ralux.RaluxToIR;
 import tfc.rlxir.RlxModule;
 
+import java.io.FileInputStream;
+
 public class CompilerTest {
     public static void main(String[] args) {
         Translator translator = new RaluxToIR();
@@ -15,6 +17,8 @@ public class CompilerTest {
         module.withDebugUtils().withRuntime();
 
         try {
+            translator.parse(module, new String(new FileInputStream("std/tfc/ralux/runtime/Object.rlx").readAllBytes()));
+
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/CallTest.rlx").readAllBytes()));
@@ -22,11 +26,13 @@ public class CompilerTest {
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/IOViaDebug.rlx").readAllBytes()));
+            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ObjectOrientation.rlx").readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }
-        translator.prepare();
-        module.setMain(module.getClass("comptest.IOViaDebug").getFunctions().get(0));
+        translator.prepare(module);
+//        module.setMain(module.getClass("comptest.IOViaDebug").getFunctions().get(0));
+        module.setMain(module.getClass("comptest.ObjectOrientation").getFunctions().get(0));
 
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);

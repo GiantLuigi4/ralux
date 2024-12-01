@@ -5,14 +5,17 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.RlxBlock;
+import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
-import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.global.ConstInstr;
+import tfc.rlxir.instr.value.obj.CallInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
+
+import java.util.Arrays;
 
 public class ExpressionParser {
     private static ValueInstr parseNumber(ParseTree node) {
@@ -159,7 +162,7 @@ public class ExpressionParser {
                 throw new RuntimeException("TODO");
             } else if (exprNode.getChildCount() == 4) {
                 if (((RuleContext) exprNode).getRuleIndex() == RaluxParser.RULE_expr) {
-                    RlxType target = RaluxToIR.parseType(exprNode.getChild(1));
+                    RlxType target = RaluxToIR.parseType(parser.module, parser.owner, exprNode.getChild(1), parser.currentScope);
                     ValueInstr instr = parseValue(parser, exprNode.getChild(3));
                     return parser.function.cast(instr, target);
                 }
@@ -172,7 +175,32 @@ public class ExpressionParser {
                         ValueInstr instr = parseValue(parser, right);
                         instr = parser.function.negate(instr);
                         return instr;
-                    } else throw new RuntimeException("TODO");
+                    } else {
+                        String funcName = switch (exprNode.getChild(1).getText()) {
+                            case ".#" -> "hashCode";
+                            case ".=" -> "equals";
+                            default -> null;
+                        };
+                        if (funcName != null) {
+                            RlxCls cls = parser.module.getClass("tfc.ralux.runtime.Object");
+                            for (RlxFunction function : cls.getFunctions()) {
+                                if (function.enclosure.name.equals("hashCode")) {
+                                    CallInstr instr = new CallInstr(
+                                            parser.module,
+                                            function,
+                                            cls, funcName,
+                                            Arrays.asList(
+                                                    parseValue(parser, exprNode.getChild(0))
+                                            )
+                                    );
+                                    parser.function.addInstr(instr);
+                                    return instr;
+                                }
+                            }
+                            throw new RuntimeException("What.");
+                        }
+                        throw new RuntimeException("TODO");
+                    }
                 }
             }
         }

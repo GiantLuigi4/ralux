@@ -14,7 +14,7 @@ public class CompilerHints {
             ));
         } else if (split.length == 2) {
             compHints.add((T) new ExternHint(
-                    split[2]
+                    split[1]
             ));
         } else throw new RuntimeException("ERROR");
     }

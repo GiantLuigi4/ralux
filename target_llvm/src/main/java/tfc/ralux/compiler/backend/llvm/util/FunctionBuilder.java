@@ -40,6 +40,10 @@ public class FunctionBuilder {
         return function;
     }
 
+    public LLVMTypeRef getType() {
+        return type;
+    }
+
     public LLVMValueRef getArg(int index, LLVMTypeRef type) {
         return root.track(LLVM.LLVMGetParam(function, index));
     }

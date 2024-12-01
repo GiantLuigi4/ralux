@@ -204,7 +204,7 @@ public class RlxModule {
         for (RlxCls aClass : classes) {
             boolean anyHadHints = true;
             while (anyHadHints) {
-                anyHadHints = true;
+                anyHadHints = false;
 
                 List<RlxFunction> functionsCpy = new ArrayList<>(aClass.functions);
                 for (RlxFunction function : functionsCpy) {

@@ -183,6 +183,18 @@ public class BuilderRoot extends ModuleRoot {
         return getValue(gep, name);
     }
 
+    public LLVMValueRef getElement(LLVMValueRef pointer, LLVMValueRef index, String name) {
+        PointerPointer indices = track(new PointerPointer(2));
+        indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
+                builder, index, getIntType(64), "as_int64"
+        )));
+        return track(LLVM.LLVMBuildGEP(
+                builder, pointer,
+                indices, 1,
+                "get_element_ptr"
+        ));
+    }
+
     public LLVMValueRef compareInt(ECompOp op, LLVMValueRef lh, LLVMValueRef rh, String label) {
         return track(LLVM.LLVMBuildICmp(builder, op.opSInt, lh, rh, label));
     }
@@ -379,5 +391,11 @@ public class BuilderRoot extends ModuleRoot {
             return truncate(toType, value, name);
         }
         return value;
+    }
+
+    public LLVMValueRef ptrCast(LLVMValueRef valueRef, LLVMTypeRef type, String name) {
+        return track(LLVM.LLVMBuildPointerCast(
+                builder, valueRef, type, name
+        ));
     }
 }
