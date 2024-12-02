@@ -217,7 +217,7 @@ public class ExpressionParser {
                         return switch (terminal.getText()) {
                             case "true" -> new ConstInstr<>(1, RlxTypes.BOOLEAN);
                             case "false" -> new ConstInstr<>(0, RlxTypes.BOOLEAN);
-                            case "null" -> new ConstInstr<>(0, RlxTypes.VOID_PTR);
+                            case "null" -> new ConstInstr<>(0, RlxTypes.VOID_PTR_PTR);
                             default -> throw new RuntimeException("Unknown constant: " + terminal.getText());
                         };
                     } else throw new RuntimeException("TODO");

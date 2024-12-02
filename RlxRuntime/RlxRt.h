@@ -28,9 +28,15 @@ namespace ralux {
         EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj);
         EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj);
 
+        // ref counting methods
+        inline EXPORT EXPORT_FUNC void __rlxrt_ref(RlxObj obj);
+        inline EXPORT EXPORT_FUNC void __rlxrt_deref(RlxObj obj);
+        inline EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj);
+        inline EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj);
+
         // gc class functions
         EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size);
-        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size);
+        EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size);
         EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc);
         EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC;
 

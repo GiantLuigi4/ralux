@@ -5,6 +5,7 @@ import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.enumeration.LinkMode;
 import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
+import tfc.rlxir.instr.value.obj.CallInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
@@ -223,6 +224,15 @@ public class RlxModule {
     public RlxModule withRuntime() {
         gc = RlxGc.inject(this);
         rt = RlxRt.inject(this, gc);
+        RlxBlock block = gc.rtGlobalGC.makeBlock("entry");
+        gc.rtGlobalGC.buildBlock(block);
+        CallInstr instr = new CallInstr(
+                this, rt.rtGlobalGC, rt.cls,
+                rt.rtGlobalGC.exportName,
+                new ArrayList<>()
+        );
+        gc.rtGlobalGC.addInstr(instr);
+        gc.rtGlobalGC.ret(instr);
         return this;
     }
 }

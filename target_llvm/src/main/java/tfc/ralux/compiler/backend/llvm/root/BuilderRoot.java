@@ -178,7 +178,7 @@ public class BuilderRoot extends ModuleRoot {
         LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP(
                 builder, pointer,
                 indices, 1,
-                "get_element_ptr"
+                name + "_gep"
         ));
         return getValue(gep, name);
     }

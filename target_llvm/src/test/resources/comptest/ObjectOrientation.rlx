@@ -5,10 +5,10 @@ use ralux.debug.Debug;
 public class ObjectOrientation {
     public static int main() {
         ObjectOrientation o = new ObjectOrientation();
-        long ptr = (long) o;
-        Debug.write(ptr);
+        Debug.write(0);
         int hc = o.#;
         Debug.write(hc);
+        o = null;
         return hc;
     }
 }

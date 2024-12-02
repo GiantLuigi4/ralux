@@ -17,7 +17,7 @@ public class RlxGc {
                     true,
                     RlxTypes.VOID_PTR,
                     "allocate",
-                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.INT)
+                    Arrays.asList(RlxTypes.OBJ, RlxTypes.INT)
             )
     ).exportName("tfc_ralux_runtime_GC_allocate");
     public final RlxFunction gcAllocObj = new RlxFunction(
@@ -25,9 +25,9 @@ public class RlxGc {
             false, false,
             new RlxEnclosure(
                     true,
-                    RlxTypes.VOID_PTR,
+                    RlxTypes.OBJ,
                     "allocate",
-                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.INT)
+                    Arrays.asList(RlxTypes.OBJ, RlxTypes.INT)
             )
     ).exportName("tfc_ralux_runtime_GC_allocateObj");
     public final RlxFunction gcCollect = new RlxFunction(
@@ -35,17 +35,28 @@ public class RlxGc {
             false, false,
             new RlxEnclosure(
                     true,
-                    RlxTypes.VOID_PTR,
+                    RlxTypes.VOID,
                     "collect",
-                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.INT)
+                    Arrays.asList(RlxTypes.OBJ)
             )
     ).exportName("tfc_ralux_runtime_GC_collect");
+    public final RlxFunction rtGlobalGC = new RlxFunction(
+            RlxFunction.ACC_PUBLIC,
+            true, true,
+            new RlxEnclosure(
+                    true,
+                    RlxTypes.OBJ,
+                    "getGlobalGC",
+                    RlxTypes.EMPTY_LIST
+            )
+    );
 
     public RlxGc(RlxCls cls) {
         this.cls = cls;
         cls.addFunction(gcAlloc);
         cls.addFunction(gcAllocObj);
         cls.addFunction(gcCollect);
+        cls.addFunction(rtGlobalGC);
     }
 
     public static RlxGc inject(RlxModule module) {

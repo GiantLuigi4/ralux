@@ -6,18 +6,19 @@ import tfc.rlxir.typing.RlxType;
 
 public class LLVMConversions {
     private final BuilderRoot root;
-    private final LLVMTypeRef F16;
-    private final LLVMTypeRef F32;
-    private final LLVMTypeRef F64;
-    private final LLVMTypeRef F128;
-    private final LLVMTypeRef I1;
-    private final LLVMTypeRef I8;
-    private final LLVMTypeRef I16;
-    private final LLVMTypeRef I32;
-    private final LLVMTypeRef I64;
-    private final LLVMTypeRef I128;
-    private final LLVMTypeRef VOID;
-    private final LLVMTypeRef VOID_PTR;
+    public final LLVMTypeRef F16;
+    public final LLVMTypeRef F32;
+    public final LLVMTypeRef F64;
+    public final LLVMTypeRef F128;
+    public final LLVMTypeRef I1;
+    public final LLVMTypeRef I8;
+    public final LLVMTypeRef I16;
+    public final LLVMTypeRef I32;
+    public final LLVMTypeRef I64;
+    public final LLVMTypeRef I128;
+    public final LLVMTypeRef VOID;
+    public final LLVMTypeRef VOID_PTR;
+    public final LLVMTypeRef VOID_PTR_PTR;
 
     public LLVMConversions(BuilderRoot root) {
         this.root = root;
@@ -36,6 +37,7 @@ public class LLVMConversions {
 
         VOID = root.VOID;
         VOID_PTR = root.pointerType(VOID);
+        VOID_PTR_PTR = root.pointerType(VOID_PTR);
     }
 
     public LLVMTypeRef typeFor(RlxType type) {
@@ -58,7 +60,7 @@ public class LLVMConversions {
             case VOID -> VOID;
 
             case BOOLEAN -> I1;
-            case PTR -> VOID_PTR;
+            case PTR -> VOID_PTR_PTR;
         };
     }
 }

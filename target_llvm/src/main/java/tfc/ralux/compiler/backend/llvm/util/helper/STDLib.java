@@ -235,4 +235,8 @@ public class STDLib {
         LLVMValueRef calcOut = root.sisum(randVal, min, "calc_out");
         return calcOut;
     }
+
+    public void printInt(LLVMValueRef integer) {
+        print(intToString(root.getIntType(32), integer));
+    }
 }

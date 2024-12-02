@@ -46,7 +46,15 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     }
 
     public CastOp valueCastOp(RlxType toType) {
-        if (type == toType.type) return CastOp.NONE;
+        if (type == toType.type) {
+            if (this == RlxTypes.VOID_PTR_PTR &&
+                    this.clazz == null
+            ) {
+                return CastOp.RLX;
+            }
+            return CastOp.NONE;
+        }
+
 
         if (type == RlxTypes.BOOLEAN.type) {
             if (toType.type.typ == 'i') return CastOp.EXTEND;
@@ -199,5 +207,9 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 
     public int getByteSize() {
         return type.bytes;
+    }
+
+    public boolean isPtr() {
+        return clazz != null;
     }
 }

@@ -1,12 +1,14 @@
 package tfc.ralux.compiler.backend.llvm;
 
 import org.bytedeco.javacpp.PointerPointer;
+import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
+import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
@@ -29,6 +31,7 @@ import tfc.rlxir.instr.value.vars.GetInstr;
 import tfc.rlxir.instr.value.vars.SetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.typing.RlxTypes;
 
 import java.util.List;
 
@@ -61,6 +64,15 @@ public class FunctionCompiler {
         this.blocks = blocks;
     }
 
+    private LLVMValueRef valConstPtr(ConstInstr<?> cst) {
+        if (((Number) cst.data).longValue() == 0) {
+            LLVMValueRef valueRef = root.integer(((Number) cst.data).longValue(), root.getIntType(64));
+            valueRef = root.ptrCast(valueRef, conversions.VOID_PTR_PTR, "to_voidptrptr");
+            return valueRef;
+        }
+        throw new RuntimeException("Const ptr must be 0 (null)");
+    }
+
     protected void ensureData(ValueInstr instr) {
         if (instr.getCompilerData() != null) return;
 
@@ -76,6 +88,7 @@ public class FunctionCompiler {
                     case DOUBLE, QUADRUPLE ->
                             root.loadFloat(((Number) cst.data).doubleValue(), conversions.typeFor(cst.type));
                     case BOOLEAN -> root.integer(((Number) cst.data).byteValue(), 1);
+                    case PTR -> valConstPtr(cst);
                     default -> throw new RuntimeException("Unsupported constant type: " + cst.valueType().type);
                 });
             }
@@ -155,6 +168,7 @@ public class FunctionCompiler {
             case FLOAT_FLOAT ->
                     root.castFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_fp_" + instr.value.valueType() + "_to_" + instr.toType);
             case NONE -> (LLVMValueRef) instr.value.getCompilerData();
+            case RLX -> (LLVMValueRef) instr.value.getCompilerData(); // TODO: maybe something
             default -> throw new RuntimeException("NYI cast mode: " + instr.mode);
         });
     }
@@ -182,13 +196,22 @@ public class FunctionCompiler {
                 );
             }
         }
-        lastVar = root.allocA(conversions.typeFor(instr.type), instr.debugName());
+        LLVMTypeRef ty = conversions.typeFor(instr.type);
+        lastVar = root.allocA(ty, instr.debugName());
         if (instr.paramFrom != -1) {
             root.setValue(
                     lastVar,
                     builder.getArg(
                             instr.paramFrom,
-                            conversions.typeFor(instr.type)
+                            ty
+                    )
+            );
+        } else if (instr.type.isPtr()) {
+            root.setValue(
+                    lastVar,
+                    root.ptrCast(
+                            root.integer(0, 64),
+                            ty, "to_ptr"
                     )
             );
         }
@@ -204,9 +227,75 @@ public class FunctionCompiler {
         instr.setCompilerData(lastVar);
     }
 
+    private void deref(LLVMValueRef obj) {
+        BlockBuilder nn = builder.block("non_null");
+        BlockBuilder re = builder.block("resume");
+        root.getBlockBuilding().conditionalJump(
+                root.compareInt(
+                        ECompOp.EQ,
+                        root.ptrCast(obj, conversions.I64, "cast_to_int"),
+                        root.integer(0, 64),
+                        "non_null"
+                ),
+                re, nn
+        );
+
+        nn.enableBuilding();
+        {
+            root.stdLib.printInt(root.integer(-8, 32));
+            FunctionBuilder builder1 = compiler.compiling.rt.rtDeref.getCompilerData();
+            PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
+            args.put(0, obj);
+            root.track(LLVM.LLVMBuildCall(
+                    root.getBuilder(),
+                    builder1.getDirect(),
+                    args, 1,
+                    ""
+            ));
+        }
+        nn.jump(re);
+
+        re.enableBuilding();
+    }
+
+    private void ref(LLVMValueRef obj) {
+        BlockBuilder nn = builder.block("non_null");
+        BlockBuilder re = builder.block("resume");
+        root.getBlockBuilding().conditionalJump(
+                root.compareInt(
+                        ECompOp.EQ,
+                        root.ptrCast(obj, conversions.I64, "cast_to_int"),
+                        root.integer(0, 64),
+                        "non_null"
+                ),
+                re, nn
+        );
+
+        nn.enableBuilding();
+        {
+            FunctionBuilder builder1 = compiler.compiling.rt.rtRef.getCompilerData();
+            PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
+            args.put(0, obj);
+            root.track(LLVM.LLVMBuildCall(
+                    root.getBuilder(),
+                    builder1.getDirect(),
+                    args, 1,
+                    ""
+            ));
+        }
+        nn.jump(re);
+
+        re.enableBuilding();
+    }
+
     private void compileVarSet(SetInstr instr) {
         ensureData(instr.value);
         LLVMValueRef alloc = instr.var.getCompilerData();
+        if (instr.value.valueType().isPtr() && !(instr.value instanceof AllocInstr)) ref(instr.value.getCompilerData());
+        if (instr.var.type.isPtr()) {
+            LLVMValueRef oldRef = root.getValue(alloc, "get_old_var");
+            deref(oldRef);
+        }
         root.setValue(alloc, instr.value.getCompilerData());
     }
 
@@ -283,17 +372,21 @@ public class FunctionCompiler {
         if (!toCall.isStatic) {
             ValueInstr valueInstr = instr.params.get(0);
             LLVMValueRef obj = valueInstr.getCompilerData();
-            obj  = root.ptrCast(
-                    obj, root.pointerType(root.pointerType(root.VOID)), "voidptrptr"
-            );
             FunctionBuilder builder1 = toCall.getCompilerData();
+            LLVMTypeRef tr = root.pointerType(root.pointerType(root.pointerType(root.BYTE_TYPE)));
+            obj = root.ptrCast(obj, tr, "yipee");
             // TODO: super calls
             LLVMValueRef valueRef;
             if (toCall.getExportName().equals("tfc_ralux_runtime_Object_hashCode")) {
-                valueRef = root.getElement(obj, root.integer(
-                        3,
-                        32
-                ), "get_function_hc");
+                valueRef = root.getValue(obj, "unpack_first");
+                PointerPointer args = new PointerPointer(1);
+                args.put(0, root.integer(2, 64));
+                valueRef = root.track(LLVM.LLVMBuildGEP(
+                        root.getBuilder(),
+                        valueRef,
+                        args, 1,
+                        "then_gep"
+                ));
             } else {
                 throw new RuntimeException("TODO");
             }

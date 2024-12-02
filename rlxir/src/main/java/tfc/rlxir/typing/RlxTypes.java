@@ -17,6 +17,8 @@ public class RlxTypes {
     public static final RlxType DOUBLE = new RlxType(PrimitiveType.DOUBLE);
     public static final RlxType QUADRUPLE = new RlxType(PrimitiveType.QUADRUPLE);
     public static final RlxType VOID_PTR = new RlxType(RlxTypes.VOID);
+    public static final RlxType VOID_PTR_PTR = new RlxType(RlxTypes.VOID_PTR);
+    public static final RlxType OBJ = VOID_PTR_PTR;
     public static final List<RlxType> EMPTY_LIST = Collections.emptyList();
     public static final RlxType[] INTS = new RlxType[]{BYTE, SHORT, INT, LONG, WIDE};
     public static final RlxType[] FLOATS = new RlxType[]{HALF, FLOAT, DOUBLE, QUADRUPLE};

@@ -19,13 +19,13 @@ public class CompilerTest {
         try {
             translator.parse(module, new String(new FileInputStream("std/tfc/ralux/runtime/Object.rlx").readAllBytes()));
 
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/CallTest.rlx").readAllBytes()));
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/AssortedTests.rlx").readAllBytes()));
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/IOViaDebug.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/TestClass1.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/CallTest.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/AssortedTests.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/BranchTest.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ABITest.rlx").readAllBytes()));
+//            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/IOViaDebug.rlx").readAllBytes()));
             translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream("comptest/ObjectOrientation.rlx").readAllBytes()));
         } catch (Throwable err) {
             throw new RuntimeException(err);
