@@ -1,3 +1,4 @@
+#include <string>
 #include <unordered_set>
 
 #if defined(__clang__)

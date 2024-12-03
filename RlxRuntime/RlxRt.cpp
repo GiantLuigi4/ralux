@@ -55,18 +55,12 @@ namespace ralux {
         
         // gc functions
         EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size) {
-            puts("allocate obj");
-            puts(std::to_string(size).c_str());
-            puts(std::to_string(sizeof(rlxObj)).c_str());
             void* data = tfc_ralux_runtime_GC_allocate(gc, size + sizeof(rlxObj));
             void** obj = static_cast<void**>(calloc(1, sizeof(void*)));
             obj[0] = data;
             
-            puts("buf_alloc'd");
             static_cast<void**>(obj[0])[2] = (void*) __rlxrt_default_hash;
-            puts("hash_code_set");
             __rlxrt_obj_created((RlxObj) obj, gc);
-            puts("obj_marked");
             return obj;
         }
 
@@ -105,15 +99,11 @@ namespace ralux {
             rlxStandardGCData* gc_data = new rlxStandardGCData();
             puts("gc data made");
             gc_data->gc = gc;
-            puts("gc var assigned");
             obj->gc_info = reinterpret_cast<rlxGCData*>(gc_data);
-            puts("gc data assigned");
             gc_data->gc->allObjs.insert(obj);
-            puts("obj added to gc");
         }
 
         EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC {
-            puts("get gc");
             return tfc_ralux_runtime_GC_GLOBAL_GC;
         }
 
@@ -126,32 +116,25 @@ namespace ralux {
         }
 
         EXPORT EXPORT_FUNC void __rlxrt_deref(const RlxObj obj) {
-            puts("CADRef");
             rlxGCData* dat = obj->gc_info;
-            puts("DatObb");
             dat->tfc_ralux_runtime_GCData_deref(obj);
         }
 
         EXPORT EXPORT_FUNC void __rlxrt_ref(const RlxObj obj) {
-            puts("CARef");
             obj->gc_info->tfc_ralux_runtime_GCData_ref(obj);
         }
 
         typedef rlxStandardGCData* STDGCD;
         
         EXPORT EXPORT_FUNC void __rlxrt_standard_ref(const RlxObj obj) {
-            puts("CRef");
             const STDGCD gc_data = reinterpret_cast<rlxStandardGCData*>(obj->gc_info);
-            puts("Refed");
             gc_data->scopeRefs++;
             if (gc_data->scopeRefs == 1)
                 gc_data->gc->roots.insert(obj);
         }
         
         EXPORT EXPORT_FUNC void __rlxrt_standard_deref(const RlxObj obj) {
-            puts("CDref");
             const STDGCD gc_data = reinterpret_cast<rlxStandardGCData*>(obj->gc_info);
-            puts("Derefed");
             gc_data->scopeRefs--;
             if (gc_data->scopeRefs == 0)
                 gc_data->gc->roots.erase(obj);

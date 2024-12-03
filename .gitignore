@@ -25,3 +25,5 @@
 /*/Debug/
 /*/x64/
 /*/build/
+/.semanticgraphs/
+/.graphbuddy/
