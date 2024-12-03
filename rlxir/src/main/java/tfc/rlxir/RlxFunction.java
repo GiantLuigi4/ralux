@@ -466,7 +466,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
             }
             return instr;
         }
-        throw new RuntimeException(instr.valueType() + " cannot be assigned to " + type.type);
+        throw new RuntimeException(instr.valueType() + " cannot be assigned to " + type);
     }
 
     public void defineGeneric(String generic, GenericType type) {

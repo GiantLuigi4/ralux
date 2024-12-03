@@ -243,7 +243,6 @@ public class FunctionCompiler {
         nn.enableBuilding();
         {
             // TODO: I wish this wasn't an rlxrt call
-            root.stdLib.printInt(root.integer(-8, 32));
             FunctionBuilder builder1 = compiler.compiling.rt.rtDeref.getCompilerData();
             PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
             args.put(0, obj);
@@ -370,7 +369,7 @@ public class FunctionCompiler {
     }
 
     private LLVMValueRef extractFunctionPtr(CallInstr instr, RlxFunction toCall) {
-        if (!toCall.isStatic) {
+        if (!toCall.isStatic && !instr.overrideStatic) {
             ValueInstr valueInstr = instr.params.get(0);
             LLVMValueRef obj = valueInstr.getCompilerData();
             FunctionBuilder builder1 = toCall.getCompilerData();

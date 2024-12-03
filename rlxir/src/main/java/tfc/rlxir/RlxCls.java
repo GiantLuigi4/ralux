@@ -72,4 +72,9 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
     public void addUsings(List<String> using) {
         this.using.addAll(using);
     }
+
+    @Override
+    public String toString() {
+        return qualifiedName();
+    }
 }

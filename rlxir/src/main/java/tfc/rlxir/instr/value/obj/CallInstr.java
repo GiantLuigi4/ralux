@@ -16,6 +16,7 @@ public class CallInstr extends ValueInstr {
     public final List<ValueInstr> params;
     public final RlxModule module;
     public final RlxFunction toCall;
+    public boolean overrideStatic = true;
 
     public CallInstr(RlxModule module, RlxCls owner, String name, List<ValueInstr> params) {
         this.module = module;

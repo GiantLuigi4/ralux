@@ -33,6 +33,7 @@ namespace ralux {
         inline EXPORT EXPORT_FUNC void __rlxrt_deref(RlxObj obj);
         inline EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj);
         inline EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj);
+        inline EXPORT EXPORT_FUNC void __rlxrt_noop(RlxObj obj);
 
         // gc class functions
         EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size);

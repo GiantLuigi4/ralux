@@ -127,6 +127,16 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     }
 
     public boolean isAssignableFrom(RlxType rlxType) {
+        if (type == rlxType.type) {
+            if (rlxType == RlxTypes.VOID_PTR_PTR &&
+                    rlxType.clazz == null
+            ) return true;
+
+            if (this == RlxTypes.VOID_PTR_PTR &&
+                    this.clazz == null
+            ) return true;
+        }
+
         if (rlxType.type.typ == 'i' && type.typ == 'i') {
             if (rlxType.type.bits <= type.bits) {
                 return true;

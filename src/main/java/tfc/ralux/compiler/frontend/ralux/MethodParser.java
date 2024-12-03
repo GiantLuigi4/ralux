@@ -384,7 +384,6 @@ public class MethodParser {
                     ));
                 }
             }
-            // TODO: explicit owner specification
             return function.call(module, ownerType.clazz, name, params);
         } else if (node.getChild(0) instanceof RaluxParser.CtorContext ctor) {
             RlxType type1 = RaluxToIR.parseType(module, owner, ctor.getChild(1), currentScope);

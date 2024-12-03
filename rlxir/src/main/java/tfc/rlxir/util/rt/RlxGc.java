@@ -26,7 +26,7 @@ public class RlxGc {
             new RlxEnclosure(
                     true,
                     RlxTypes.OBJ,
-                    "allocate",
+                    "allocateObj",
                     Arrays.asList(RlxTypes.OBJ, RlxTypes.INT)
             )
     ).exportName("tfc_ralux_runtime_GC_allocateObj");

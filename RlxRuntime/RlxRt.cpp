@@ -43,18 +43,23 @@ namespace ralux {
             RlxGC gc;
         };
 
+        struct EXPORT rlxNoGCData {
+            void (*tfc_ralux_runtime_GCData_ref)(RlxObj obj) = __rlxrt_noop;
+            void (*tfc_ralux_runtime_GCData_deref)(RlxObj obj) = __rlxrt_noop;
+        };
+
         RlxGC tfc_ralux_runtime_GC_GLOBAL_GC;
     }
 
 
     extern "C" {
         // gc functions
-        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size) {
+        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(const RlxGC gc, const int32_t size) {
             return calloc(std::_Bit_cast<uint32_t>(size), 1);
         }
         
         // gc functions
-        EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size) {
+        EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(const RlxGC gc, const int32_t size) {
             void* data = tfc_ralux_runtime_GC_allocate(gc, size + sizeof(rlxObj));
             void** obj = static_cast<void**>(calloc(1, sizeof(void*)));
             obj[0] = data;
@@ -64,7 +69,9 @@ namespace ralux {
             return obj;
         }
 
-        EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
+        EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(const RlxGC gc) {
+            puts(std::to_string(gc->allObjs.size()).c_str());
+            puts(std::to_string(gc->roots.size()).c_str());
             std::unordered_set<RlxObj> refd;
             for (const RlxObj root : gc->roots)
                 root->clazz->__rlxrt_gc_track(root, refd);
@@ -84,35 +91,50 @@ namespace ralux {
         }
 
         EXPORT EXPORT_FUNC void __rlxrt_free_obj(const RlxObj obj) {
-            obj->clazz->__rlxrt_gc_free(obj);
+            puts("Freeing object");
+            // obj->clazz->__rlxrt_gc_free(obj);
+            puts("Released");
             free(obj->gc_info);
+            puts("Freed GC Info");
             void** internal = reinterpret_cast<void**>(obj);
             free(internal[0]);
+            puts("Freed Object internal");
             free(obj);
+            puts("Freed pointer");
         }
 
         EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj) {
             return reinterpret_cast<long long>(obj);
         }
 
+        #pragma optimize("", off)
         EXPORT EXPORT_FUNC void __rlxrt_obj_created(const RlxObj obj, RlxGC gc) {
             rlxStandardGCData* gc_data = new rlxStandardGCData();
-            puts("gc data made");
             gc_data->gc = gc;
-            obj->gc_info = reinterpret_cast<rlxGCData*>(gc_data);
+            obj->gc_info = (rlxGCData*) gc_data;
             gc_data->gc->allObjs.insert(obj);
         }
+        #pragma optimize("", on)
 
         EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC {
             return tfc_ralux_runtime_GC_GLOBAL_GC;
         }
 
+        #pragma optimize("", off)
+        EXPORT EXPORT_FUNC void __rlxrt_init_gc() {
+            const RlxGC obj = tfc_ralux_runtime_GC_GLOBAL_GC;
+            rlxNoGCData* gc_data = new rlxNoGCData();
+            obj->gc_info = (rlxGCData*) gc_data;
+        }
+        #pragma optimize("", on)
+        
         EXPORT EXPORT_FUNC void __rlxrt_init() {
             tfc_ralux_runtime_GC_GLOBAL_GC = new rlxGC();
+            __rlxrt_init_gc();
         }
 
         EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj) {
-            return static_cast<int>(reinterpret_cast<long long>(obj));
+            return reinterpret_cast<int>(obj);
         }
 
         EXPORT EXPORT_FUNC void __rlxrt_deref(const RlxObj obj) {
@@ -138,6 +160,9 @@ namespace ralux {
             gc_data->scopeRefs--;
             if (gc_data->scopeRefs == 0)
                 gc_data->gc->roots.erase(obj);
+        }
+        
+        EXPORT EXPORT_FUNC void __rlxrt_noop(const RlxObj obj) {
         }
     }
 }

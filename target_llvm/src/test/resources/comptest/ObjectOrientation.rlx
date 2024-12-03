@@ -1,14 +1,16 @@
 pkg comptest;
 
 use ralux.debug.Debug;
+use tfc.ralux.runtime.GC;
 
 public class ObjectOrientation {
     public static int main() {
         ObjectOrientation o = new ObjectOrientation();
-        Debug.write(0);
         int hc = o.#;
         Debug.write(hc);
         o = null;
+        GC gc = GC.getGlobalGC();
+        GC.collect(gc);
         return hc;
     }
 }

@@ -193,6 +193,7 @@ public class ExpressionParser {
                                                     parseValue(parser, exprNode.getChild(0))
                                             )
                                     );
+                                    instr.overrideStatic = false;
                                     parser.function.addInstr(instr);
                                     return instr;
                                 }
