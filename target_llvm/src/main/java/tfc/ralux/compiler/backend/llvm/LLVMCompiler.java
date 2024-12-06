@@ -342,16 +342,21 @@ public class LLVMCompiler extends Compiler {
                     "/defaultlib:clang_rt.builtins-x86_64.lib " +
                     "/defaultlib:RlxRt " +
                     "/defaultlib:msvcrt " +
+                    "/defaultlib:libconcrt " +
                     "/defaultlib:libcmt " +
                     "/defaultlib:ucrt " +
+//                    "/defaultlib:libucrt " +
                     "/defaultlib:user32 " +
                     "/defaultlib:kernel32 " +
                     "/defaultlib:vcruntime " +
                     "/subsystem:console " +
                     "/fixed /cetcompat /incremental:no /ltcg " +
-                    "/release /debug:none /verbose " +
+                    "/release " +
+                    "/debug:none " +
+                    "/verbose " +
                     "/merge:.text=.text " +
                     "-opt:ref -opt:icf -opt:lbr " +
+                    "/debug:full " +
                     "-entry:main module.obj /out:module.exe";
 
             System.out.println("Linking using:");

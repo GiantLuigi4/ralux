@@ -291,7 +291,9 @@ public class FunctionCompiler {
     private void compileVarSet(SetInstr instr) {
         ensureData(instr.value);
         LLVMValueRef alloc = instr.var.getCompilerData();
-        if (instr.value.valueType().isPtr() && !(instr.value instanceof AllocInstr)) ref(instr.value.getCompilerData());
+        if (instr.value.valueType().isPtr()) {
+            ref(instr.value.getCompilerData());
+        }
         if (instr.var.type.isPtr()) {
             LLVMValueRef oldRef = root.getValue(alloc, "get_old_var");
             deref(oldRef);
@@ -373,12 +375,12 @@ public class FunctionCompiler {
             ValueInstr valueInstr = instr.params.get(0);
             LLVMValueRef obj = valueInstr.getCompilerData();
             FunctionBuilder builder1 = toCall.getCompilerData();
-            LLVMTypeRef tr = root.pointerType(root.pointerType(root.pointerType(root.BYTE_TYPE)));
+            LLVMTypeRef tr = root.pointerType(root.pointerType(root.BYTE_TYPE));
             obj = root.ptrCast(obj, tr, "yipee");
             // TODO: super calls
             LLVMValueRef valueRef;
             if (toCall.getExportName().equals("tfc_ralux_runtime_Object_hashCode")) {
-                valueRef = root.getValue(obj, "unpack_first");
+                valueRef = obj;
                 PointerPointer args = new PointerPointer(1);
                 args.put(0, root.integer(2, 64));
                 valueRef = root.track(LLVM.LLVMBuildGEP(
@@ -423,7 +425,6 @@ public class FunctionCompiler {
 
     private void compileAlloc(AllocInstr instr) {
         RlxType type = instr.type;
-        type.getByteSize();
         PointerPointer<LLVMValueRef> noArg = new PointerPointer<>(0);
         PointerPointer<LLVMValueRef> args = new PointerPointer<>(2);
         root.track(args);
@@ -476,10 +477,10 @@ public class FunctionCompiler {
                     case DEFINE_VAR -> compileVarDef((VarInstr) instr);
                     case SET_VAR -> compileVarSet((SetInstr) instr);
                     case GET_VAR -> compileVarGet((GetInstr) instr);
-                    case CONST_JUMP -> builder.jump(((JumpInstr) instr).target.getCompilerData());
+                    case CONST_JUMP -> root.getBlockBuilding().jump(((JumpInstr) instr).target.getCompilerData());
                     case COND_JUMP -> {
                         ensureData(((ConditionalJumpInstr) instr).condition);
-                        builder.conditionalJump(
+                        root.getBlockBuilding().conditionalJump(
                                 ((ConditionalJumpInstr) instr).condition.getCompilerData(),
                                 ((ConditionalJumpInstr) instr).targetTrue.getCompilerData(),
                                 ((ConditionalJumpInstr) instr).targetFalse.getCompilerData()
@@ -522,7 +523,7 @@ public class FunctionCompiler {
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }
-            if (!builder.isTerminated()) builder.ret();
+            if (!root.getBlockBuilding().isTerminated()) root.getBlockBuilding().ret();
         }
     }
 }

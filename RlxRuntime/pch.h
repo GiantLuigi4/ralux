@@ -1,5 +1,12 @@
-#include <string>
-#include <unordered_set>
+#pragma once
+#include <malloc.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+// #include <signal.h>
+// #include <csignal>
+// #include <windows.h>
+// #include <dbghelp.h>
 
 #if defined(__clang__)
     #define EXPORT __declspec(dllexport)

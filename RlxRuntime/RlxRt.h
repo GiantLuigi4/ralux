@@ -1,47 +1,45 @@
+#pragma once
 #include "pch.h"
 #include "intrinsics.h"
+#include "set.h"
 
-namespace ralux {
-    extern "C++" {
-        // core types
-        struct EXPORT rlxClass;
-        struct EXPORT rlxObj;
+#define SetT SimpleSet*
 
-        // gc types
-        struct EXPORT rlxGCData;
-        struct EXPORT rlxStandardGCData;
-        struct EXPORT rlxGC;
+// core types
+struct rlxClass;
+struct rlxObj;
 
-        typedef rlxClass* RlxCls;
-        typedef rlxObj* RlxObj;
-        typedef rlxGC* RlxGC;
+// gc types
+struct rlxGCData;
+struct rlxStandardGCData;
+struct rlxGC;
 
-        // static variables
-        // static rlxGC* tfc_ralux_runtime_GC_GLOBAL_GC;
-    }
+typedef struct rlxClass* RlxCls;
+typedef struct rlxObj* RlxObj;
+typedef struct rlxGC* RlxGC;
 
-    extern "C" {
-        // runtime methods
-        EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(std::unordered_set<RlxObj> refd, RlxObj obj);
-        EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc);
-        EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
-        EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj);
-        EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj);
+// static variables
+// static rlxGC* tfc_ralux_runtime_GC_GLOBAL_GC;
 
-        // ref counting methods
-        inline EXPORT EXPORT_FUNC void __rlxrt_ref(RlxObj obj);
-        inline EXPORT EXPORT_FUNC void __rlxrt_deref(RlxObj obj);
-        inline EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj);
-        inline EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj);
-        inline EXPORT EXPORT_FUNC void __rlxrt_noop(RlxObj obj);
+// runtime methods
+EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(SetT refd, RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc);
+EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
+EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj);
+EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj);
 
-        // gc class functions
-        EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int32_t size);
-        EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int32_t size);
-        EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc);
-        EXPORT EXPORT_FUNC auto __rlxrt_get_global_gc() -> RlxGC;
+// ref counting methods
+EXPORT EXPORT_FUNC void __rlxrt_ref(RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_deref(RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_noop(RlxObj obj);
 
-        // initialization functions
-        EXPORT EXPORT_FUNC void __rlxrt_init();
-    }
-}
+// gc class functions
+EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int size);
+EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size);
+EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc);
+EXPORT EXPORT_FUNC RlxGC __rlxrt_get_global_gc();
+
+// initialization functions
+EXPORT EXPORT_FUNC void __rlxrt_init();

@@ -48,7 +48,8 @@ public class BlockBuilder {
     }
 
     public void jump(BlockBuilder block) {
-        if (terminated) throw new RuntimeException("Already terminated");
+        if (terminated)
+            throw new RuntimeException("Already terminated");
         root.track(LLVM.LLVMBuildBr(root.getBuilder(), block.blockRef));
         terminated = true;
     }

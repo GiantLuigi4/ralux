@@ -151,7 +151,7 @@
       <CompileAsManaged>false</CompileAsManaged>
       <DisableLanguageExtensions />
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <LanguageStandard_C>stdc90</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -171,11 +171,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="RlxRt.cpp" />
-    <ClCompile Include="intrinsics.cpp" />
+    <ClCompile Include="RlxRt.c" />
+    <ClCompile Include="set.c" />
+    <ClCompile Include="rtset.c" />
+    <ClCompile Include="intrinsics.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RlxRt.h" />
+    <ClInclude Include="set.h" />
+    <ClInclude Include="rtset.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="intrinsics.h" />
   </ItemGroup>
