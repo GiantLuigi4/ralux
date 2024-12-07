@@ -16,5 +16,5 @@ void setAdd(SimpleSet* map, void* key);
 void setRemove(SimpleSet* map, void* key);
 bool setContains(SimpleSet* map, void* element);
 void setFree(SimpleSet* map);
-int setSize(SimpleSet* set);
-void* setGet(SimpleSet* set, int index);
+// int setSize(SimpleSet* set);
+// void* setGet(SimpleSet* set, int index);

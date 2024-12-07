@@ -27,6 +27,7 @@ public class BuilderRoot extends ModuleRoot {
             intTypes.add(LLVM.LLVMIntTypeInContext(context, 1 << i));
             System.out.println(1 << i);
         }
+        LLVM.LLVMSetModuleIdentifier(module, moduleName, moduleName.length());
 
         floatTypes.add(null);
         floatTypes.add(null);

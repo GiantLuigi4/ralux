@@ -173,7 +173,6 @@
   <ItemGroup>
     <ClCompile Include="RlxRt.c" />
     <ClCompile Include="set.c" />
-    <ClCompile Include="rtset.c" />
     <ClCompile Include="intrinsics.c" />
   </ItemGroup>
   <ItemGroup>

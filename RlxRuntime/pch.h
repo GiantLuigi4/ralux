@@ -15,3 +15,5 @@
 #endif
 
 #define EXPORT_FUNC __stdcall
+
+#define internal __attribute__((always_inline)) __inline__

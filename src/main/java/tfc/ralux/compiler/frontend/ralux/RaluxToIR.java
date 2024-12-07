@@ -18,6 +18,7 @@ import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -123,7 +124,7 @@ public class RaluxToIR extends Translator {
         }
     }
 
-    private void parseClass(RlxCls clazz, RlxModule module, RaluxParser.C_bodyContext tree) {
+    private void parseClass(RlxCls clazz, RlxModule module, RaluxParser.C_bodyContext tree, String source) {
         for (int i = 1; i < tree.children.size() - 1; i++) {
             ParseTree element = tree.children.get(i);
             if (element instanceof RaluxParser.C_componentContext component) {
@@ -166,7 +167,8 @@ public class RaluxToIR extends Translator {
                             module, clazz, trees,
                             type, name,
                             params, this,
-                            isStub, isAbi
+                            isStub, isAbi,
+                            source
                     );
                     if (!annotations.isEmpty()) throw new RuntimeException("NYI: annotations");
                     parser.function.addHints(clazz, compilerHints);
@@ -198,7 +200,7 @@ public class RaluxToIR extends Translator {
         return context.getChild(1).getText();
     }
 
-    private void accept(RlxModule module, RaluxParser.FileContext tree) {
+    private void accept(RlxModule module, RaluxParser.FileContext tree, String source) {
         String pkg = null;
         List<String> using = new ArrayList<>();
         for (ParseTree child : tree.children) {
@@ -222,7 +224,7 @@ public class RaluxToIR extends Translator {
                 // TODO: add in type of class
                 // TODO: add in modifiers
                 module.addClass(cls);
-                parseClass(cls, module, (RaluxParser.C_bodyContext) ((RaluxParser.ClassContext) child).children.get(index));
+                parseClass(cls, module, (RaluxParser.C_bodyContext) ((RaluxParser.ClassContext) child).children.get(index), source);
             } else {
                 System.out.println(tree);
                 throw new RuntimeException("TODO");
@@ -231,7 +233,7 @@ public class RaluxToIR extends Translator {
     }
 
     @Override
-    public void parse(RlxModule module, String file) {
+    public void parse(RlxModule module, String file, String source) {
         RaluxLexer lexer = new RaluxLexer(CharStreams.fromString(file));
         RaluxParser parser = new RaluxParser(new CommonTokenStream(lexer));
 
@@ -239,7 +241,8 @@ public class RaluxToIR extends Translator {
         if (tree.children == null)
             return;
 
-        accept(module, tree);
+        String rel = source;
+        accept(module, tree, rel);
     }
 
     public class Params {

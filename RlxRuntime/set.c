@@ -14,7 +14,7 @@ SimpleSet* setCreate() {
     return ptr;
 }
 
-int search(SimpleSet* set, void* element, char* exists) {
+internal int search(SimpleSet* set, void* element, char* exists) {
     void** dat = set->data;
     for (int i = 0; i < set->size; i++) {
         void* elem = dat[i];
@@ -23,17 +23,16 @@ int search(SimpleSet* set, void* element, char* exists) {
             exists[0] = 1;
             return i;
         }
-        // if (rel > 0) {
-        //     puts("Not found");
-        //     exists[0] = 0;
-        //     return set->size;
-        // }
+        if (rel > 0) {
+            exists[0] = 0;
+            return i;
+        }
     }
     exists[0] = 0;
     return set->size;
 }
 
-void ensureCapacity(SimpleSet* set) {
+internal void ensureCapacity(SimpleSet* set) {
     int size = set->size;
     int capacity = set->capacity;
     if (size + 1 >= capacity) {
@@ -48,23 +47,28 @@ void ensureCapacity(SimpleSet* set) {
     }
 }
 
-void memmov(void* src, void* dst, int count) {
-    void* tmp = malloc(count);
-    memcpy(src, tmp, count);
-    memcpy(tmp, dst, count);
+internal void memmov(void* src, void* dst, int count) {
+    void** tmp = malloc(count * sz);
+    // TODO: optimize
+    for (int i = 0; i < count; i++) {
+        tmp[i] = ((void**)src)[i];
+    }
+    for (int i = 0; i < count; i++) {
+        ((void**)dst)[i] = tmp[i];
+    }
     free(tmp);
 }
 
-void shift(struct simpleSet* set, int index, int offset) {
+internal void shift(struct simpleSet* set, int index, int offset) {
     if (index == 0 && offset < 0) return;
     if (index == set->size && offset > 0) return;
-    int start = index * sz;
-    int dest = (index + offset) * sz;
+    int start = index;
+    int dest = (index + offset);
     int len = set->size - index;
-    int end = (index + len + offset) * sz;
-    int delt = end;
-    // memmov(set->data + start, set->data + dest, delt);
-    memcpy(set->data + start, set->data + dest, delt);
+    int end = (index + len + offset);
+    int delt = len;
+    memmov(set->data + start, set->data + dest, delt);
+    // memcpy(set->data + start, set->data + dest, delt);
 }
 
 void setAdd(SimpleSet* set, void* key) {
@@ -82,68 +86,29 @@ void setRemove(SimpleSet* set, void* key) {
     char exists = 0;
     int index = search(set, key, &exists);
     if (exists) {
-        // shift(set, index + 1, -1);
-        // set->size--;
-        set->data[index] = 0;
+        shift(set, index + 1, -1);
+        set->size--;
     }
 }
 
 bool setContains(SimpleSet* map, void* element) {
     char exists = 0;
     search(map, element, &exists);
-    return (bool) exists;
+    return (bool)exists;
 }
 
 void setFree(SimpleSet* map) {
+    free(map->data);
+    map->capacity = 0;
+    map->size = 0;
+    map->data = 0;
     free(map);
 }
 
-int setSize(SimpleSet* set) {
-    return set->size;
-}
-
-void* setGet(SimpleSet* set, int index) {
-    return set->data[index];
-}
-
-//int compare(void* l, void* r) {
-//    const char* left = (const char*) l;
-//    const char* right = (const char*) r;
-//    return strcmp(left, right);
-//}
+// int setSize(SimpleSet* set) {
+//     return set->size;
+// }
 //
-//int hash(void* v) {
-//    const char* value = (const char*) v;
-//    int hash = 0;
-//    const int prime = 31;
-//    for (int i = 0;; i++) {
-//        hash = hash * prime + value[i];
-//        if (value[i] == 0) break;
-//    }
-//    return hash;
-//}
-//
-//int main() {
-//    SimpleSet* ptr = setCreate();
-//    ptr->compare = compare;
-//    ptr->hash = hash;
-//
-//    setAdd(ptr, "te", "et");
-//    setAdd(ptr, "et", "te");
-//    setAdd(ptr, "test", "tset");
-//    setAdd(ptr, "tes", "tse");
-//    setAdd(ptr, "testing", "gnitset");
-//    setAdd(ptr, "tests", "stset");
-//    setAdd(ptr, "testi", "itset");
-//    setAdd(ptr, "testss", "sstset");
-//    setAdd(ptr, "testss", "this element was replaced");
-//
-//    printf("elem: %s\n", (const char*) setContains(ptr, "te"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "et"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "tes"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "test"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "tests"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "testss"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "testi"));
-//    printf("elem: %s\n", (const char*) setContains(ptr, "testing"));
-//}
+// void* setGet(SimpleSet* set, int index) {
+//     return set->data[index];
+// }

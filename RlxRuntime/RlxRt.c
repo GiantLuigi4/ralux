@@ -62,7 +62,7 @@ struct rlxStandardGCData {
 static RlxGC tfc_ralux_runtime_GC_GLOBAL_GC;
 
 #pragma optimize("", off)
-void** makeObj(int size) {
+__attribute__((always_inline)) __inline__ void** makeObj(int size) {
     // puts("c0");
     void* obj = malloc(size);
     // puts("c2");
@@ -90,6 +90,7 @@ EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size) {
 
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     SetT refd = createSet();
+    SetT fred = createSet();
     printf("roots %i\n", setSize(gc->roots));
     printf("objs %i\n", setSize(gc->allObjs));
     printf("Iteration time\n");
@@ -102,9 +103,15 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     for (int i = 0; i < setSize(gc->allObjs); i++) {
         RlxObj obj = setGet(gc->allObjs, i);
         if (!contains(refd, obj))
-            __rlxrt_free_obj(obj);
+            setAdd(fred, obj);
+    }
+    for (int i = 0; i < setSize(fred); i++) {
+        RlxObj obj = setGet(fred, i);
+        setRemove(gc->allObjs, obj);
+        __rlxrt_free_obj(obj);
     }
     freeSet(refd);
+    freeSet(fred);
 }
 
 // runtime functions
@@ -146,6 +153,8 @@ EXPORT EXPORT_FUNC void __rlxrt_init_gc() {
     gc_data[0] = __rlxrt_noop;
     gc_data[1] = __rlxrt_noop;
     obj->gc_info = gc_data;
+    // setAdd(obj->roots, obj);
+    // setAdd(obj->allObjs, obj);
 }
 #pragma optimize("", on)
 

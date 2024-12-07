@@ -2,6 +2,7 @@ package tfc.ralux.compiler.frontend.ralux;
 
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.*;
 import tfc.rlxir.instr.base.ValueInstr;
@@ -24,6 +25,7 @@ public class MethodParser {
     RlxFunction function;
     Scope currentScope = new Scope();
     RaluxToIR raluxToRlx;
+    String source;
 
     public MethodParser(
             RlxModule module,
@@ -33,7 +35,8 @@ public class MethodParser {
             ParseTree name,
             RaluxToIR.Params params,
             RaluxToIR raluxToRlx,
-            boolean isStub, boolean isAbi
+            boolean isStub, boolean isAbi,
+            String source
     ) {
         this.module = module;
         this.owner = cls;
@@ -97,6 +100,7 @@ public class MethodParser {
         ValueInstr val = currentScope.getCached(name);
         String op = statement.getChild(1).getText();
         ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(2));
+        Util.setLineColumn(instr, (TerminalNodeImpl) statement.getChild(0), source);
         var.set(function.cast(switch (op) {
             case "=" -> instr;
             case "+=" -> function.sum(val, instr);

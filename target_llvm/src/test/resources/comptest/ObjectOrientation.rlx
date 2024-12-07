@@ -5,17 +5,18 @@ use tfc.ralux.runtime.GC;
 
 public class ObjectOrientation {
     public static int main() {
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < 32000; i++) {
             ObjectOrientation o0 = new ObjectOrientation();
             ObjectOrientation o1 = new ObjectOrientation();
             int hc = o0.#;
             Debug.write(hc);
             Debug.write(i);
+            GC gc = GC.getGlobalGC();
+            GC.collect(gc);
             o0 = null;
             o1 = null;
         }
-        GC gc = GC.getGlobalGC();
-        GC.collect(gc);
+        Debug.write(100);
         return 0;
     }
 }
