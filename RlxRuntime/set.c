@@ -15,25 +15,55 @@ SimpleSet* setCreate() {
 }
 
 internal int search(SimpleSet* set, void* element, char* exists) {
-    void** dat = set->data;
-    for (int i = 0; i < set->size; i++) {
-        void* elem = dat[i];
-        int rel = set->compare(elem, element);
-        if (rel == 0) {
+    int size = set->size;
+    if (size == 0) {
+        exists[0] = 0;
+        return 0;
+    }
+    size -= 1;
+    
+    void** data = set->data;
+
+    int middle = size >> 1;
+    int leftBound = 0;
+    int rightBound = size;
+
+    int (*compare)(void*, void*) = set->compare;
+    
+    while (leftBound < rightBound) {
+        void** elem = data[middle];
+        int comparison = compare(element, elem);
+
+        if (comparison == 0) {
             exists[0] = 1;
-            return i;
+            return middle;
         }
-        if (rel > 0) {
+
+        if (comparison > 0) {
+            leftBound = middle + 1;
+        } else {
+            rightBound = middle - 1;
+        }
+        middle = (leftBound + rightBound) >> 1;
+
+        if (middle < 0) {
             exists[0] = 0;
-            return i;
+            return 0;
+        } else if (middle > size) {
+            exists[0] = 0;
+            return size;
         }
     }
-    exists[0] = 0;
-    return set->size;
+
+    void** elem = data[middle];
+    int comparison = compare(element, elem);
+
+    exists[0] = comparison == 0;
+    if (comparison > 0) middle += 1;
+    return middle;
 }
 
-internal void ensureCapacity(SimpleSet* set) {
-    int size = set->size;
+internal void ensureCapacity(SimpleSet* set, int size) {
     int capacity = set->capacity;
     if (size + 1 >= capacity) {
         int grow = capacity;
@@ -59,15 +89,14 @@ internal void memmov(void* src, void* dst, int count) {
     free(tmp);
 }
 
-internal void shift(struct simpleSet* set, int index, int offset) {
+internal void shift(struct simpleSet* set, int index, int offset, int size, void** data) {
     if (index == 0 && offset < 0) return;
-    if (index == set->size && offset > 0) return;
+    if (index == size && offset > 0) return;
     int start = index;
-    int dest = (index + offset);
-    int len = set->size - index;
-    int end = (index + len + offset);
+    int dest = index + offset;
+    int len = size - index;
     int delt = len;
-    memmov(set->data + start, set->data + dest, delt);
+    memmov(data + start, data + dest, delt);
     // memcpy(set->data + start, set->data + dest, delt);
 }
 
@@ -75,9 +104,14 @@ void setAdd(SimpleSet* set, void* key) {
     char exists = 0;
     int index = search(set, key, &exists);
     if (!exists) {
-        ensureCapacity(set);
-        shift(set, index, 1);
-        set->data[index] = key;
+        int size = set->size;
+        if (index < 0) index = 0;
+        if (index > size) index = size;
+        
+        ensureCapacity(set, size);
+        void** data = set->data;
+        shift(set, index, 1, size, data);
+        data[index] = key;
         set->size++;
     }
 }
@@ -86,7 +120,7 @@ void setRemove(SimpleSet* set, void* key) {
     char exists = 0;
     int index = search(set, key, &exists);
     if (exists) {
-        shift(set, index + 1, -1);
+        shift(set, index + 1, -1, set->size, set->data);
         set->size--;
     }
 }

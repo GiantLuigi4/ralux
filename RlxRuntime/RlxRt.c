@@ -112,9 +112,7 @@ EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj) {
     // obj->clazz->__rlxrt_gc_free(obj);
     // puts("Released");
     free(obj->gc_info);
-    // puts("Freed GC Info");
     free(obj);
-    // puts("Freed object");
 }
 
 EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj) {
