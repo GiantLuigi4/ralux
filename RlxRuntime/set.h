@@ -12,9 +12,17 @@ struct simpleSet {
 };
 
 SimpleSet* setCreate();
+// not marked as internal since I want to deduplicate these
 void setAdd(SimpleSet* map, void* key);
 void setRemove(SimpleSet* map, void* key);
 bool setContains(SimpleSet* map, void* element);
-void setFree(SimpleSet* map);
+internal void setFree(SimpleSet* map) {
+    free(map->data);
+    map->capacity = 0;
+    map->size = 0;
+    map->data = 0;
+    free(map);
+}
+
 // int setSize(SimpleSet* set);
 // void* setGet(SimpleSet* set, int index);

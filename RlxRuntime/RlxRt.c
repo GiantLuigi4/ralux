@@ -1,6 +1,7 @@
 #include "RlxRt.h"
 #include "pch.h"
 #include "rtset.h"
+#include "allocator.h"
 
 // void segfaultHandler(int signal) {
 //     std::cerr << "Segmentation fault caught! Signal: " << signal << std::endl;
@@ -61,41 +62,24 @@ struct rlxStandardGCData {
 
 static RlxGC tfc_ralux_runtime_GC_GLOBAL_GC;
 
-#pragma optimize("", off)
-__attribute__((always_inline)) __inline__ void** makeObj(int size) {
-    // puts("c0");
-    void* obj = malloc(size);
-    // puts("c2");
-    return obj;
-}
-#pragma optimize("", on)
-
 // gc functions
 EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int size) {
-    return calloc(size, 1);
+    return rlx_calloc(size);
 }
 
 // gc functions
 EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size) {
-    // puts("create");
-    void** obj = makeObj(size + sizeof(struct rlxObj));
-    // puts("created");
+    void** obj = rlx_malloc(size + sizeof(struct rlxObj));
 
     obj[2] = __rlxrt_default_hash;
-    // puts("hash_set");
     __rlxrt_obj_created((RlxObj) obj, gc);
-    // puts("buffred");
     return obj;
 }
 
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     SetT refd = createSet();
     SetT fred = createSet();
-    printf("roots %i\n", setSize(gc->roots));
-    printf("objs %i\n", setSize(gc->allObjs));
-    printf("Iteration time\n");
     for (int i = 0; i < setSize(gc->roots); i++) {
-        printf("Obj%i\n", i);
         RlxObj root = setGet(gc->roots, i);
         // root->clazz->__rlxrt_gc_track(root, refd);
         __rlxrt_mark_obj(refd, root);
@@ -124,13 +108,13 @@ EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(SetT refd, RlxObj obj) {
 }
 
 EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj) {
-    puts("Freeing object");
+    // puts("Freeing object");
     // obj->clazz->__rlxrt_gc_free(obj);
-    puts("Released");
+    // puts("Released");
     free(obj->gc_info);
-    puts("Freed GC Info");
+    // puts("Freed GC Info");
     free(obj);
-    puts("Freed object");
+    // puts("Freed object");
 }
 
 EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj) {
@@ -145,49 +129,33 @@ EXPORT EXPORT_FUNC int __rlxrt_default_hash(RlxObj obj) {
     return (int) obj;
 }
 
-#pragma optimize("", off)
+// #pragma optimize("", off)
 EXPORT EXPORT_FUNC void __rlxrt_init_gc() {
     RlxGC obj = tfc_ralux_runtime_GC_GLOBAL_GC;
     obj->tfc_ralux_runtime_Object_hashCode = __rlxrt_default_hash;
-    void** gc_data = calloc(1, sizeof(struct rlxStandardGCData));
+    void** gc_data = rlx_malloc(sizeof(struct rlxStandardGCData));
     gc_data[0] = __rlxrt_noop;
     gc_data[1] = __rlxrt_noop;
     obj->gc_info = gc_data;
-    // setAdd(obj->roots, obj);
-    // setAdd(obj->allObjs, obj);
 }
-#pragma optimize("", on)
 
-#pragma optimize("", off)
 EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc) {
-    void** gc_data = calloc(1, sizeof(struct rlxStandardGCData));
+    void** gc_data = rlx_malloc(sizeof(struct rlxStandardGCData));
     gc_data[0] = __rlxrt_standard_ref;
     gc_data[1] = __rlxrt_standard_deref;
     gc_data[2] = gc;
     gc_data[3] = 0;
-    // printf("alloc\n");
-    // printf("obj ptr %lld\n", (long long) obj);
-    // printf("gc_dat ptr %lld\n", (long long) gc_data);
-    // printf("deref ptr %lld\n", (long long) gc_data[1]);
     obj->gc_info = (struct rlxGCData*) gc_data;
     add(gc->allObjs, obj);
-    // puts("added");
 }
-#pragma optimize("", on)
+// #pragma optimize("", on)
 
 EXPORT EXPORT_FUNC void __rlxrt_deref(RlxObj obj) {
-    // printf("deref\n");
-    // printf("obj ptr %lld\n", (long long) obj);
-    // printf("gc_dat ptr %lld\n", (long long) obj->gc_info);
-    // printf("deref ptr %lld\n", (long long) obj->gc_info->tfc_ralux_runtime_GCData_deref);
     obj->gc_info->tfc_ralux_runtime_GCData_deref(obj);
-    // puts("Deref'd");
 }
 
 EXPORT EXPORT_FUNC void __rlxrt_ref(RlxObj obj) {
-    // printf("ref\n");
     obj->gc_info->tfc_ralux_runtime_GCData_ref(obj);
-    // puts("Ref'd");
 }
 
 typedef struct rlxStandardGCData* STDGCD;
@@ -195,9 +163,7 @@ typedef struct rlxStandardGCData* STDGCD;
 EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj) {
     STDGCD gc_data = (struct rlxStandardGCData*) obj->gc_info;
     gc_data->scopeRefs++;
-    // printf("scopec: %i\n", gc_data->scopeRefs);
     if (gc_data->scopeRefs == 1) {
-        // printf("Add Root\n");
         add(gc_data->gc->roots, obj);
     }
 }
@@ -205,9 +171,7 @@ EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj) {
 EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj) {
     STDGCD gc_data = (struct rlxStandardGCData*) obj->gc_info;
     gc_data->scopeRefs--;
-    // printf("scopec: %i\n", gc_data->scopeRefs);
     if (gc_data->scopeRefs == 0) {
-        // printf("Remove root\n");
         erase(gc_data->gc->roots, obj);
     }
 }

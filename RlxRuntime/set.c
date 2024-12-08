@@ -36,7 +36,7 @@ internal void ensureCapacity(SimpleSet* set) {
     int size = set->size;
     int capacity = set->capacity;
     if (size + 1 >= capacity) {
-        int grow = capacity / 16;
+        int grow = capacity;
         void** old = set->data;
         int cap = capacity + grow;
         void** newData = malloc(cap * sz);
@@ -95,14 +95,6 @@ bool setContains(SimpleSet* map, void* element) {
     char exists = 0;
     search(map, element, &exists);
     return (bool)exists;
-}
-
-void setFree(SimpleSet* map) {
-    free(map->data);
-    map->capacity = 0;
-    map->size = 0;
-    map->data = 0;
-    free(map);
 }
 
 // int setSize(SimpleSet* set) {

@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// #include <signal.h>
-// #include <csignal>
-// #include <windows.h>
-// #include <dbghelp.h>
+
+#if defined(_WIN64) || defined(_WIN32)
+    #include <windows.h>
+#endif
 
 #if defined(__clang__)
     #define EXPORT __declspec(dllexport)
@@ -14,6 +14,6 @@
     #define EXPORT __declspec(dllexport)
 #endif
 
-#define EXPORT_FUNC __stdcall
+#define EXPORT_FUNC __stdcall __attribute__((fastcall))
 
-#define internal __attribute__((always_inline)) __inline__
+#define internal __attribute__((always_inline)) __inline__ __attribute__((fastcall))

@@ -1,10 +1,13 @@
-clang -c ./RlxRt.c -o ./x64/RlxRt.obj -target x86_64-apple-windows-ucrt -fno-omit-frame-pointer -fno-inline -gdwarf -nostdlib -nodefaultlibs -std=c99 -O3
-clang -c -emit-llvm -S ./RlxRt.c -o ./x64/RlxRt.ll -target x86_64-apple-windows-ucrt -fno-omit-frame-pointer -fno-inline -gdwarf -nostdlib -nodefaultlibs -std=c99 -O3 -Xclang -no-opaque-pointers
+clang -c ./RlxRt.c -o ./x64/RlxRt.obj -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -std=c99 -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -O3
+clang -c -emit-llvm -S ./RlxRt.c -o ./x64/RlxRt.ll -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -std=c99 -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -O3 -Xclang -no-opaque-pointers
 
-clang -c ./set.c -o ./x64/set.obj -target x86_64-apple-windows-ucrt -fno-omit-frame-pointer -fno-inline -gdwarf -nostdlib -nodefaultlibs -std=c99 -O3
-clang -c -emit-llvm -S ./set.c -o ./x64/set.ll -target x86_64-apple-windows-ucrt -fno-omit-frame-pointer -fno-inline -gdwarf -nostdlib -nodefaultlibs -std=c99 -O3
+clang -c ./set.c -o ./x64/set.obj -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -std=c99 -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -O3
+clang -c -emit-llvm -S ./set.c -o ./x64/set.ll -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -std=c99 -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -O3
 
-clang -c ./intrinsics.c -o ./x64/intrinsics.obj -target x86_64-apple-windows-ucrt -fno-omit-frame-pointer -fno-inline -gdwarf -nostdlib -nodefaultlibs -std=c99 -O3
-clang -c -emit-llvm -S ./intrinsics.c -o ./x64/intrinsics.ll -target x86_64-apple-windows-ucrt -fno-omit-frame-pointer -fno-inline -gdwarf -nostdlib -nodefaultlibs -std=c99 -O3
+clang -c ./intrinsics.c -o ./x64/intrinsics.obj -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -std=c99 -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -O3
+clang -c -emit-llvm -S ./intrinsics.c -o ./x64/intrinsics.ll -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -std=c99 -O3
+
+clang -c ./allocator.c -o ./x64/allocator.obj -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -std=c99 -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -O3
+clang -c -emit-llvm -S ./allocator.c -o ./x64/allocator.ll -target x86_64-apple-windows-ucrt -nostdlib -nodefaultlibs -fdata-sections -ffunction-sections -fvisibility=hidden -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -mregparm=3 -std=c99 -O3
 
 llvm-ar rc ./x64/RlxRt.lib ./x64/*.obj

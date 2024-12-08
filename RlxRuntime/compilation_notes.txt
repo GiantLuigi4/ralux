@@ -1,0 +1,1 @@
+debug: -fno-omit-frame-pointer -fno-inline -gdwarf -Og -g3

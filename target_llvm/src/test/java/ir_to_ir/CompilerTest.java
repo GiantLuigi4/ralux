@@ -8,7 +8,6 @@ import tfc.ralux.compiler.frontend.ralux.RaluxToIR;
 import tfc.rlxir.RlxModule;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class CompilerTest {
@@ -36,13 +35,15 @@ public class CompilerTest {
 //            parse(translator, module, "comptest/BranchTest.rlx");
 //            parse(translator, module, "comptest/ABITest.rlx");
 //            parse(translator, module, "comptest/IOViaDebug.rlx");
-            parse(translator, module, "comptest/ObjectOrientation.rlx");
+            parse(translator, module, "comptest/GCTest.rlx");
+//            parse(translator, module, "comptest/Wides.rlx");
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }
         translator.prepare(module);
 //        module.setMain(module.getClass("comptest.IOViaDebug").getFunctions().get(0));
-        module.setMain(module.getClass("comptest.ObjectOrientation").getFunctions().get(0));
+        module.setMain(module.getClass("comptest.GCTest").getFunctions().get(0));
+//        module.setMain(module.getClass("comptest.Wides").getFunctions().get(0));
 
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);

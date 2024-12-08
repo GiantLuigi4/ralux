@@ -1,0 +1,23 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+use tfc.ralux.runtime.GC;
+
+public class GCTest {
+    public static int main() {
+        GC gc = GC.getGlobalGC();
+        for (int i = 0; i < 3200000; i++) {
+            GCTest o0 = new GCTest();
+            GCTest o1 = new GCTest();
+            int hc = o0.#;
+            // Debug.write(hc);
+            // Debug.write(i);
+            // o0 = null;
+            // o1 = null;
+            // GC.collect(gc);
+        }
+        GC.collect(gc);
+        Debug.write(100);
+        return 0;
+    }
+}

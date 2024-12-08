@@ -215,9 +215,11 @@ public class LLVMCompiler extends Compiler {
             LLVM.LLVMAddDeadArgEliminationPass(pass);
 
             // another round
-            LLVM.LLVMAddStripSymbolsPass(pass);
-            LLVM.LLVMAddCFGSimplificationPass(pass);
             LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
+            LLVM.LLVMAddLoopUnswitchPass(pass);
+            LLVM.LLVMAddCFGSimplificationPass(pass);
+            LLVM.LLVMAddAggressiveDCEPass(pass);
+            LLVM.LLVMAddStripSymbolsPass(pass);
             root.hyperAggressiveOptimizer(false, pass);
 
             LLVM.LLVMAddReassociatePass(pass);
@@ -328,7 +330,7 @@ public class LLVMCompiler extends Compiler {
                         Environment.UCLIBC
                 ),
                 CPU.GENERIC,
-                3
+                LLVM.LLVMCodeGenLevelAggressive
         );
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
         try {

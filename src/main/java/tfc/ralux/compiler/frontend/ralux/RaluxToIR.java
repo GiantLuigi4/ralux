@@ -299,6 +299,6 @@ public class RaluxToIR extends Translator {
             clz = module.getClass(text);
             if (clz != null) return clz.getType();
         }
-        throw new RuntimeException("TODO");
+        throw new RuntimeException("TODO: " + text);
     }
 }
