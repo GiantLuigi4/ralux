@@ -11,6 +11,7 @@ import tfc.ralux.compiler.frontend.Translator;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxLexer;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.RlxCls;
+import tfc.rlxir.RlxField;
 import tfc.rlxir.RlxModule;
 import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.instr.value.vars.VarInstr;
@@ -189,7 +190,26 @@ public class RaluxToIR extends Translator {
                         }
                     });
                     clazz.addFunction(parser.function);
-                }
+                } else if (context instanceof RaluxParser.FieldContext field) {
+                    // TODO: parse access
+                    RlxType type = parseType(module, clazz, context.getChild(0), null);
+
+                    String name = context.getChild(1).getText();
+                    RlxField field1 = clazz.addField(
+                            false, type,
+                            name
+                    );
+                    if (context.getChildCount() > 3) {
+                        Object o = clazz.getCompilerData();
+                        if (o == null) clazz.setCompilerData(o = new RlxClassData());
+
+                        RlxClassData clzDat = (RlxClassData) o;
+                        // TODO:
+                        throw new RuntimeException();
+                    }
+
+//                    throw new RuntimeException("NYI");
+                } else throw new RuntimeException("NYI");
             } else throw new RuntimeException("huh?");
         }
     }

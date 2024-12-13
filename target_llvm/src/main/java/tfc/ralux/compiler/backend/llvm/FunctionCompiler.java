@@ -27,9 +27,7 @@ import tfc.rlxir.instr.value.arrays.ArraySet;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.obj.AllocInstr;
 import tfc.rlxir.instr.value.obj.CallInstr;
-import tfc.rlxir.instr.value.vars.GetInstr;
-import tfc.rlxir.instr.value.vars.SetInstr;
-import tfc.rlxir.instr.value.vars.VarInstr;
+import tfc.rlxir.instr.value.vars.*;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
@@ -140,6 +138,9 @@ public class FunctionCompiler {
             };
             default -> throw new RuntimeException("NYI");
         });
+
+        LLVMValueRef ref = instr.getCompilerData();
+        root.setDebug(ref, instr);
     }
 
     private void compileBoolOp(BoolInstr instr) {
@@ -448,6 +449,29 @@ public class FunctionCompiler {
         instr.setCompilerData(valueRef);
     }
 
+    protected LLVMValueRef extractField(LLVMValueRef obj, LLVMTypeRef type, int offset) {
+        LLVMTypeRef tr = root.pointerType(type);
+        // TODO: super calls
+        LLVMValueRef valueRef = obj;
+        // TODO: GEP?
+        valueRef = root.ptrCast(valueRef, root.getIntType(64), "cast_to_long");
+        valueRef = root.sisum(valueRef, root.integer(offset + RlxCls.OBJ_BASE, 64), "offset_ptr");
+        valueRef = root.toPtr(valueRef, tr, "ensure_ptr");
+        return root.getValue(valueRef, "get_data");
+    }
+
+    private void compileFieldGet(FieldGetInstr instr) {
+        FieldInstr instr1 = instr.var;
+        int offset = instr1.owner.clazz.getFieldOffset(instr1.field);
+
+        ValueInstr dataBase = instr.base;
+        if (dataBase != null) {
+            LLVMValueRef base = dataBase.getCompilerData();
+            LLVMValueRef value = extractField(base, conversions.typeFor(instr1.type), offset);
+            instr.setCompilerData(value);
+        } else throw new RuntimeException("Static field NYI");
+    }
+
     public void compile() {
         stubBlocks();
 
@@ -520,6 +544,8 @@ public class FunctionCompiler {
                     case NEGATE -> compileNegation((NegInstr) instr);
                     case CALL -> compileCall((CallInstr) instr);
                     case ALLOC -> compileAlloc((AllocInstr) instr);
+
+                    case GET_FIELD -> compileFieldGet((FieldGetInstr) instr);
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }

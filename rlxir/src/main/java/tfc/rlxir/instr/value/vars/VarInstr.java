@@ -1,5 +1,6 @@
 package tfc.rlxir.instr.value.vars;
 
+import tfc.rlxir.RlxFunction;
 import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
@@ -33,6 +34,12 @@ public class VarInstr extends BaseInstr {
         function.addInstr(new SetInstr(this, value));
     }
 
+    public ValueInstr get(RlxFunction function) {
+        if (function != this.function) throw new RuntimeException("Cannot get var from another function");
+        return get();
+    }
+
+    @Deprecated(forRemoval = true)
     public ValueInstr get() {
         GetInstr instr = new GetInstr(this);
         function.addInstr(instr);

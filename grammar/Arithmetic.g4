@@ -18,7 +18,7 @@ expr: expr '.#'
 ;
 
 fb_expr: NUMBER | CONSTANT // const&number
-       | WORD              // variable
+       | qualif            // variable
        | STRING | CHR      // string&char
        | call
        | assignment

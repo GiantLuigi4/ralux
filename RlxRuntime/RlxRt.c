@@ -70,6 +70,9 @@ EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int size) {
 // gc functions
 EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size) {
     void** obj = rlx_malloc(size + sizeof(struct rlxObj));
+    // long long base = (long long) obj;
+    // base += 3 * 8;
+    memset(((byte*) obj) + 3 * 8, 0, size);
 
     obj[2] = __rlxrt_default_hash;
     __rlxrt_obj_created((RlxObj) obj, gc);

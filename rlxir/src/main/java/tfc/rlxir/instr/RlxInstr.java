@@ -23,4 +23,8 @@ public abstract class RlxInstr extends DebuggerDataHolder<RlxInstr> {
         this.function = function;
         return this;
     }
+
+    public RlxFunction getFunction() {
+        return function;
+    }
 }

@@ -152,7 +152,7 @@ public class RlxModule {
                     )
             );
             VarInstr arg0 = writeInt.param(anInt, 0);
-            writeInt.print(arg0.get());
+            writeInt.print(arg0.get(writeInt));
             writeInt.ret();
             cls.addFunction(writeInt);
 

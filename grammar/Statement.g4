@@ -35,7 +35,7 @@ loop_standard: ((flow|statement)?) semi_truck (expr) semi_truck ((flow|statement
 
 //|'+='|'-='|'/='|'*='|'&='|'^='|'%='
 definition: full_type WORD '=' expr;
-assignment: (WORD operand expr)|(WORD dOperand);
+assignment: (qualif operand expr)|(WORD dOperand);
 
 // calls
 call: method_call|ctor;
@@ -43,6 +43,8 @@ method_call: (named_type '.')? WORD '(' params? ')';
 ctor: NEW type '(' params? ')';
 // TODO; fix
 params: (expr ',')* expr;
+
+qualif: ((named_type '.')? WORD);
 
 // operands
 dOperand: INC_INC|DEC_DEC;

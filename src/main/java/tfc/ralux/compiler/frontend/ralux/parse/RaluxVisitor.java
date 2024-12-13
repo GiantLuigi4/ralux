@@ -196,6 +196,12 @@ public interface RaluxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitParams(RaluxParser.ParamsContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link RaluxParser#qualif}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitQualif(RaluxParser.QualifContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link RaluxParser#dOperand}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -267,4 +273,10 @@ public interface RaluxVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitDirective(RaluxParser.DirectiveContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link RaluxParser#field}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitField(RaluxParser.FieldContext ctx);
 }

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Stack;
 
 public class Scope {
+    public final RlxFunction function;
     Map<String, VarInstr> variables = new HashMap<>();
     Stack<Map<String, ValueInstr>> caches = new Stack<>();
     Map<String, ValueInstr> got = new HashMap<>();
@@ -17,9 +18,11 @@ public class Scope {
 
     public Scope(Scope parent) {
         this.parent = parent;
+        this.function = parent.function;
     }
 
-    public Scope() {
+    public Scope(RlxFunction function) {
+        this.function = function;
     }
 
     public void pushCache() {
@@ -35,7 +38,7 @@ public class Scope {
         VarInstr var = variables.get(name);
         if (var == null && parent != null) {
             var = parent.getVar(name);
-            variables.put(name, var);
+            if (var != null) variables.put(name, var);
         }
         return var;
     }
@@ -44,7 +47,7 @@ public class Scope {
     public ValueInstr getCached(String name) {
         ValueInstr val = got.get(name);
         if (val == null) {
-            val = getVar(name).get();
+            val = getVar(name).get(function);
             got.put(name, val);
         }
         return val;
@@ -72,5 +75,9 @@ public class Scope {
         instr.setDebugName(name);
         variables.put(name, instr);
         return instr;
+    }
+
+    public boolean containsVar(String name) {
+        return variables.containsValue(name);
     }
 }

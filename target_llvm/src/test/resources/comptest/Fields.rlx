@@ -1,0 +1,22 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+
+public class Fields {
+    int f ;
+    int f1;
+
+    public static int main() {
+        Fields flds = new Fields();
+
+        // flds.f = 10;
+        Debug.write(flds.f);
+        Debug.write(flds.f1);
+
+        // flds.f1 = flds.f1 + flds.f;
+        Debug.write(flds.f);
+        Debug.write(flds.f1);
+
+        return 0;
+    }
+}

@@ -1,23 +1,34 @@
 package tfc.rlxir;
 
 import tfc.rlxir.comphints.ClassCompilerHint;
-import tfc.rlxir.comphints.FunctionCompilerHint;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.util.CompilerDataHolder;
+import tfc.rlxir.util.IndexedHashSet;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class RlxCls extends CompilerDataHolder<RlxCls> {
+    // rlxrt has 3 builtin fields
+    public static final int OBJ_BASE = 3 * 8;
+
     public final String name;
     public final String pkg;
     RlxCls parent;
     List<RlxFunction> functions = new ArrayList<>();
     List<String> using = new ArrayList<>();
     List<ClassCompilerHint> compilerHints = new ArrayList<>();
+    Map<String, RlxField> fields = new HashMap<>();
+    IndexedHashSet<RlxField> fieldsSet = new IndexedHashSet<>();
 
     public void addFunction(RlxFunction function) {
         this.functions.add(function);
+    }
+
+    public RlxField addField(boolean isStatic, RlxType type, String name) {
+        RlxField field = new RlxField(isStatic, type, this.type, name);
+        fields.put(name, field);
+        fieldsSet.add(field);
+        return field;
     }
 
     public RlxCls(String pkg, String name) {
@@ -76,5 +87,24 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
     @Override
     public String toString() {
         return qualifiedName();
+    }
+
+    public RlxField getField(String text) {
+        return fields.get(text);
+    }
+
+    public Collection<RlxField> getFields() {
+        return fields.values();
+    }
+
+    public int getFieldOffset(RlxField field) {
+        IndexedHashSet<RlxField>.Index index = fieldsSet.getRoot();
+
+        int offset = 0;
+        while (index.getElem() != field) {
+            offset += index.getElem().type.getElementByteSize();
+            index = index.getNext();
+        }
+        return offset;
     }
 }

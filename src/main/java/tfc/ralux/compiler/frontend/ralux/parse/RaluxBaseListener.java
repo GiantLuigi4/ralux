@@ -388,6 +388,18 @@ public class RaluxBaseListener implements RaluxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterQualif(RaluxParser.QualifContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitQualif(RaluxParser.QualifContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDOperand(RaluxParser.DOperandContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -527,6 +539,18 @@ public class RaluxBaseListener implements RaluxListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitDirective(RaluxParser.DirectiveContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterField(RaluxParser.FieldContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitField(RaluxParser.FieldContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

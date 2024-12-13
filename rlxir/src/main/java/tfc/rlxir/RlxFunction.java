@@ -142,7 +142,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     }
 
     public void ret(VarInstr var) {
-        ret(var.get());
+        ret(var.get(this));
     }
 
     public void ret() {
@@ -379,13 +379,13 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         RlxBlock exit = makeBlock("exit");
 
         jump(header);
-        ValueInstr value = variable.get();
+        ValueInstr value = variable.get(this);
         ValueInstr cmp = compare(op, value, end);
         jumpIf(cmp, body, exit);
 
         buildBlock(body);
         bodyBuilder.accept(body);
-        value = variable.get();
+        value = variable.get(this);
         variable.set(sum(
                 value, step
         ));

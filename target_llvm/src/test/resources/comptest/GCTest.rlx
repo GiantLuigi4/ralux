@@ -10,7 +10,8 @@ public class GCTest {
             GCTest o0 = new GCTest();
             GCTest o1 = new GCTest();
             int hc = o0.#;
-            // Debug.write(hc);
+            Debug.write(hc);
+            Debug.write(hc + 5);
             // Debug.write(i);
             o0 = null;
             o1 = null;

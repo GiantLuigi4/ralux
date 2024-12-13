@@ -7,6 +7,7 @@ import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.CompareOp;
 import tfc.rlxir.instr.global.ConstInstr;
@@ -102,7 +103,7 @@ public class ExpressionParser {
                 parser.function.buildBlock(shortB);
                 dirtVar.set(leftV);
                 parser.function.jump(exitB);
-                return dirtVar.get();
+                return dirtVar.get(parser.function);
             }
             case "||" -> {
                 RlxBlock shortB = parser.function.makeBlock("short_branch_or");
@@ -117,7 +118,7 @@ public class ExpressionParser {
                 parser.function.buildBlock(shortB);
                 dirtVar.set(leftV);
                 parser.function.jump(exitB);
-                return dirtVar.get();
+                return dirtVar.get(parser.function);
             }
             default -> throw new RuntimeException("TODO");
         }
@@ -150,11 +151,15 @@ public class ExpressionParser {
                         ValueInstr leftV = parseValue(parser, left);
                         ValueInstr rightV = parseValue(parser, right);
                         String operand;
-                        if (operator instanceof TerminalNodeImpl) {
+                        TerminalNodeImpl terminal;
+                        if (operator instanceof TerminalNodeImpl node) {
                             operand = operator.getText();
+                            terminal = node;
                         } else throw new RuntimeException("wat");
 
-                        return makeOperator(parser.function, operand, leftV, rightV);
+                        ValueInstr instr = makeOperator(parser.function, operand, leftV, rightV);
+                        Util.setLineColumn(instr, terminal, parser.source);
+                        return instr;
                     } else {
                         return parseValue(parser, exprNode.getChild(1));
                     }
@@ -226,7 +231,9 @@ public class ExpressionParser {
                     return parser.parseAssign((RaluxParser.AssignmentContext) node, true);
                 } else if (node instanceof RaluxParser.CallContext) {
                     return parser.parseCall((RaluxParser.CallContext) node);
-                } else throw new RuntimeException("TODO");
+                } else if (node instanceof RaluxParser.QualifContext qualif) {
+                    return MethodParser.getVarVal(parser.module,parser.owner, parser.currentScope, qualif);
+                }
             } else throw new RuntimeException("TODO");
         }
 

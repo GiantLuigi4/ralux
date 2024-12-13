@@ -1,6 +1,7 @@
 package tfc.rlxir.typing;
 
 import tfc.rlxir.RlxCls;
+import tfc.rlxir.RlxField;
 import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.instr.enumeration.MathVariant;
 import tfc.rlxir.util.CompilerDataHolder;
@@ -209,13 +210,20 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     public int getByteSizeObj() {
         if (isArray()) return 8;
         if (type == PrimitiveType.PTR) {
+            if (clazz != null) {
+                int sz = 0;
+                for (RlxField field : clazz.getFields())
+                    sz += field.type.getElementByteSize();
+                return sz;
+            }
+
             // TODO: should be total size of instance fields (and function ptrs)
             return 0;
         }
         return type.bytes;
     }
 
-    public int getByteSize() {
+    public int getElementByteSize() {
         return type.bytes;
     }
 

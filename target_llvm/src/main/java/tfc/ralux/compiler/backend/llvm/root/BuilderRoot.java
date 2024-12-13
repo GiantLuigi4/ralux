@@ -9,20 +9,26 @@ import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.ralux.compiler.backend.llvm.util.helper.STDLib;
 import tfc.ralux.compiler.backend.llvm.util.helper.Util;
+import tfc.rlxir.RlxFunction;
+import tfc.rlxir.instr.RlxInstr;
+import tfc.rlxir.instr.value.MathInstr;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class BuilderRoot extends ModuleRoot {
     public final LLVMTypeRef VOID;
     public STDLib stdLib;
     LLVMBuilderRef builder = LLVM.LLVMCreateBuilderInContext(context);
+    LLVMDIBuilderRef debug;
 
     List<LLVMTypeRef> intTypes = new ArrayList<>();
     List<LLVMTypeRef> floatTypes = new ArrayList<>();
 
     public BuilderRoot(String moduleName) {
         super(moduleName);
+        debug = LLVM.LLVMCreateDIBuilder(module);
         for (int i = 0; i < 8; i++) {
             intTypes.add(LLVM.LLVMIntTypeInContext(context, 1 << i));
             System.out.println(1 << i);
@@ -397,6 +403,70 @@ public class BuilderRoot extends ModuleRoot {
     public LLVMValueRef ptrCast(LLVMValueRef valueRef, LLVMTypeRef type, String name) {
         return track(LLVM.LLVMBuildPointerCast(
                 builder, valueRef, type, name
+        ));
+    }
+
+    HashMap<String, LLVMMetadataRef> scopes = new HashMap<>();
+
+    protected LLVMMetadataRef file(String name) {
+        LLVMMetadataRef md = scopes.get(name);
+        if (md != null) return md;
+
+        String dir = name.substring(0, name.lastIndexOf('/'));
+        String fileName = name.substring(name.lastIndexOf('/') + 1);
+        LLVMMetadataRef metadataRef = LLVM.LLVMDIBuilderCreateFile(
+                debug,
+                dir, dir.length(),
+                fileName, fileName.length()
+        );
+        track(metadataRef);
+        metadataRef = LLVM.LLVMDIBuilderCreateCompileUnit(
+                debug,
+                LLVM.LLVMDWARFSourceLanguageUPC,
+                metadataRef, "RaluxLang" + (char) 0, "RaluxLang".length(),
+                0, "", 0,
+                0, "", 0,
+                0, 0, 0, 0,
+                "", 0, "RlxRt" + (char) 0, 5
+        );
+        scopes.put(name, metadataRef);
+        return metadataRef;
+    }
+
+//    protected LLVMMetadataRef dbgFunction(RlxInstr instr, LLVMMetadataRef scope) {
+//        RlxFunction function = instr.getFunction();
+//        FunctionBuilder builder1 = function.getCompilerData();
+//        LLVM.LLVMDIBuilderCreateFunction(
+//                debug,
+//                scope,
+//                instr.getFunction().getExportName(),
+//                instr.getFunction().getExportName().length(),
+//                instr.getFunction().getExportName(),
+//                instr.getFunction().getExportName().length(),
+//                file,
+//                0,
+//
+//        )
+//        builder1.getDirect();
+//    }
+
+    public void setDebug(LLVMValueRef ref, RlxInstr instr) {
+        if (instr.getSourceFile() != null) {
+            // TODO: scopes are per-function...
+
+//            LLVMMetadataRef md = file(instr.getSourceFile());
+//            LLVMMetadataRef llvmMetadataRef = LLVM.LLVMDIBuilderCreateDebugLocation(
+//                    context, instr.getLine(), instr.getColumn(),
+//                    md, null
+//            );
+//            track(llvmMetadataRef);
+//            LLVM.LLVMInstructionSetDebugLoc(ref, llvmMetadataRef);
+        }
+    }
+
+    public LLVMValueRef toPtr(LLVMValueRef valueRef, LLVMTypeRef llvmTypeRef, String name) {
+        return track(LLVM.LLVMBuildIntToPtr(
+                builder, valueRef, llvmTypeRef, name
         ));
     }
 }

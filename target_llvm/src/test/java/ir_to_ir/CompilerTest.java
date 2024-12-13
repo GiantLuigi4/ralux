@@ -35,23 +35,25 @@ public class CompilerTest {
 //            parse(translator, module, "comptest/BranchTest.rlx");
 //            parse(translator, module, "comptest/ABITest.rlx");
 //            parse(translator, module, "comptest/IOViaDebug.rlx");
-            parse(translator, module, "comptest/GCTest.rlx");
+//            parse(translator, module, "comptest/GCTest.rlx");
 //            parse(translator, module, "comptest/Wides.rlx");
+            parse(translator, module, "comptest/Fields.rlx");
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }
         translator.prepare(module);
 //        module.setMain(module.getClass("comptest.IOViaDebug").getFunctions().get(0));
-        module.setMain(module.getClass("comptest.GCTest").getFunctions().get(0));
+//        module.setMain(module.getClass("comptest.GCTest").getFunctions().get(0));
 //        module.setMain(module.getClass("comptest.Wides").getFunctions().get(0));
+        module.setMain(module.getClass("comptest.Fields").getFunctions().get(0));
 
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);
         compiler.verbose();
         compiler.stub();
         compiler.compile();
-        compiler.optimize(3, 5, true);
-//        compiler.optimize(0, 0, false);
+//        compiler.optimize(3, 5, true);
+        compiler.optimize(0, 0, false);
         compiler.write();
     }
 }

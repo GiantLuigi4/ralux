@@ -23,7 +23,7 @@ public class MethodParser {
     RlxCls owner;
     RaluxToIR.Params params;
     RlxFunction function;
-    Scope currentScope = new Scope();
+    Scope currentScope;
     RaluxToIR raluxToRlx;
     String source;
 
@@ -56,9 +56,46 @@ public class MethodParser {
                 0, isStatic, false,
                 new RlxEnclosure(type, this.name, params.toList())
         );
+        currentScope = new Scope(function);
 
         if (!isAbi && !isStub) currentScope.parameterize(this.function, params);
         this.raluxToRlx = raluxToRlx;
+        this.source = source;
+    }
+
+    protected static VarInstr getVarRef(ValueInstr base, String field) {
+        RlxType type1 = base.valueType();
+        RlxCls cls = type1.clazz;
+        RlxField field1 = cls.getField(field);
+        return field1.instr.from(base);
+    }
+
+    public static VarInstr getVarRef(RlxModule module, RlxCls clazz, Scope scope, String text) {
+        if (text.contains(".")) {
+            String substr = text.substring(0, text.lastIndexOf('.'));
+            ValueInstr var = getVarVal(module, clazz, scope, substr);
+            return getVarRef(var, text.substring(text.lastIndexOf('.') + 1));
+        } else {
+            VarInstr var = scope.getVar(text);
+            if (var != null) return var;
+            RlxField o = clazz.getField(text);
+            if (o != null) return o.instr; // TODO: pretty sure this is wrong
+            throw new RuntimeException("Symbol not found: " + text);
+        }
+    }
+
+    public static VarInstr getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.QualifContext qualifContext) {
+        return getVarRef(module, clazz, scope, qualifContext.getText());
+    }
+
+    public static ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, String text) {
+        VarInstr instr = currentScope.getVar(text);
+        if (instr != null) return currentScope.getCached(text);
+        return getVarRef(module, owner, currentScope, text).get(currentScope.function);
+    }
+
+    public static ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.QualifContext qualif) {
+        return getVarVal(module, owner, currentScope, qualif.getText());
     }
 
     public ValueInstr parseAssign(RaluxParser.AssignmentContext statement, boolean forExpr) {
@@ -96,11 +133,18 @@ public class MethodParser {
         }
 
         String name = statement.getChild(0).getText();
-        VarInstr var = currentScope.getVar(name);
-        ValueInstr val = currentScope.getCached(name);
+        VarInstr var = getVarRef(module, owner, currentScope, (RaluxParser.QualifContext) statement.getChild(0));
+        boolean inScope = currentScope.containsVar(name);
+
+        ValueInstr val;
+        if (inScope) val = currentScope.getCached(name);
+        else val = var.get(function);
+
         String op = statement.getChild(1).getText();
         ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(2));
-        Util.setLineColumn(instr, (TerminalNodeImpl) statement.getChild(0), source);
+
+        ParseTree tree = statement.getChild(0);
+        Util.setLineColumn(instr, (TerminalNodeImpl) tree.getChild(tree.getChildCount() - 1), source);
         var.set(function.cast(switch (op) {
             case "=" -> instr;
             case "+=" -> function.sum(val, instr);
@@ -109,9 +153,12 @@ public class MethodParser {
             case "/=" -> function.div(val, instr);
             default -> throw new RuntimeException("Unsupported assignment operation " + op);
         }, var.type));
-        currentScope.dirtyVar(name);
-        if (raluxToRlx.debugMode) function.print(currentScope.getCached(name));
-        return forExpr ? currentScope.getCached(name) : null;
+
+        if (inScope) {
+            currentScope.dirtyVar(name);
+            if (raluxToRlx.debugMode) function.print(currentScope.getCached(name));
+            return forExpr ? currentScope.getCached(name) : null;
+        } else return forExpr ? var.get(function) : null;
     }
 
     private void parseStatement(
