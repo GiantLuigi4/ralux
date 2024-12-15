@@ -27,6 +27,11 @@ public class VarInstr extends BaseInstr {
         return this;
     }
 
+    public void set(RlxFunction function, ValueInstr value) {
+        set(value);
+    }
+
+    @Deprecated(forRemoval = true)
     public void set(ValueInstr value) {
         if (type != value.valueType()) {
             throw new RuntimeException(type + " variable cannot be set as a " + value.valueType() + ". Are you missing a cast?");

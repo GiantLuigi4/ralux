@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include "intrinsics.h"
 #include "set.h"
 
 #define SetT SimpleSet*
@@ -22,7 +21,7 @@ typedef struct rlxGC* RlxGC;
 // static rlxGC* tfc_ralux_runtime_GC_GLOBAL_GC;
 
 // runtime methods
-EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(SetT refd, RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj);
 EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc);
 EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
 EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj);
@@ -37,7 +36,7 @@ EXPORT EXPORT_FUNC void __rlxrt_noop(RlxObj obj);
 
 // gc class functions
 EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int size);
-EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size);
+EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size, RlxCls cls);
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc);
 EXPORT EXPORT_FUNC RlxGC __rlxrt_get_global_gc();
 

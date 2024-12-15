@@ -33,6 +33,10 @@ internal void erase(SetT set, void* key) {
     setRemove(set, key);
 }
 
+internal void clear(SetT set) {
+    setClear(set);
+}
+
 internal void freeSet(SetT set) {
     setFree(set);
 }

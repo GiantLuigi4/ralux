@@ -1,21 +1,37 @@
 pkg comptest;
 
 use ralux.debug.Debug;
+use tfc.ralux.runtime.GC;
 
 public class Fields {
     int f ;
     int f1;
+    Fields nested;
 
     public static int main() {
+        GC gc = GC.getGlobalGC();
+
         Fields flds = new Fields();
 
-        // flds.f = 10;
+        flds.f1 = 20;
+
+        flds.f = 10;
         Debug.write(flds.f);
         Debug.write(flds.f1);
 
-        // flds.f1 = flds.f1 + flds.f;
+        flds.f1 = flds.f1 + flds.f;
         Debug.write(flds.f);
         Debug.write(flds.f1);
+
+        flds.nested = new Fields();
+        flds.nested.f = 22;
+        flds.nested.f1 = 10;
+        Debug.write(flds.nested.f);
+        Debug.write(flds.nested.f1);
+
+        GC.collect(gc);
+        flds = null;
+        GC.collect(gc);
 
         return 0;
     }

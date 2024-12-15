@@ -9,6 +9,7 @@ import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
+import tfc.ralux.compiler.frontend.ralux.RlxClassData;
 import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxFunction;
@@ -439,11 +440,19 @@ public class FunctionCompiler {
         ));
         args.put(0, gc);
         args.put(1, root.integer(type.getByteSizeObj(), 32));
+        args.put(2, root.track(
+                LLVM.LLVMBuildCall(
+                        root.getBuilder(),
+                        ((FunctionBuilder)((RlxClassData)instr.type.clazz.getCompilerData()).loadFunc).getDirect(),
+                        noArg, 0,
+                        ""
+                )
+        ));
 
         LLVMValueRef valueRef = root.track(LLVM.LLVMBuildCall(
                 root.getBuilder(),
                 ((FunctionBuilder) compiler.compiling.gc.gcAllocObj.getCompilerData()).getDirect(),
-                args, 2,
+                args, 3,
                 "gcAllocObj"
         ));
         instr.setCompilerData(valueRef);
@@ -457,18 +466,32 @@ public class FunctionCompiler {
         valueRef = root.ptrCast(valueRef, root.getIntType(64), "cast_to_long");
         valueRef = root.sisum(valueRef, root.integer(offset + RlxCls.OBJ_BASE, 64), "offset_ptr");
         valueRef = root.toPtr(valueRef, tr, "ensure_ptr");
-        return root.getValue(valueRef, "get_data");
+        return valueRef;
     }
 
     private void compileFieldGet(FieldGetInstr instr) {
         FieldInstr instr1 = instr.var;
         int offset = instr1.owner.clazz.getFieldOffset(instr1.field);
 
-        ValueInstr dataBase = instr.base;
+        ValueInstr dataBase = instr1.base;
         if (dataBase != null) {
             LLVMValueRef base = dataBase.getCompilerData();
             LLVMValueRef value = extractField(base, conversions.typeFor(instr1.type), offset);
-            instr.setCompilerData(value);
+            instr.setCompilerData(root.getValue(value, "get_field_data"));
+        } else throw new RuntimeException("Static field NYI");
+    }
+
+    private void compileFieldSet(FieldSetInstr instr) {
+        ensureData(instr.value);
+
+        FieldInstr instr1 = instr.var;
+        int offset = instr1.owner.clazz.getFieldOffset(instr1.field);
+
+        ValueInstr dataBase = instr1.base;
+        if (dataBase != null) {
+            LLVMValueRef base = dataBase.getCompilerData();
+            LLVMValueRef value = extractField(base, conversions.typeFor(instr1.type), offset);
+            root.setValue(value, instr.value.getCompilerData());
         } else throw new RuntimeException("Static field NYI");
     }
 
@@ -546,6 +569,7 @@ public class FunctionCompiler {
                     case ALLOC -> compileAlloc((AllocInstr) instr);
 
                     case GET_FIELD -> compileFieldGet((FieldGetInstr) instr);
+                    case SET_FIELD -> compileFieldSet((FieldSetInstr) instr);
                     default -> throw new RuntimeException("NYI: " + instr.type());
                 }
             }

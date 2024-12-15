@@ -1,0 +1,3 @@
+clang -c ./MiniCRT.c -o ./x64/MiniCRT.obj -nostdlib -nodefaultlibs -fdata-sections -ffunction-sections -fvisibility=default -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -ffast-math -fassociative-math -freciprocal-math -ffp-contract=fast -fvectorize -fslp-vectorize -O3
+clang -emit-llvm -S ./MiniCRT.c -o ./x64/MiniCRT.ll -nostdlib -nodefaultlibs -fdata-sections -ffunction-sections -fvisibility=default -fwhole-program-vtables -fstrict-vtable-pointers -flto -funroll-loops -fno-rtti -fmerge-all-constants -fomit-frame-pointer -fno-exceptions -ffast-math -fassociative-math -freciprocal-math -ffp-contract=fast -fvectorize -fslp-vectorize -O3
+llvm-ar rc ./x64/MiniCRT.lib ./x64/*.obj

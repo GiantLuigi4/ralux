@@ -58,6 +58,14 @@ public class LLVMCompiler extends Compiler {
     @Override
     public void compile() {
         for (RlxCls aClass : compiling.getClasses()) {
+            ClassObjCompiler.compileClass(
+                    compiling.rt,
+                    root, aClass,
+                    compiling
+            );
+        }
+
+        for (RlxCls aClass : compiling.getClasses()) {
             compileClass(aClass);
         }
 
@@ -332,6 +340,7 @@ public class LLVMCompiler extends Compiler {
                 CPU.GENERIC,
                 LLVM.LLVMCodeGenLevelAggressive
         );
+        root.dumpToFile(new File(compiling.getName() + ".ll").getAbsolutePath());
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
         try {
             System.out.flush();
@@ -342,15 +351,19 @@ public class LLVMCompiler extends Compiler {
                     "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" " +
                     "/libpath:lib " +
                     "/defaultlib:clang_rt.builtins-x86_64.lib " +
+//                    "/defaultlib:MiniCRT " +
                     "/defaultlib:RlxRt " +
-                    "/defaultlib:msvcrt " +
-                    "/defaultlib:libconcrt " +
-                    "/defaultlib:libcmt " +
+
+                    "/defaultlib:vcruntime " +
+
+//                    "/defaultlib:msvcrt " +
+//                    "/defaultlib:libconcrt " +
+//                    "/defaultlib:libcmt " +
                     "/defaultlib:ucrt " +
 //                    "/defaultlib:libucrt " +
-                    "/defaultlib:user32 " +
-                    "/defaultlib:kernel32 " +
-                    "/defaultlib:vcruntime " +
+//                    "/defaultlib:user32 " +
+//                    "/defaultlib:kernel32 " +
+//                    "/defaultlib:advapi32 " +
                     "/subsystem:console " +
                     "/fixed /cetcompat /incremental:no /ltcg " +
                     "/release " +
@@ -358,7 +371,7 @@ public class LLVMCompiler extends Compiler {
                     "/verbose " +
                     "/merge:.text=.text " +
                     "-opt:ref -opt:icf -opt:lbr " +
-                    "/debug:full " +
+//                    "/debug:full " +
                     "-entry:main module.obj /out:module.exe";
 
             System.out.println("Linking using:");

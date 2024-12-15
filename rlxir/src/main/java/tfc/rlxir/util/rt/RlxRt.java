@@ -59,7 +59,7 @@ public class RlxRt {
                     true,
                     RlxTypes.BOOLEAN,
                     "__rlxrt_mark_obj",
-                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.VOID_PTR)
+                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.VOID_PTR, RlxTypes.VOID_PTR)
             )
     ).exportName("__rlxrt_mark_obj");
     public final RlxFunction rtRef = new RlxFunction(
@@ -82,6 +82,16 @@ public class RlxRt {
                     Arrays.asList(RlxTypes.OBJ)
             )
     ).exportName("__rlxrt_deref");
+    public final RlxFunction rtNoop = new RlxFunction(
+            RlxFunction.ACC_PUBLIC,
+            true, true,
+            new RlxEnclosure(
+                    true,
+                    RlxTypes.VOID,
+                    "__rlxrt_noop",
+                    Arrays.asList(RlxTypes.OBJ)
+            )
+    ).exportName("__rlxrt_noop");
 
     public RlxRt(RlxCls rt) {
         this.cls = rt;
@@ -92,6 +102,7 @@ public class RlxRt {
         rt.addFunction(rtFree);
         rt.addFunction(rtRef);
         rt.addFunction(rtDeref);
+        rt.addFunction(rtNoop);
     }
 
     public static RlxRt inject(RlxModule module, RlxGc gc) {

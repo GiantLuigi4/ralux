@@ -37,13 +37,7 @@ public class FieldInstr extends VarInstr {
 
     @Override
     public ValueInstr get(RlxFunction function) {
-        FieldGetInstr instr = new FieldGetInstr(this, base);
-        function.addInstr(instr);
-        return instr;
-    }
-
-    public ValueInstr get(RlxFunction function, ValueInstr base) {
-        FieldGetInstr instr = new FieldGetInstr(this, base);
+        FieldGetInstr instr = new FieldGetInstr(this);
         function.addInstr(instr);
         return instr;
     }
@@ -55,11 +49,20 @@ public class FieldInstr extends VarInstr {
     }
 
     @Override
-    public void set(ValueInstr value) {
-        throw new RuntimeException("NYI");
+    public void set(RlxFunction function, ValueInstr value) {
+        if (type != value.valueType()) {
+            throw new RuntimeException(type + " variable cannot be set as a " + value.valueType() + ". Are you missing a cast?");
+        }
+        function.addInstr(new FieldSetInstr(this, value));
     }
 
-    public VarInstr from(ValueInstr base) {
+    @Override
+    @Deprecated(forRemoval = true)
+    public void set(ValueInstr value) {
+        throw new RuntimeException("Cannot default set field");
+    }
+
+    public FieldInstr from(ValueInstr base) {
         return new FieldInstr(isStatic, owner, type, field, base);
     }
 }

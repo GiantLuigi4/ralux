@@ -27,7 +27,7 @@ public class RlxGc {
                     true,
                     RlxTypes.OBJ,
                     "allocateObj",
-                    Arrays.asList(RlxTypes.OBJ, RlxTypes.INT)
+                    Arrays.asList(RlxTypes.OBJ, RlxTypes.INT, RlxTypes.VOID_PTR_PTR)
             )
     ).exportName("tfc_ralux_runtime_GC_allocateObj");
     public final RlxFunction gcCollect = new RlxFunction(

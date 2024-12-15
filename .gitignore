@@ -12,7 +12,9 @@
 # execution outputs
 /*.obj
 /*.exe
+/*.ll
 /module.lib
+/module.pdb
 /dmp/
 
 # subproject ide files
@@ -23,6 +25,7 @@
 # subproject build files
 /*/Release/
 /*/Debug/
+/MiniCRT/test/
 /*/x64/
 /*/build/
 /.semanticgraphs/

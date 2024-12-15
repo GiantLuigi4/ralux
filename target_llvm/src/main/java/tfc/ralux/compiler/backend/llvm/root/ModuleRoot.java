@@ -25,6 +25,10 @@ public class ModuleRoot extends ContextRoot {
         LLVM.LLVMDumpModule(module);
     }
 
+    public void dumpToFile(String absolutePath) {
+        LLVM.LLVMPrintModuleToFile(module, absolutePath, new byte[0]);
+    }
+
     public BytePointer dumpToMem() {
         return LLVM.LLVMPrintModuleToString(module);
     }

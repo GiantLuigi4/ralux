@@ -294,16 +294,18 @@ public class RaluxToIR extends Translator {
 
     public static RlxType resolveClass(RlxModule module, RlxCls owner, ParseTree child, Scope scope) {
         String pkg = owner.pkg;
-        String text = child.getText().toString();
+        String text = child.getText();
         if (text.contains(".")) {
             // TODO: what about var access chains?
             RlxCls clz = module.getClass(text);
             if (clz != null) return clz.getType();
         } else {
-            VarInstr instr = scope.getVar(text);
-            if (instr != null) {
-                RlxType type = instr.valueType();
-                return type;
+            if (scope != null) {
+                VarInstr instr = scope.getVar(text);
+                if (instr != null) {
+                    RlxType type = instr.valueType();
+                    return type;
+                }
             }
 
             RlxCls clz;

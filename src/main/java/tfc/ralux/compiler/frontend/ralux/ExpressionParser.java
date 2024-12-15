@@ -97,11 +97,11 @@ public class ExpressionParser {
 
                 parser.function.buildBlock(longB);
                 ValueInstr rightV = parseValue(parser, right);
-                dirtVar.set(rightV);
+                dirtVar.set(parser.function, rightV);
                 parser.function.jump(exitB);
 
                 parser.function.buildBlock(shortB);
-                dirtVar.set(leftV);
+                dirtVar.set(parser.function, leftV);
                 parser.function.jump(exitB);
                 return dirtVar.get(parser.function);
             }
@@ -112,11 +112,11 @@ public class ExpressionParser {
                 parser.function.jumpIf(leftV, shortB, longB);
 
                 ValueInstr rightV = parseValue(parser, right);
-                dirtVar.set(rightV);
+                dirtVar.set(parser.function, rightV);
                 parser.function.jump(exitB);
 
                 parser.function.buildBlock(shortB);
-                dirtVar.set(leftV);
+                dirtVar.set(parser.function, leftV);
                 parser.function.jump(exitB);
                 return dirtVar.get(parser.function);
             }

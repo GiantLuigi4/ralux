@@ -111,13 +111,13 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
 
     public VarInstr makeVar(RlxType rlxType, ValueInstr value) {
         VarInstr instr = makeVar(rlxType);
-        instr.set(value);
+        instr.set(this, value);
         return instr;
     }
 
     public VarInstr makeVar(ValueInstr value) {
         VarInstr instr = makeVar(value.valueType());
-        instr.set(value);
+        instr.set(this, value);
         return instr;
     }
 
@@ -386,7 +386,7 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         buildBlock(body);
         bodyBuilder.accept(body);
         value = variable.get(this);
-        variable.set(sum(
+        variable.set(this, sum(
                 value, step
         ));
         if (!body.isTerminated())

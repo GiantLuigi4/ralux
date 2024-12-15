@@ -7,11 +7,9 @@ import tfc.rlxir.typing.RlxType;
 
 public class FieldGetInstr extends ValueInstr {
     public final FieldInstr var;
-    public final ValueInstr base;
 
-    public FieldGetInstr(FieldInstr var, ValueInstr base) {
+    public FieldGetInstr(FieldInstr var) {
         this.var = var;
-        this.base = base;
     }
 
     @Override

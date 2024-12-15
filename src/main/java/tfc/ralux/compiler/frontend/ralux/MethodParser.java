@@ -118,11 +118,11 @@ public class MethodParser {
 
             switch (dop.getText()) {
                 case "++" -> {
-                    var.set(function.sum(value, new ConstInstr<>(1, var.type)));
+                    var.set(function, function.sum(value, new ConstInstr<>(1, var.type)));
                     currentScope.dirtyVar(name);
                 }
                 case "--" -> {
-                    var.set(function.sub(value, new ConstInstr<>(1, var.type)));
+                    var.set(function, function.sub(value, new ConstInstr<>(1, var.type)));
                     currentScope.dirtyVar(name);
                 }
                 default -> throw new RuntimeException("Unsupported double operand " + dop.getText());
@@ -145,7 +145,7 @@ public class MethodParser {
 
         ParseTree tree = statement.getChild(0);
         Util.setLineColumn(instr, (TerminalNodeImpl) tree.getChild(tree.getChildCount() - 1), source);
-        var.set(function.cast(switch (op) {
+        var.set(function, function.cast(switch (op) {
             case "=" -> instr;
             case "+=" -> function.sum(val, instr);
             case "-=" -> function.sub(val, instr);
@@ -185,7 +185,7 @@ public class MethodParser {
                     ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(3));
                     instr = function.assignmentCast(instr, var.type);
 
-                    var.set(instr);
+                    var.set(function, instr);
                 }
             }
             case RaluxParser.RULE_assignment -> parseAssign((RaluxParser.AssignmentContext) statement, false);
@@ -199,6 +199,8 @@ public class MethodParser {
     }
 
     private void parseIf(RaluxParser.IfContext ifCtx, RlxBlock termin) {
+        Scope par = currentScope;
+        currentScope = new Scope(currentScope);
         ParseTree tree = ifCtx.getChild(2);
         ValueInstr instr = ExpressionParser.parseValue(this, tree);
         ParseTree bdy = ifCtx.getChild(4);
@@ -214,16 +216,12 @@ public class MethodParser {
         function.buildBlock(bodyB);
 
         if (bdy instanceof RaluxParser.BodyContext body) {
-            Scope par = currentScope;
-            currentScope = new Scope(currentScope);
             parseBody(body);
             currentScope = par;
 
             if (function.isBlockActive())
                 function.jump(conclusion);
         } else if (bdy instanceof RaluxParser.StatementContext statementContext) {
-            Scope par = currentScope;
-            currentScope = new Scope(currentScope);
             parseStatement((RuleContext) statementContext.getChild(0));
             currentScope = par;
 
@@ -235,7 +233,7 @@ public class MethodParser {
         if (ifCtx.getChildCount() > threshold) {
             ParseTree elseData = ifCtx.getChild(threshold + 1);
             if (elseData instanceof RaluxParser.BodyContext body) {
-                Scope par = currentScope;
+                par = currentScope;
                 currentScope = new Scope(currentScope);
                 parseBody(body);
                 currentScope = par;
@@ -243,7 +241,7 @@ public class MethodParser {
                 if (function.isBlockActive())
                     function.jump(conclusion);
             } else if (elseData instanceof RaluxParser.StatementContext statementContext) {
-                Scope par = currentScope;
+                par = currentScope;
                 currentScope = new Scope(currentScope);
                 parseStatement((RuleContext) statementContext.getChild(0));
                 currentScope = par;

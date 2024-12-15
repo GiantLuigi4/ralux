@@ -33,7 +33,7 @@ struct rlxGCData {
 };
 
 struct rlxClass {
-    void (*__rlxrt_gc_track)(RlxObj, SetT);
+    void (*__rlxrt_gc_track)(RlxObj, SetT, SetT);
     void (*__rlxrt_gc_free)(RlxObj);
 };
 
@@ -68,12 +68,13 @@ EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int size) {
 }
 
 // gc functions
-EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size) {
+EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size, RlxCls clazz) {
     void** obj = rlx_malloc(size + sizeof(struct rlxObj));
     // long long base = (long long) obj;
     // base += 3 * 8;
-    memset(((byte*) obj) + 3 * 8, 0, size);
+    __builtin_memset(((byte*) obj) + 3 * 8, 0, size);
 
+    obj[0] = clazz;
     obj[2] = __rlxrt_default_hash;
     __rlxrt_obj_created((RlxObj) obj, gc);
     return obj;
@@ -82,11 +83,30 @@ EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size) {
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     SetT refd = createSet();
     SetT fred = createSet();
+    SetT fref = createSet();
+
     for (int i = 0; i < setSize(gc->roots); i++) {
         RlxObj root = setGet(gc->roots, i);
-        // root->clazz->__rlxrt_gc_track(root, refd);
-        __rlxrt_mark_obj(refd, root);
+        __rlxrt_mark_obj(0, refd, root);
+        root->clazz->__rlxrt_gc_track(root, fref, refd);
     }
+
+    // TODO: test better
+    SetT frefSwap = createSet();
+    while (setSize(fref) != 0) {
+        for (int i = 0; i < setSize(fref); i++) {
+            RlxObj root = setGet(fref, i);
+            __rlxrt_mark_obj(0, refd, root);
+            root->clazz->__rlxrt_gc_track(root, frefSwap, refd);
+        }
+        clear(fref);
+        SetT temp = fref;
+        fref = frefSwap;
+        frefSwap = temp;
+    }
+    setFree(fref);
+    setFree(frefSwap);
+    
     for (int i = 0; i < setSize(gc->allObjs); i++) {
         RlxObj obj = setGet(gc->allObjs, i);
         if (!contains(refd, obj))
@@ -102,18 +122,16 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 }
 
 // runtime functions
-EXPORT EXPORT_FUNC bool __rlxrt_mark_obj(SetT refd, RlxObj obj) {
+EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj) {
+    if (obj == 0) return;
     if (!contains(refd, obj)) {
         add(refd, obj);
-        return 0;
+        if (freshRefs != 0) add(freshRefs, obj);
     }
-    return 1;
 }
 
 EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj) {
-    // puts("Freeing object");
-    // obj->clazz->__rlxrt_gc_free(obj);
-    // puts("Released");
+    obj->clazz->__rlxrt_gc_free(obj);
     free(obj->gc_info);
     free(obj);
 }

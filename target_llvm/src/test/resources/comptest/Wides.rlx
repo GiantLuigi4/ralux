@@ -1,0 +1,24 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+
+public class Wides {
+    public static int main() {
+        quadruple quad0 = 0.0;
+        quadruple quad1 = 0.5;
+        quadruple quad2 = 32.5;
+        wide value = Wides.wideFrom(quad0);
+        Debug.write(value);
+        value = Wides.wideFrom(quad0);
+        Debug.write(value);
+        value = Wides.wideFrom(quad1);
+        Debug.write(value);
+        value = Wides.wideFrom(quad2);
+        Debug.write(value);
+        return 0;
+    }
+
+    public static wide wideFrom(quadruple value) {
+        return (quadruple) value;
+    }
+}

@@ -16,6 +16,7 @@ import tfc.rlxir.instr.value.MathInstr;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BuilderRoot extends ModuleRoot {
     public final LLVMTypeRef VOID;
@@ -62,7 +63,13 @@ public class BuilderRoot extends ModuleRoot {
         return pointerType(type, 0);
     }
 
+    Map<LLVMTypeRef, LLVMTypeRef> defaultPtrs = new HashMap<>();
+
     public LLVMTypeRef pointerType(LLVMTypeRef type, int addrSpace) {
+        if (addrSpace == 0) {
+            LLVMTypeRef ptrType = defaultPtrs.get(type);
+            if (ptrType != null) return ptrType;
+        }
         return LLVM.LLVMPointerType(type, addrSpace);
     }
 
@@ -468,5 +475,19 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildIntToPtr(
                 builder, valueRef, llvmTypeRef, name
         ));
+    }
+
+    public LLVMValueRef globalMemory(String varName) {
+        return globalMemory(pointerType(VOID), varName);
+    }
+
+    public LLVMValueRef globalMemory(LLVMTypeRef typeRef, String varName) {
+        LLVMValueRef valueRef = LLVM.LLVMAddGlobal(module, typeRef, varName);
+        LLVM.LLVMSetLinkage(valueRef, LLVM.LLVMInternalLinkage);
+        LLVM.LLVMSetInitializer(
+                valueRef,
+                ptrCast(integer(0, 64), typeRef, "to_type")
+        );
+        return track(valueRef);
     }
 }
