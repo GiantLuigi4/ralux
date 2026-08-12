@@ -352,14 +352,15 @@ public class Snake {
 
         function.buildBlock(exit);
         function.ret(CONST_0);
-
-        System.out.println(module.asText());
+	    
+	    module.withRuntime();
+	    System.out.println(module.asText());
 
         Compiler compiler = backend.compilerFor(module);
         compiler.verbose();
         compiler.stub();
         compiler.compile();
-        compiler.optimize(0, 4, true);
+        compiler.optimize(3, 4, true);
         compiler.write();
     }
 

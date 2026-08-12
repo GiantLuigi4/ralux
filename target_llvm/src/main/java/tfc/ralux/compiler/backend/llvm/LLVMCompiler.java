@@ -11,6 +11,7 @@ import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
+import tfc.ralux.compiler.backend.llvm.util.ProgramLocator;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.CPU;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.Target;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.part.Architecture;
@@ -26,6 +27,7 @@ import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.util.rt.RlxRt;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 public class LLVMCompiler extends Compiler {
@@ -335,7 +337,7 @@ public class LLVMCompiler extends Compiler {
                         Architecture.X86_64,
                         Vendor.APPLE,
                         OperatingSystem.WINDOWS,
-                        Environment.UCLIBC
+                        Environment.MSVC
                 ),
                 CPU.GENERIC,
                 LLVM.LLVMCodeGenLevelAggressive
@@ -347,19 +349,30 @@ public class LLVMCompiler extends Compiler {
             System.err.flush();
 //            Thread.sleep(2000);
 
+	        Path locClang = ProgramLocator.find("clang");
+			if (locClang == null) {
+				System.err.println("Could not find a clang install, build may fail.");
+			}
+			File fl = new File(locClang.getParent().getParent() + "/lib/clang/");
+	        for (File file : fl.listFiles()) {
+				fl = file;
+		        break;
+	        }
+			
             String linkCmd = "lld-link.exe " +
-                    "/libpath:\"C:/Program Files/LLVM-13.0.1/lib/clang/13.0.1/lib/windows\" " +
+                    "/libpath:\"" + fl + "/lib/windows\" " +
                     "/libpath:lib " +
                     "/defaultlib:clang_rt.builtins-x86_64.lib " +
 //                    "/defaultlib:MiniCRT " +
                     "/defaultlib:RlxRt " +
 
+//                    "/defaultlib:libvcruntime " +
                     "/defaultlib:vcruntime " +
+		            "/defaultlib:libcmt " +
+		            "/defaultlib:ucrt " +
 
-//                    "/defaultlib:msvcrt " +
+                    "/defaultlib:msvcrt " +
 //                    "/defaultlib:libconcrt " +
-//                    "/defaultlib:libcmt " +
-                    "/defaultlib:ucrt " +
 //                    "/defaultlib:libucrt " +
 //                    "/defaultlib:user32 " +
 //                    "/defaultlib:kernel32 " +

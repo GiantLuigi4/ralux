@@ -79,7 +79,7 @@ public class ClassObjCompiler {
 
         {
             // TODO: locate finalize function (if present)
-            data.finalizeFunc = module.rt.rtNoop.getCompilerData();
+            data.finalizeFunc = module.rt == null ? null : module.rt.rtNoop.getCompilerData();
         }
 
         {
@@ -121,42 +121,45 @@ public class ClassObjCompiler {
         root.track(noArg);
         root.track(allocArgs);
 
-        LLVMValueRef gc = root.track(LLVM.LLVMBuildCall(
-                root.getBuilder(),
-                ((FunctionBuilder) module.gc.rtGlobalGC.getCompilerData()).getDirect(),
-                noArg, 0,
-                "get_gc"
-        ));
+		if (module.gc != null) {
+			LLVMValueRef gc = root.track(LLVM.LLVMBuildCall(
+					root.getBuilder(),
+					((FunctionBuilder) module.gc.rtGlobalGC.getCompilerData()).getDirect(),
+					noArg, 0,
+					"get_gc"
+			));
+			
+			allocArgs.put(0, gc);
+			allocArgs.put(1, root.integer(8 * 2, 32));
+			
+			LLVMValueRef classValue = root.track(LLVM.LLVMBuildCall(
+					root.getBuilder(),
+					((FunctionBuilder) module.gc.gcAlloc.getCompilerData()).getDirect(),
+					allocArgs, 2,
+					"alloc_class"
+			));
+			LLVMValueRef ptrptr = root.ptrCast(classValue, root.pointerType(root.pointerType(root.VOID)), "to_ptr_ptr");
+			
+			root.setValue(classObject, classValue);
+			
+			{
+				LLVMValueRef ptr = root.ptrCast(
+						trackObj.getDirect(),
+						root.pointerType(root.VOID),
+						"to_ptr"
+				);
+				root.setValue(ptrptr, root.integer(0, 32), ptr);
+			}
+			{
+				LLVMValueRef ptr = root.ptrCast(
+						finalizeObj.getDirect(),
+						root.pointerType(root.VOID),
+						"to_ptr"
+				);
+				root.setValue(ptrptr, root.integer(1, 32), ptr);
+			}
+		}
 
-        allocArgs.put(0, gc);
-        allocArgs.put(1, root.integer(8 * 2, 32));
-
-        LLVMValueRef classValue = root.track(LLVM.LLVMBuildCall(
-                root.getBuilder(),
-                ((FunctionBuilder) module.gc.gcAlloc.getCompilerData()).getDirect(),
-                allocArgs, 2,
-                "alloc_class"
-        ));
-        LLVMValueRef ptrptr = root.ptrCast(classValue, root.pointerType(root.pointerType(root.VOID)), "to_ptr_ptr");
-
-        root.setValue(classObject, classValue);
-
-        {
-            LLVMValueRef ptr = root.ptrCast(
-                    trackObj.getDirect(),
-                    root.pointerType(root.VOID),
-                    "to_ptr"
-            );
-            root.setValue(ptrptr, root.integer(0, 32), ptr);
-        }
-        {
-            LLVMValueRef ptr = root.ptrCast(
-                    finalizeObj.getDirect(),
-                    root.pointerType(root.VOID),
-                    "to_ptr"
-            );
-            root.setValue(ptrptr, root.integer(1, 32), ptr);
-        }
         mbranch.jump(abranch);
 
         abranch.enableBuilding();
