@@ -81,7 +81,7 @@ public class LLVMCompiler extends Compiler {
 
             root.track(LLVM.LLVMBuildCall2(
                     root.getBuilder(),
-		            ((FunctionBuilder) function.getCompilerData()).getType(),
+                    ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getType(),
                     ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getDirect(),
                     args, 0,
                     ""
