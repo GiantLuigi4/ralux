@@ -299,7 +299,7 @@ public class FunctionCompiler {
             ref(instr.value.getCompilerData());
         }
         if (instr.var.type.isPtr()) {
-            LLVMValueRef oldRef = root.getValue(compiler.typeData(instr.value.valueType()), alloc, "get_old_var");
+            LLVMValueRef oldRef = root.getValue(compiler.typeData(instr.var.type), alloc, "get_old_var");
             deref(oldRef);
         }
         root.setValue(alloc, instr.value.getCompilerData());
@@ -342,7 +342,7 @@ public class FunctionCompiler {
 
         LLVMValueRef array = instr.array.getCompilerData();
         LLVMValueRef index = instr.index.getCompilerData();
-        instr.setCompilerData(root.getValue(compiler.typeData(instr.array.valueType().arrayOf), array, index, "get_value"));
+        instr.setCompilerData(root.getValue(compiler.typeData(instr.valueType()), array, index, "get_value"));
     }
 
     private void compileArraySet(ArraySet instr) {
@@ -488,7 +488,7 @@ public class FunctionCompiler {
         if (dataBase != null) {
             LLVMValueRef base = dataBase.getCompilerData();
             LLVMValueRef value = extractField(base, conversions.typeFor(instr1.type), offset);
-            instr.setCompilerData(root.getValue(instr1.type.getCompilerData(), value, "get_field_data"));
+            instr.setCompilerData(root.getValue(compiler.typeData(instr1.type), value, "get_field_data"));
         } else throw new RuntimeException("Static field NYI");
     }
 

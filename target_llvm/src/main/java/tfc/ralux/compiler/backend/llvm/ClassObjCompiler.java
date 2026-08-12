@@ -27,7 +27,7 @@ public class ClassObjCompiler {
         return valueRef;
     }
 
-    public static RlxClassData compileClass(RlxRt rt, BuilderRoot root, RlxCls clazz, RlxModule module) {
+    public static RlxClassData compileClass(RlxRt rt, LLVMCompiler compiler, BuilderRoot root, RlxCls clazz, RlxModule module) {
         LLVMTypeRef voidPtr = root.pointerType(root.VOID);
 
         RlxClassData data = clazz.getCompilerData();
@@ -60,7 +60,7 @@ public class ClassObjCompiler {
                     args.put(1, val1);
 
                     LLVMValueRef val2 = root.getValue(
-							field.type.getCompilerData(),
+							compiler.typeData(field.type),
 							extractField(
 		                            root, object,
 		                            voidPtr, offset

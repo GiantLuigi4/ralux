@@ -59,7 +59,7 @@ public class LLVMCompiler extends Compiler {
         for (RlxCls aClass : compiling.getClasses()) {
             ClassObjCompiler.compileClass(
                     compiling.rt,
-                    root, aClass,
+                    this, root, aClass,
                     compiling
             );
         }
@@ -458,13 +458,21 @@ public class LLVMCompiler extends Compiler {
 		if (tr != null)
 			return tr;
 		
-		tr = root.getIntType(rlxType.type.bits);
+		if (rlxType.type.isFloat()) {
+			tr = root.getFloatType(rlxType.type.bits);
+		} else {
+			tr = root.getIntType(rlxType.type.bits);
+		}
 		
 		if (rlxType.isArray()) {
 			throw new RuntimeException("TODO");
 		}
 		if (rlxType.isPtr()) {
-			throw new RuntimeException("TODO");
+//			throw new RuntimeException("TODO");
+			// TODO: allow more specific ptr type
+			tr = root.pointerType(
+					root.getIntType(8)
+			);
 		}
 		
 		rlxType.setCompilerData(tr);
