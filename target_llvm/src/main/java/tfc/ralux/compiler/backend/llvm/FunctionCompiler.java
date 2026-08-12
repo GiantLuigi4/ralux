@@ -8,7 +8,6 @@ import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
-import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.ralux.compiler.frontend.ralux.RlxClassData;
 import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
@@ -30,7 +29,6 @@ import tfc.rlxir.instr.value.obj.AllocInstr;
 import tfc.rlxir.instr.value.obj.CallInstr;
 import tfc.rlxir.instr.value.vars.*;
 import tfc.rlxir.typing.RlxType;
-import tfc.rlxir.typing.RlxTypes;
 
 import java.util.List;
 
@@ -201,7 +199,7 @@ public class FunctionCompiler {
         LLVMTypeRef ty = conversions.typeFor(instr.type);
         lastVar = root.allocA(ty, instr.debugName());
         if (instr.paramFrom != -1) {
-            root.setValue(
+            root.setValueI8(
                     lastVar,
                     builder.getArg(
                             instr.paramFrom,
@@ -209,7 +207,7 @@ public class FunctionCompiler {
                     )
             );
         } else if (instr.type.isPtr()) {
-            root.setValue(
+            root.setValueI8(
                     lastVar,
                     root.ptrCast(
                             root.integer(0, 64),
@@ -302,7 +300,7 @@ public class FunctionCompiler {
             LLVMValueRef oldRef = root.getValue(compiler.typeData(instr.var.type), alloc, "get_old_var");
             deref(oldRef);
         }
-        root.setValue(alloc, instr.value.getCompilerData());
+        root.setValueI8(alloc, instr.value.getCompilerData());
     }
 
     private void compileVarGet(GetInstr instr) {
@@ -353,8 +351,9 @@ public class FunctionCompiler {
         LLVMValueRef array = instr.array.getCompilerData();
         LLVMValueRef index = instr.index.getCompilerData();
         LLVMValueRef value = instr.value.getCompilerData();
-        root.setValue(array, index, value);
-        instr.setCompilerData(value);
+//        root.setValue(array, index, value);
+	    throw new RuntimeException("TODO");
+//        instr.setCompilerData(value);
     }
 
     private void compileNegation(NegInstr instr) {
@@ -502,7 +501,7 @@ public class FunctionCompiler {
         if (dataBase != null) {
             LLVMValueRef base = dataBase.getCompilerData();
             LLVMValueRef value = extractField(base, conversions.typeFor(instr1.type), offset);
-            root.setValue(value, instr.value.getCompilerData());
+            root.setValueI8(value, instr.value.getCompilerData());
         } else throw new RuntimeException("Static field NYI");
     }
 

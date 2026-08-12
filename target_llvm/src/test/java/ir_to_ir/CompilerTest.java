@@ -52,8 +52,8 @@ public class CompilerTest {
         compiler.verbose();
         compiler.stub();
         compiler.compile();
-//        compiler.optimize(3, 5, true);
-        compiler.optimize(0, 0, false);
+        compiler.optimize(3, 5, true);
+//        compiler.optimize(0, 0, false);
         compiler.write();
     }
 }

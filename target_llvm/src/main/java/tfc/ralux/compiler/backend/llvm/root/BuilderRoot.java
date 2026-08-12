@@ -159,11 +159,11 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildArrayAlloca(builder, type, length, name));
     }
 
-    public void setValue(LLVMValueRef pointer, LLVMValueRef value) {
+    public void setValueI8(LLVMValueRef pointer, LLVMValueRef value) {
         track(LLVM.LLVMBuildStore(builder, value, pointer));
     }
 
-    public void setValue(LLVMValueRef pointer, LLVMValueRef index, LLVMValueRef value) {
+    public void setValueI8(LLVMTypeRef type, LLVMValueRef pointer, LLVMValueRef index, LLVMValueRef value) {
 //        %3 = getelementptr inbounds [20 x i8], [20 x i8]* %1, i64 0, i64 1
 //        store i8 49, i8* %3, align 1, !tbaa !3
 
@@ -171,13 +171,28 @@ public class BuilderRoot extends ModuleRoot {
         indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
                 builder, index, getIntType(64), "as_int64"
         )));
-	    LLVMTypeRef elementType = getIntType(8);
         LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP2(
-                builder, elementType, pointer,
+                builder, type, pointer,
                 indices, 1,
                 "get_element_ptr"
         ));
-        setValue(gep, value);
+        setValueI8(gep, value);
+    }
+
+    public void setValueI8(LLVMValueRef pointer, LLVMValueRef index, LLVMValueRef value) {
+//        %3 = getelementptr inbounds [20 x i8], [20 x i8]* %1, i64 0, i64 1
+//        store i8 49, i8* %3, align 1, !tbaa !3
+
+        PointerPointer indices = track(new PointerPointer(2));
+        indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
+                builder, index, getIntType(64), "as_int64"
+        )));
+        LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP2(
+                builder, getIntType(8), pointer,
+                indices, 1,
+                "get_element_ptr"
+        ));
+        setValueI8(gep, value);
     }
 
     public LLVMValueRef getValue(LLVMTypeRef type, LLVMValueRef pointer, String name) {
