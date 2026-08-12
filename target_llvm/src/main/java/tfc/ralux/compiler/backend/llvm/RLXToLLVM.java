@@ -1,5 +1,6 @@
 package tfc.ralux.compiler.backend.llvm;
 
+import org.bytedeco.javacpp.Loader;
 import tfc.ralux.compiler.backend.Backend;
 import tfc.ralux.compiler.backend.Compiler;
 import tfc.rlxir.RlxModule;

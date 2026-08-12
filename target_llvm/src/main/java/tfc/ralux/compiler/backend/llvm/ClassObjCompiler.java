@@ -59,14 +59,18 @@ public class ClassObjCompiler {
                     args.put(0, val0);
                     args.put(1, val1);
 
-                    LLVMValueRef val2 = root.getValue(extractField(
-                            root, object,
-                            voidPtr, offset
-                    ), "get_field_value");
+                    LLVMValueRef val2 = root.getValue(
+							field.type.getCompilerData(),
+							extractField(
+		                            root, object,
+		                            voidPtr, offset
+		                    ), "get_field_value"
+                    );
 
                     args.put(2, val2);
-                    root.track(LLVM.LLVMBuildCall(
+                    root.track(LLVM.LLVMBuildCall2(
                             root.getBuilder(),
+                            markObj.getType(),
                             markObj.getDirect(),
                             args, 3,
                             ""
@@ -104,6 +108,7 @@ public class ClassObjCompiler {
         LLVMValueRef nullCheck = root.compareInt(
                 ECompOp.EQ,
                 root.getValue(
+		                root.getIntType(64),
                         root.ptrCast(classObject, root.pointerType(root.getIntType(64)), "to_long_ptr"),
                         "extract_pointee"
                 ),
@@ -122,8 +127,9 @@ public class ClassObjCompiler {
         root.track(allocArgs);
 
 		if (module.gc != null) {
-			LLVMValueRef gc = root.track(LLVM.LLVMBuildCall(
+			LLVMValueRef gc = root.track(LLVM.LLVMBuildCall2(
 					root.getBuilder(),
+					((FunctionBuilder) module.gc.rtGlobalGC.getCompilerData()).getType(),
 					((FunctionBuilder) module.gc.rtGlobalGC.getCompilerData()).getDirect(),
 					noArg, 0,
 					"get_gc"
@@ -132,8 +138,9 @@ public class ClassObjCompiler {
 			allocArgs.put(0, gc);
 			allocArgs.put(1, root.integer(8 * 2, 32));
 			
-			LLVMValueRef classValue = root.track(LLVM.LLVMBuildCall(
+			LLVMValueRef classValue = root.track(LLVM.LLVMBuildCall2(
 					root.getBuilder(),
+					((FunctionBuilder) module.gc.gcAlloc.getCompilerData()).getType(),
 					((FunctionBuilder) module.gc.gcAlloc.getCompilerData()).getDirect(),
 					allocArgs, 2,
 					"alloc_class"
@@ -163,6 +170,7 @@ public class ClassObjCompiler {
         mbranch.jump(abranch);
 
         abranch.enableBuilding();
-        abranch.ret(root.ptrCast(root.getValue(classObject, "get_class"), root.pointerType(root.pointerType(root.VOID)), "cst"));
+		LLVMTypeRef voidPtr = root.pointerType(root.pointerType(root.VOID));
+        abranch.ret(root.getValue(voidPtr, classObject, "get_class"));
     }
 }

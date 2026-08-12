@@ -7,11 +7,10 @@ import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
+import tfc.ralux.compiler.backend.llvm.util.helper.LLVMOptimizer;
 import tfc.ralux.compiler.backend.llvm.util.helper.STDLib;
 import tfc.ralux.compiler.backend.llvm.util.helper.Util;
-import tfc.rlxir.RlxFunction;
 import tfc.rlxir.instr.RlxInstr;
-import tfc.rlxir.instr.value.MathInstr;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -172,29 +171,31 @@ public class BuilderRoot extends ModuleRoot {
         indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
                 builder, index, getIntType(64), "as_int64"
         )));
-        LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP(
-                builder, pointer,
+	    LLVMTypeRef elementType = getIntType(8);
+        LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP2(
+                builder, elementType, pointer,
                 indices, 1,
                 "get_element_ptr"
         ));
         setValue(gep, value);
     }
 
-    public LLVMValueRef getValue(LLVMValueRef pointer, String name) {
-        return track(LLVM.LLVMBuildLoad(builder, pointer, name));
+    public LLVMValueRef getValue(LLVMTypeRef type, LLVMValueRef pointer, String name) {
+        return track(LLVM.LLVMBuildLoad2(builder, type, pointer, name));
     }
 
-    public LLVMValueRef getValue(LLVMValueRef pointer, LLVMValueRef index, String name) {
+    public LLVMValueRef getValue(LLVMTypeRef type, LLVMValueRef pointer, LLVMValueRef index, String name) {
         PointerPointer indices = track(new PointerPointer(2));
         indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
                 builder, index, getIntType(64), "as_int64"
         )));
-        LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP(
-                builder, pointer,
+	    LLVMTypeRef elementType = getIntType(8);
+        LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP2(
+                builder, elementType, pointer,
                 indices, 1,
                 name + "_gep"
         ));
-        return getValue(gep, name);
+        return getValue(type, gep, name);
     }
 
     public LLVMValueRef getElement(LLVMValueRef pointer, LLVMValueRef index, String name) {
@@ -202,8 +203,9 @@ public class BuilderRoot extends ModuleRoot {
         indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
                 builder, index, getIntType(64), "as_int64"
         )));
-        return track(LLVM.LLVMBuildGEP(
-                builder, pointer,
+	    LLVMTypeRef elementType = getIntType(8);
+        return track(LLVM.LLVMBuildGEP2(
+                builder, elementType, pointer,
                 indices, 1,
                 "get_element_ptr"
         ));
@@ -309,8 +311,9 @@ public class BuilderRoot extends ModuleRoot {
         LLVMValueRef long0 = integer(0, 64);
         indices.put(0, long0);
         indices.put(1, long0);
-        return track(LLVM.LLVMBuildInBoundsGEP(
-                builder, text,
+	    LLVMTypeRef elementType = getIntType(8);
+	    return track(LLVM.LLVMBuildInBoundsGEP2(
+                builder, elementType, text,
                 indices, 2,
                 "gep_str"
         ));
@@ -328,58 +331,55 @@ public class BuilderRoot extends ModuleRoot {
         return track(LLVM.LLVMBuildSelect(builder, conditionPN, dig, negate, "select"));
     }
 
-    public void hyperAggressiveOptimizer(boolean forFunction, LLVMPassManagerRef pass) {
-        // setup
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-        LLVM.LLVMAddPromoteMemoryToRegisterPass(pass);
-        LLVM.LLVMAddAggressiveDCEPass(pass);
-        LLVM.LLVMAddEarlyCSEPass(pass);
-        LLVM.LLVMAddSimplifyLibCallsPass(pass);
-        LLVM.LLVMAddAlwaysInlinerPass(pass);
-        LLVM.LLVMAddInstructionSimplifyPass(pass);
-        LLVM.LLVMAddReassociatePass(pass);
-        LLVM.LLVMAddInstructionCombiningPass(pass);
-        LLVM.LLVMAddIndVarSimplifyPass(pass);
-        LLVM.LLVMAddNewGVNPass(pass);
-        LLVM.LLVMAddConstantMergePass(pass);
-        LLVM.LLVMAddTailCallEliminationPass(pass);
-
-        // analysis
-        LLVM.LLVMAddTypeBasedAliasAnalysisPass(pass);
-        LLVM.LLVMAddBasicAliasAnalysisPass(pass);
-        LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
-
-        // erase branches
-        LLVM.LLVMAddLoopIdiomPass(pass);
-        LLVM.LLVMAddLoopRotatePass(pass);
-        LLVM.LLVMAddLoopUnrollAndJamPass(pass);
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-        if (!forFunction)
-            LLVM.LLVMAddLoopUnswitchPass(pass);
-        LLVM.LLVMAddLoopDeletionPass(pass);
-        LLVM.LLVMAddLoopRerollPass(pass);
-        LLVM.LLVMAddJumpThreadingPass(pass);
-        LLVM.LLVMAddLICMPass(pass);
-        LLVM.LLVMAddSCCPPass(pass);
-
-        // simplify
-        LLVM.LLVMAddInstructionSimplifyPass(pass);
-        LLVM.LLVMAddIndVarSimplifyPass(pass);
-        LLVM.LLVMAddSLPVectorizePass(pass);
-        LLVM.LLVMAddDeadStoreEliminationPass(pass);
-        LLVM.LLVMAddStripDeadPrototypesPass(pass);
-        LLVM.LLVMAddMergedLoadStoreMotionPass(pass);
-        LLVM.LLVMAddMemCpyOptPass(pass);
-
-        // re-associate
-        LLVM.LLVMAddReassociatePass(pass);
-        LLVM.LLVMAddInstructionCombiningPass(pass);
-
-        // finalize
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-        LLVM.LLVMAddAggressiveInstCombinerPass(pass);
-        LLVM.LLVMAddScopedNoAliasAAPass(pass);
-        LLVM.LLVMAddSLPVectorizePass(pass);
+    public void hyperAggressiveOptimizer(boolean forFunction, LLVMOptimizer optimizer) {
+		optimizer.simplifyControlFlow();
+		optimizer.convertMem2Reg();
+		optimizer.earlyCSE();
+		optimizer.simplifyInstructions();
+		optimizer.reassociate();
+		optimizer.combineInstructions();
+		optimizer.gvn();
+		optimizer.mergeConstants();
+		optimizer.tailCallElimination();
+	    optimizer.inlineFunctions();
+	    
+	    optimizer.assumeAlignment();
+	    
+	    // erase branches
+	    optimizer.loopIdiom();
+//	    optimizer.loopSimplify();
+	    optimizer.loopIdiom();
+	    optimizer.loopIndVar();
+//	    optimizer.loopFusion();
+		optimizer.loopRotate();
+		optimizer.loopUnrollAndJam();
+//		optimizer.loopFusion();
+		optimizer.simplifyControlFlow();
+	    if (!forFunction) {
+			optimizer.loopLICM();
+		    optimizer.loopUnswitch();
+	    }
+		optimizer.loopDeletion();
+//		optimizer.loopReroll();
+		optimizer.jumpThreading();
+		optimizer.loopLICM();
+	    optimizer.inlineFunctions();
+		optimizer.conditionalConstantSparsePropagation();
+	    
+	    optimizer.simplifyInstructions();
+		optimizer.loopIndVar();
+		optimizer.deadStoreElim();
+		optimizer.globalDCE();
+		optimizer.mldstMotion();
+		optimizer.optimizeMemCpy();
+	    
+	    optimizer.reassociate();
+		optimizer.combineInstructions();
+	    
+	    optimizer.simplifyControlFlow();
+		optimizer.combineInstructionsAggressive();
+		optimizer.slpVectorize();
+	    optimizer.inlineFunctions();
     }
 
     public void memSet(LLVMValueRef ptr, LLVMValueRef value, LLVMValueRef len, int alignment) {

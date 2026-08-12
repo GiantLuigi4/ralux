@@ -1,9 +1,8 @@
 package tfc.ralux.compiler.backend.llvm.util.helper.str;
 
+import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
-import org.bytedeco.llvm.LLVM.LLVMTypeRef;
-import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.LLVM.*;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.root.enums.ECompOp;
@@ -49,24 +48,29 @@ public class IntToString {
     }
 
     private void optimize() {
-        LLVMPassManagerRef pass = LLVM.LLVMCreateFunctionPassManagerForModule(root.getModule());
-
-        // TODO: optimize pass set
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-        LLVM.LLVMAddPromoteMemoryToRegisterPass(pass);
-        LLVM.LLVMAddInstructionCombiningPass(pass);
-        LLVM.LLVMAddReassociatePass(pass);
-        LLVM.LLVMAddLoopRotatePass(pass);
-        LLVM.LLVMAddLoopUnrollPass(pass);
-        LLVM.LLVMAddLoopVectorizePass(pass);
-        LLVM.LLVMAddGVNPass(pass);
-        LLVM.LLVMAddInstructionCombiningPass(pass);
-        LLVM.LLVMAddReassociatePass(pass);
-        LLVM.LLVMAddCFGSimplificationPass(pass);
-
-        LLVM.LLVMRunFunctionPassManager(pass, functionBuilder.getDirect());
-
-        LLVM.LLVMDisposePassManager(pass);
+//	    // 1. Define the pass pipeline string
+//	    // Note: Loop passes must be wrapped in loop(...) or they will be ignored.
+//	    String pipeline = "simplifycfg,mem2reg,instcombine,reassociate," +
+//			    "loop(loop-rotate),loop(loop-unroll),loop-vectorize,newgvn," +
+//			    "instcombine,reassociate,simplifycfg";
+//
+//	    // 2. Create PassBuilder options (Replaces PassManagerBuilder)
+//	    LLVMPassBuilderOptionsRef options = LLVM.LLVMCreatePassBuilderOptions();
+//
+//	    // 3. Run passes on the specific function
+//	    // functionBuilder.getDirect() should return an LLVMValueRef representing the function
+//	    LLVMTargetMachineRef tm = null; // Provide your TargetMachine if you need target-specific vectorization
+//	    LLVMErrorRef err = LLVM.LLVMRunPassesOnFunction(functionBuilder.getDirect(), pipeline, tm, options);
+//
+//	    // 4. Handle potential errors (NewPM requires explicit error checking)
+//	    if (err != null && !err.isNull()) {
+//		    BytePointer msg = LLVM.LLVMGetErrorMessage(err);
+//		    System.err.println("LLVM Function Pass Error: " + msg.getString());
+//		    LLVM.LLVMDisposeErrorMessage(msg);
+//	    }
+//
+//	    // 5. Cleanup
+//	    LLVM.LLVMDisposePassBuilderOptions(options);
     }
 
     private void buildBody() {
@@ -93,7 +97,8 @@ public class IntToString {
 
         LLVMValueRef conditionPN = root.compareInt(ECompOp.GE, arg1, zero, "comp_val_pos");
 
-        LLVMValueRef index = root.allocA(root.getIntType(32), "index");
+		LLVMTypeRef i32 = root.getIntType(32);
+        LLVMValueRef index = root.allocA(i32, "index");
         LLVMValueRef interm = root.allocA(typeRef, "interm");
         root.setValue(index, root.integer(0, 32));
         root.setValue(interm, arg1);
@@ -106,7 +111,7 @@ public class IntToString {
 
             header.enableBuilding();
 
-            LLVMValueRef value = root.getValue(interm, "tmp_cmp_interm");
+            LLVMValueRef value = root.getValue(typeRef, interm, "tmp_cmp_interm");
             LLVMValueRef condition = root.compareInt(ECompOp.NE, value, zero, "condition_eq_0");
             BlockBuilder body = functionBuilder.block("body");
 
@@ -114,7 +119,7 @@ public class IntToString {
 
             body.enableBuilding();
 
-            value = root.getValue(interm, "value");
+            value = root.getValue(typeRef, interm, "value");
             LLVMValueRef dig = root.simod(value, ten, "get_last_digit");
             value = root.sidiv(value, ten, "div_by_10");
             root.setValue(interm, value);
@@ -124,7 +129,7 @@ public class IntToString {
                     dig, root.negate(dig)
             );
 
-            value = root.getValue(index, "index");
+            value = root.getValue(i32, index, "index");
             root.setValue(arg0, value, root.sisum(root.truncate(
                     root.getIntType(8),
                     dig,
@@ -147,18 +152,18 @@ public class IntToString {
 
             neg.enableBuilding();
 
-            LLVMValueRef value = root.getValue(index, "index");
+            LLVMValueRef value = root.getValue(i32, index, "index");
             root.setValue(arg0, value, root.sisum(root.truncate(
                     root.getIntType(8),
                     fortyFive,
                     "as_int8"
             ), fortyEight, "offset_to_utf"));
-            root.setValue(index, root.sisum(root.getValue(index, "tmp_get_idx"), one, "incr_idx"));
+            root.setValue(index, root.sisum(root.getValue(i32, index, "tmp_get_idx"), one, "incr_idx"));
             neg.jump(reverse);
         }
 
         reverse.enableBuilding();
-        LLVMValueRef ip = root.getValue(index, "get_index");
+        LLVMValueRef ip = root.getValue(i32, index, "get_index");
         LLVMValueRef ipm1 = root.sisub(ip, one, "index_minus_one");
         LLVMValueRef ip1 = root.sisum(ip, one, "index_plus_one");
         LLVMValueRef ip1d2 = root.sidiv(ip1, root.integer(2, 32), "div_by_2");
@@ -171,16 +176,16 @@ public class IntToString {
             reverse.jump(header);
 
             header.enableBuilding();
-            LLVMValueRef indx = root.getValue(index, "get_index");
+            LLVMValueRef indx = root.getValue(i32, index, "get_index");
             LLVMValueRef cond = root.compareInt(ECompOp.LT, indx, ip1d2, "compare_termin");
             header.conditionalJump(cond, body, conclusion);
 
             body.enableBuilding();
-            indx = root.getValue(index, "get_indx");
+            indx = root.getValue(i32, index, "get_indx");
 
-            LLVMValueRef left = root.getValue(arg0, indx, "get_left");
+            LLVMValueRef left = root.getValue(root.BYTE_TYPE, arg0, indx, "get_left");
             LLVMValueRef right_indx = root.sisub(ipm1, indx, "calc_right_indx");
-            LLVMValueRef right = root.getValue(arg0, right_indx, "get_right");
+            LLVMValueRef right = root.getValue(root.BYTE_TYPE, arg0, right_indx, "get_right");
             root.setValue(arg0, indx, right);
             root.setValue(arg0, right_indx, left);
 
@@ -190,7 +195,7 @@ public class IntToString {
         }
 
         conclusion.enableBuilding();
-        conclusion.ret(root.getValue(index, "res_index"));
+        conclusion.ret(root.getValue(i32, index, "res_index"));
 
         building.enableBuilding();
     }
@@ -210,8 +215,9 @@ public class IntToString {
         args.put(0, str);
         args.put(1, value);
 
-        root.track(LLVM.LLVMBuildCall(
+        root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+		        functionBuilder.getType(),
                 functionBuilder.getDirect(),
                 args, 2, ""
         ));

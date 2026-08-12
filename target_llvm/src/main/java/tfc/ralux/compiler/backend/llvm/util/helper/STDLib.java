@@ -51,8 +51,9 @@ public class STDLib {
             labelPuts = root.track(Util.memUTF("callPuts"));
         }
 
-        return root.track(LLVM.LLVMBuildCall(
+        return root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+				fPutS.getType(),
                 fPutS.getDirect(),
                 text, 1, labelPuts
         ));
@@ -74,8 +75,9 @@ public class STDLib {
 
         PointerPointer<LLVMValueRef> args0 = root.track(new PointerPointer<>(3));
         args0.put(0, root.integer(0, 32));
-        return root.track(LLVM.LLVMBuildCall(
+        return root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+                seriouslyMicrosoft.getType(),
                 seriouslyMicrosoft.getDirect(),
                 args0, 1, "seriouslyMicrosoft"
         ));
@@ -101,8 +103,9 @@ public class STDLib {
         args.put(0, text);
         args.put(1, length);
         args.put(2, seriouslyMicrosoft());
-        root.track(LLVM.LLVMBuildCall(
+        root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+                fFGetS.getType(),
                 fFGetS.getDirect(),
                 args, 3, "callFGetS"
         ));
@@ -224,8 +227,9 @@ public class STDLib {
         }
 
         PointerPointer<LLVMValueRef> noArg = root.track(new PointerPointer<>());
-        LLVMValueRef rand = root.track(LLVM.LLVMBuildCall(
+        LLVMValueRef rand = root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+                fRandom.getType(),
                 fRandom.getDirect(),
                 noArg, 0,
                 "rand"

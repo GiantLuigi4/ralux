@@ -1,10 +1,7 @@
 package tfc.ralux.compiler.backend.llvm;
 
 import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.llvm.LLVM.LLVMPassManagerBuilderRef;
-import org.bytedeco.llvm.LLVM.LLVMPassManagerRef;
-import org.bytedeco.llvm.LLVM.LLVMTypeRef;
-import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.LLVM.*;
 import org.bytedeco.llvm.global.LLVM;
 import tfc.ralux.compiler.backend.Compiler;
 import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
@@ -12,6 +9,7 @@ import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.ralux.compiler.backend.llvm.util.ProgramLocator;
+import tfc.ralux.compiler.backend.llvm.util.helper.LLVMOptimizer;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.CPU;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.Target;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.part.Architecture;
@@ -24,7 +22,6 @@ import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
-import tfc.rlxir.util.rt.RlxRt;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -82,23 +79,26 @@ public class LLVMCompiler extends Compiler {
             root.track(args);
             LLVMValueRef valOut = root.integer(0, 32);
 
-            root.track(LLVM.LLVMBuildCall(
+            root.track(LLVM.LLVMBuildCall2(
                     root.getBuilder(),
+		            ((FunctionBuilder) function.getCompilerData()).getType(),
                     ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getDirect(),
                     args, 0,
                     ""
             ));
 
             if (function.enclosure.result.type == PrimitiveType.INT) {
-                root.track(valOut = LLVM.LLVMBuildCall(
+                root.track(valOut = LLVM.LLVMBuildCall2(
                         root.getBuilder(),
+						((FunctionBuilder) function.getCompilerData()).getType(),
                         ((FunctionBuilder) function.getCompilerData()).getDirect(),
                         args, 0,
                         "call_main"
                 ));
             } else {
-                root.track(LLVM.LLVMBuildCall(
+                root.track(LLVM.LLVMBuildCall2(
                         root.getBuilder(),
+		                ((FunctionBuilder) function.getCompilerData()).getType(),
                         ((FunctionBuilder) function.getCompilerData()).getDirect(),
                         args, 0,
                         ""
@@ -164,171 +164,223 @@ public class LLVMCompiler extends Compiler {
             stubClass(aClass);
         }
     }
+	
+	@Override
+	public void optimize(int backend, int rlx, boolean lowerIntrinsics) {
+		LLVMOptimizer optimizer = new LLVMOptimizer();
+		
+		optimizer.globalVarOpt();
+		optimizer.assumeAlignment();
+		optimizer.inferAttributes();
+		
+		if (rlx >= 5) {
+			optimizer.internalize("main");
+			
+			// lower intrinsics
+			optimizer.lowerExpect();
+			optimizer.lowerConstantIntrinsics();
+			optimizer.lowerSwitch();
+			optimizer.lowerAtomic();
+			optimizer.simplifyControlFlow();
+			optimizer.convertMem2Reg();
+			optimizer.aggregatesToScalars();
+			optimizer.earlyCSEMemSSA();
+			optimizer.eliminateDeadCode();
+			
+			// IPO
+			optimizer.calledValuePropagation();
+			optimizer.correlatedPropagation();
+			optimizer.ipSCCP();
+			optimizer.globalVarOpt();
+			optimizer.mergeConstants();
+			optimizer.globalDCE();
+			optimizer.deadArgElim();
 
-    @Override
-    public void optimize(int backend, int rlx, boolean lowerIntrinsics) {
-        LLVMPassManagerBuilderRef builderRef = LLVM.LLVMPassManagerBuilderCreate();
-        LLVM.LLVMPassManagerBuilderSetOptLevel(builderRef, backend);
+			// force aggressive inlining
+			optimizer.internalize("main");
+			optimizer.partialInline();
+			optimizer.alwaysInline();
+			optimizer.inlineFunctions();
+			optimizer.argPromotion(); // Turns pointer args into scalar args
+			optimizer.mergeFunctions(); // Merges identical functions (ICF)
 
-        LLVMPassManagerRef pass = LLVM.LLVMCreatePassManager();
-        LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
-        LLVM.LLVMAddTypeBasedAliasAnalysisPass(pass);
-        LLVM.LLVMAddBasicAliasAnalysisPass(pass);
-        LLVM.LLVMAddScopedNoAliasAAPass(pass);
+			// Optimize loops
+			optimizer.loopIdiom();
+			optimizer.loopRotate();
+			optimizer.loopUnrollAndJam();
+			optimizer.loopUnswitch();
+//			optimizer.loopLICM();
+			optimizer.loopDeletion();
+//			optimizer.loopReroll();
+			optimizer.loopIndVar();
 
-        if (rlx >= 5) {
-            LLVM.LLVMPassManagerBuilderAddCoroutinePassesToExtensionPoints(builderRef);
-            LLVM.LLVMPassManagerBuilderSetDisableUnrollLoops(builderRef, 1);
-            LLVM.LLVMPassManagerBuilderSetDisableSimplifyLibCalls(builderRef, 1);
+			// Optimize math
+			optimizer.reassociate();
+			optimizer.combineInstructionsAggressive();
+			optimizer.gvn();
+			optimizer.conditionalConstantSparsePropagation();
+			optimizer.optimizeMemCpy();
+			optimizer.deadStoreElim();
+			optimizer.mldstMotion();
+			optimizer.combineInstructions();
 
-            // lower intrinsics
-            LLVM.LLVMAddStripSymbolsPass(pass);
-            LLVM.LLVMAddLowerExpectIntrinsicPass(pass);
-            LLVM.LLVMAddLowerConstantIntrinsicsPass(pass);
-            LLVM.LLVMAddLowerSwitchPass(pass); // h?
+			// first O3
+			optimizer.opt(backend);
 
-            // prepare
-            LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
-            LLVM.LLVMAddGlobalOptimizerPass(pass);
-            LLVM.LLVMAddFunctionAttrsPass(pass);
-            LLVM.LLVMAddLICMPass(pass);
-            LLVM.LLVMAddDeadArgEliminationPass(pass);
-            LLVM.LLVMAddAggressiveDCEPass(pass);
-            LLVM.LLVMAddGlobalDCEPass(pass);
-            LLVM.LLVMAddScalarReplAggregatesPass(pass);
-            LLVM.LLVMAddArgumentPromotionPass(pass);
-            LLVM.LLVMAddPruneEHPass(pass);
-            LLVM.LLVMAddCalledValuePropagationPass(pass);
-            LLVM.LLVMAddCorrelatedValuePropagationPass(pass);
-            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
-            LLVM.LLVMAddIPSCCPPass(pass);
-            LLVM.LLVMAddLICMPass(pass);
-            root.hyperAggressiveOptimizer(false, pass);
+			// O3 may have exposed more optimization potential
+			optimizer.functionAttrs();
+			optimizer.deadArgElim();
+			optimizer.globalDCE();
+			optimizer.mergeFunctions();
 
-            // force inline
-            LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddInternalizePass(pass, 1);
-            LLVM.LLVMAddPartiallyInlineLibCallsPass(pass);
-            LLVM.LLVMAddAlwaysInlinerPass(pass);
-            LLVM.LLVMAddMergeFunctionsPass(pass);
-            LLVM.LLVMAddFunctionInliningPass(pass);
+			// prepare
+			optimizer.simplifyControlFlow();
+			optimizer.globalVarOpt();
+			optimizer.functionAttrs();
+			optimizer.deadArgElim();
+			optimizer.aggressiveDCE();
+			optimizer.globalDCE();
+			optimizer.aggregatesToScalars();
+			optimizer.argPromotion();
+			optimizer.calledValuePropagation();
+			optimizer.correlatedPropagation();
+			optimizer.ipSCCP();
 
-            // simplify
-            LLVM.LLVMAddCalledValuePropagationPass(pass);
-            LLVM.LLVMAddCorrelatedValuePropagationPass(pass);
-            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
-            LLVM.LLVMAddScalarReplAggregatesPass(pass);
-            LLVM.LLVMAddFunctionAttrsPass(pass);
-            LLVM.LLVMAddIPSCCPPass(pass);
-            LLVM.LLVMAddLICMPass(pass);
-            LLVM.LLVMAddDeadArgEliminationPass(pass);
+			// hyperAggressiveOptimizer
+			root.hyperAggressiveOptimizer(false, optimizer);
 
-            // another round
-            LLVM.LLVMAddUnifyFunctionExitNodesPass(pass);
-            LLVM.LLVMAddLoopUnswitchPass(pass);
-            LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddAggressiveDCEPass(pass);
-            LLVM.LLVMAddStripSymbolsPass(pass);
-            root.hyperAggressiveOptimizer(false, pass);
+			// force inline
+			optimizer.simplifyControlFlow();
+			optimizer.internalize("main");
+			optimizer.partialInline();
+			optimizer.alwaysInline();
+			optimizer.mergeFunctions();
+			optimizer.inlineFunctions();
 
-            LLVM.LLVMAddReassociatePass(pass);
-            LLVM.LLVMAddGVNPass(pass);
-            LLVM.LLVMAddNewGVNPass(pass);
-            LLVM.LLVMAddGlobalOptimizerPass(pass);
-            LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddLoopUnrollAndJamPass(pass);
-            LLVM.LLVMAddTailCallEliminationPass(pass);
+			// simplify
+			optimizer.calledValuePropagation();
+			optimizer.correlatedPropagation();
+			optimizer.aggregatesToScalars();
+			optimizer.functionAttrs();
+			optimizer.ipSCCP();
+			optimizer.deadArgElim();
 
-            LLVM.LLVMAddFunctionAttrsPass(pass);
+			// another round
+			optimizer.simplifyControlFlow();
+			optimizer.aggressiveDCE();
+			optimizer.stripSymbols();
+			root.hyperAggressiveOptimizer(false, optimizer);
 
-            LLVM.LLVMAddPartiallyInlineLibCallsPass(pass);
-            LLVM.LLVMAddReassociatePass(pass);
-            LLVM.LLVMAddMemCpyOptPass(pass);
-            LLVM.LLVMAddFunctionAttrsPass(pass);
+			optimizer.reassociate();
+			optimizer.gvn();
+			optimizer.globalVarOpt();
+			optimizer.simplifyControlFlow();
+			optimizer.tailCallElimination();
 
-            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
-            LLVM.LLVMAddSLPVectorizePass(pass);
-            LLVM.LLVMAddAggressiveInstCombinerPass(pass);
-            LLVM.LLVMAddFunctionAttrsPass(pass);
-            LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
-            LLVM.LLVMAddCFGSimplificationPass(pass);
-            LLVM.LLVMAddAggressiveInstCombinerPass(pass);
-            LLVM.LLVMAddSLPVectorizePass(pass);
-            LLVM.LLVMAddStripSymbolsPass(pass);
-        } else {
-            if (rlx >= 4) {
-                LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
-                LLVM.LLVMAddFunctionAttrsPass(pass);
-                root.hyperAggressiveOptimizer(false, pass);
-            } else {
-                // passes for cleanup; always used for lower optimization levels
-                LLVM.LLVMAddCFGSimplificationPass(pass);
-                LLVM.LLVMAddPromoteMemoryToRegisterPass(pass);
-                LLVM.LLVMAddEarlyCSEPass(pass);
-                LLVM.LLVMAddDCEPass(pass);
-                LLVM.LLVMAddConstantMergePass(pass);
-                LLVM.LLVMAddInstructionSimplifyPass(pass);
-                LLVM.LLVMAddCFGSimplificationPass(pass);
+			optimizer.functionAttrs();
+			optimizer.partialInline();
+			optimizer.reassociate();
+			optimizer.optimizeMemCpy();
+			optimizer.functionAttrs();
 
-                if (rlx >= 1) {
-                    LLVM.LLVMAddFunctionAttrsPass(pass);
-                    LLVM.LLVMAddCFGSimplificationPass(pass);
-                    LLVM.LLVMAddReassociatePass(pass);
-                    LLVM.LLVMAddLoopUnrollAndJamPass(pass);
-                    LLVM.LLVMAddReassociatePass(pass);
-                    LLVM.LLVMAddCFGSimplificationPass(pass);
+			optimizer.opt(backend);
 
-                    if (rlx >= 2) {
-                        if (rlx == 3) {
-                            LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
-                            LLVM.LLVMAddEarlyCSEPass(pass);
-                            LLVM.LLVMAddReassociatePass(pass);
-                            LLVM.LLVMAddLoopRotatePass(pass);
-                            LLVM.LLVMAddLoopUnrollPass(pass);
-                            LLVM.LLVMAddLoopDeletionPass(pass);
-                            LLVM.LLVMAddLoopIdiomPass(pass);
-                            LLVM.LLVMAddLoopRerollPass(pass);
-                            LLVM.LLVMAddCFGSimplificationPass(pass);
-                            LLVM.LLVMAddAggressiveDCEPass(pass);
-                        }
+			// Post populate
+			optimizer.slpVectorize();
+			optimizer.combineInstructionsAggressive();
+			optimizer.functionAttrs();
+			optimizer.assumeAlignment();
+			optimizer.simplifyControlFlow();
+			optimizer.combineInstructionsAggressive();
+			optimizer.slpVectorize();
+			optimizer.stripSymbols();
+		} else {
+			if (rlx >= 4) {
+				optimizer.functionAttrs();
+				root.hyperAggressiveOptimizer(false, optimizer);
+			} else {
+				optimizer.simplifyControlFlow();
+				optimizer.convertMem2Reg();
+				optimizer.earlyCSE();
+				optimizer.eliminateDeadCode();
+				optimizer.mergeConstants();
+				optimizer.combineInstructions();
+				optimizer.simplifyControlFlow();
 
-                        LLVM.LLVMAddJumpThreadingPass(pass);
-                        LLVM.LLVMAddLoopVectorizePass(pass);
-                        LLVM.LLVMAddSLPVectorizePass(pass);
-                        LLVM.LLVMAddNewGVNPass(pass);
-                        LLVM.LLVMAddCFGSimplificationPass(pass);
-                        LLVM.LLVMAddInstructionCombiningPass(pass);
-                    }
+				if (rlx >= 1) {
+					optimizer.functionAttrs();
+					optimizer.simplifyControlFlow();
+					optimizer.reassociate();
+					optimizer.loopUnrollAndJam();
+					optimizer.reassociate();
+					optimizer.simplifyControlFlow();
 
-                    LLVM.LLVMAddSLPVectorizePass(pass);
-                }
-            }
-            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
-        }
+					if (rlx >= 2) {
+						if (rlx == 3) {
+							optimizer.assumeAlignment();
+							optimizer.earlyCSE();
+							optimizer.reassociate();
+							optimizer.loopRotate();
+							optimizer.loopUnroll();
+							optimizer.loopDeletion();
+							optimizer.loopIdiom();
+							optimizer.loopReroll();
+							optimizer.simplifyControlFlow();
+							optimizer.aggressiveDCE();
+						}
 
-        if (lowerIntrinsics) {
-            LLVM.LLVMAddInternalizePass(pass, 1);
-            LLVM.LLVMPassManagerBuilderPopulateModulePassManager(builderRef, pass);
-            if (rlx >= 5) {
-                LLVM.LLVMAddSLPVectorizePass(pass);
-                LLVM.LLVMAddAggressiveInstCombinerPass(pass);
-                LLVM.LLVMAddAlignmentFromAssumptionsPass(pass);
-                LLVM.LLVMAddCFGSimplificationPass(pass);
-                LLVM.LLVMAddStripSymbolsPass(pass);
-                LLVM.LLVMAddAggressiveInstCombinerPass(pass);
-            }
-        }
+						optimizer.jumpThreading();
+						optimizer.loopVectorize();
+						optimizer.slpVectorize();
+						optimizer.gvn();
+						optimizer.simplifyControlFlow();
+						optimizer.combineInstructions();
+					}
 
-//        LLVM.LLVMAddScalarizerPass(pass);
-//        LLVM.LLVMAddVerifierPass(pass);
+					optimizer.slpVectorize();
+				}
+			}
 
-        LLVM.LLVMRunPassManager(pass, root.getModule());
-        LLVM.LLVMDisposePassManager(pass);
-        LLVM.LLVMPassManagerBuilderDispose(builderRef);
+			optimizer.opt(backend);
+		}
 
-        if (enableVerbose) root.dump();
-    }
+		if (lowerIntrinsics) {
+			if (rlx >= 5) {
+				optimizer.vectorizeSlp();
+				optimizer.combineInstructionsAggressive();
+				optimizer.assumeAlignment();
+				optimizer.simplifyControlFlow();
+				optimizer.stripSymbols();
+				optimizer.combineInstructionsAggressive();
+			} else {
+				optimizer.lowerExpect();
+				optimizer.lowerConstantIntrinsics();
+			}
+		}
+		
+		// Clean up any trailing or double commas
+		
+		// 1. Create Options (replaces PassManagerBuilder)
+		LLVMPassBuilderOptionsRef options = LLVM.LLVMCreatePassBuilderOptions();
+		if (rlx >= 4) {
+			LLVM.LLVMPassBuilderOptionsSetMergeFunctions(options, 1);
+			LLVM.LLVMPassBuilderOptionsSetLoopInterleaving(options, 1);
+			LLVM.LLVMPassBuilderOptionsSetLoopUnrolling(options, 1);
+			LLVM.LLVMPassBuilderOptionsSetLoopVectorization(options, 1);
+			LLVM.LLVMPassBuilderOptionsSetSLPVectorization(options, 1);
+		}
+		
+		// 2. Run Passes
+		// IMPORTANT: If you are doing vectorization (SLP/Loop), pass your LLVMTargetMachineRef
+		// instead of `null` so the passes know the target architecture's vector widths!
+		LLVMTargetMachineRef tm = null; // Replace with your target machine if available
+		optimizer.invoke(root.getModule(), tm, options);
+		
+		// 4. Cleanup
+		LLVM.LLVMDisposePassBuilderOptions(options);
+		
+		if (enableVerbose) root.dump();
+	}
 
     @Override
     public void write() {
@@ -400,4 +452,22 @@ public class LLVMCompiler extends Compiler {
             throw new RuntimeException(err);
         }
     }
+	
+	public LLVMTypeRef typeData(RlxType rlxType) {
+		LLVMTypeRef tr = rlxType.getCompilerData();
+		if (tr != null)
+			return tr;
+		
+		tr = root.getIntType(rlxType.type.bits);
+		
+		if (rlxType.isArray()) {
+			throw new RuntimeException("TODO");
+		}
+		if (rlxType.isPtr()) {
+			throw new RuntimeException("TODO");
+		}
+		
+		rlxType.setCompilerData(tr);
+		return tr;
+	}
 }

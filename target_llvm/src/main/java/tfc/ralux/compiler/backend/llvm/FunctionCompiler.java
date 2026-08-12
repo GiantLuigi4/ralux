@@ -248,8 +248,9 @@ public class FunctionCompiler {
             FunctionBuilder builder1 = compiler.compiling.rt.rtDeref.getCompilerData();
             PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
             args.put(0, obj);
-            root.track(LLVM.LLVMBuildCall(
+            root.track(LLVM.LLVMBuildCall2(
                     root.getBuilder(),
+					builder1.getType(),
                     builder1.getDirect(),
                     args, 1,
                     ""
@@ -278,8 +279,9 @@ public class FunctionCompiler {
             FunctionBuilder builder1 = compiler.compiling.rt.rtRef.getCompilerData();
             PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
             args.put(0, obj);
-            root.track(LLVM.LLVMBuildCall(
+            root.track(LLVM.LLVMBuildCall2(
                     root.getBuilder(),
+					builder1.getType(),
                     builder1.getDirect(),
                     args, 1,
                     ""
@@ -297,7 +299,7 @@ public class FunctionCompiler {
             ref(instr.value.getCompilerData());
         }
         if (instr.var.type.isPtr()) {
-            LLVMValueRef oldRef = root.getValue(alloc, "get_old_var");
+            LLVMValueRef oldRef = root.getValue(compiler.typeData(instr.value.valueType()), alloc, "get_old_var");
             deref(oldRef);
         }
         root.setValue(alloc, instr.value.getCompilerData());
@@ -309,7 +311,8 @@ public class FunctionCompiler {
 
         instr.setCompilerData(
                 root.getValue(
-                        instr.var.getCompilerData(),
+		                compiler.typeData(instr.valueType()),
+		                instr.var.getCompilerData(),
                         "get_" + instr.var.debugName()
                 )
         );
@@ -339,7 +342,7 @@ public class FunctionCompiler {
 
         LLVMValueRef array = instr.array.getCompilerData();
         LLVMValueRef index = instr.index.getCompilerData();
-        instr.setCompilerData(root.getValue(array, index, "get_value"));
+        instr.setCompilerData(root.getValue(compiler.typeData(instr.array.valueType().arrayOf), array, index, "get_value"));
     }
 
     private void compileArraySet(ArraySet instr) {
@@ -385,8 +388,11 @@ public class FunctionCompiler {
                 valueRef = obj;
                 PointerPointer args = new PointerPointer(1);
                 args.put(0, root.integer(2, 64));
-                valueRef = root.track(LLVM.LLVMBuildGEP(
+	            LLVMTypeRef elementType = root.pointerType(root.BYTE_TYPE);
+//                valueRef = root.track(LLVM.LLVMBuildGEP2(
+                valueRef = root.track(LLVM.LLVMBuildInBoundsGEP2(
                         root.getBuilder(),
+						elementType,
                         valueRef,
                         args, 1,
                         "then_gep"
@@ -394,8 +400,9 @@ public class FunctionCompiler {
             } else {
                 throw new RuntimeException("TODO");
             }
-            valueRef = root.ptrCast(valueRef, root.pointerType(root.pointerType(builder1.getType())), "ptr_to_func");
-            return root.getValue(valueRef, "get_function");
+			LLVMTypeRef getTyp = root.pointerType(builder1.getType());
+            valueRef = root.ptrCast(valueRef, root.pointerType(getTyp), "ptr_to_func");
+            return root.getValue(getTyp, valueRef, "get_function");
         }
         FunctionBuilder builder1 = instr.toCall.getCompilerData();
         return builder1.getDirect();
@@ -415,8 +422,9 @@ public class FunctionCompiler {
             ensureData(param);
             args.put(i, param.getCompilerData());
         }
-        LLVMValueRef callVal = root.track(LLVM.LLVMBuildCall(
+        LLVMValueRef callVal = root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+				((FunctionBuilder) instr.toCall.getCompilerData()).getType(),
                 valueRef,
                 args, argC,
                 callName
@@ -432,8 +440,9 @@ public class FunctionCompiler {
         root.track(args);
         root.track(noArg);
 
-        LLVMValueRef gc = root.track(LLVM.LLVMBuildCall(
+        LLVMValueRef gc = root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+                ((FunctionBuilder) compiler.compiling.rt.rtGlobalGC.getCompilerData()).getType(),
                 ((FunctionBuilder) compiler.compiling.rt.rtGlobalGC.getCompilerData()).getDirect(),
                 noArg, 0,
                 "getGC"
@@ -441,16 +450,18 @@ public class FunctionCompiler {
         args.put(0, gc);
         args.put(1, root.integer(type.getByteSizeObj(), 32));
         args.put(2, root.track(
-                LLVM.LLVMBuildCall(
+                LLVM.LLVMBuildCall2(
                         root.getBuilder(),
+                        ((FunctionBuilder)((RlxClassData)instr.type.clazz.getCompilerData()).loadFunc).getType(),
                         ((FunctionBuilder)((RlxClassData)instr.type.clazz.getCompilerData()).loadFunc).getDirect(),
                         noArg, 0,
                         ""
                 )
         ));
 
-        LLVMValueRef valueRef = root.track(LLVM.LLVMBuildCall(
+        LLVMValueRef valueRef = root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
+                ((FunctionBuilder) compiler.compiling.gc.gcAllocObj.getCompilerData()).getType(),
                 ((FunctionBuilder) compiler.compiling.gc.gcAllocObj.getCompilerData()).getDirect(),
                 args, 3,
                 "gcAllocObj"
@@ -477,7 +488,7 @@ public class FunctionCompiler {
         if (dataBase != null) {
             LLVMValueRef base = dataBase.getCompilerData();
             LLVMValueRef value = extractField(base, conversions.typeFor(instr1.type), offset);
-            instr.setCompilerData(root.getValue(value, "get_field_data"));
+            instr.setCompilerData(root.getValue(instr1.type.getCompilerData(), value, "get_field_data"));
         } else throw new RuntimeException("Static field NYI");
     }
 
