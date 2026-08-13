@@ -47,7 +47,7 @@ public class ClassObjCompiler {
             builder.enableBuilding();
 
             LLVMValueRef val0 = trackFunc.getArg(1, voidPtr);
-            LLVMValueRef val1 = trackFunc.getArg(2, voidPtr);
+//            LLVMValueRef val1 = trackFunc.getArg(2, voidPtr);
             LLVMValueRef object = trackFunc.getArg(0, voidPtr);
 
             for (RlxField field : clazz.getFields()) {
@@ -57,7 +57,7 @@ public class ClassObjCompiler {
                     FunctionBuilder markObj = rt.rtMarkObj.getCompilerData();
                     PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(3));
                     args.put(0, val0);
-                    args.put(1, val1);
+//                    args.put(1, val1);
 
                     LLVMValueRef val2 = root.getValue(
 							compiler.typeData(field.type),
@@ -67,7 +67,7 @@ public class ClassObjCompiler {
 		                    ), "get_field_value"
                     );
 
-                    args.put(2, val2);
+                    args.put(1, val2);
                     root.track(LLVM.LLVMBuildCall2(
                             root.getBuilder(),
                             markObj.getType(),

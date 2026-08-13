@@ -21,7 +21,7 @@ typedef struct rlxGC* RlxGC;
 // static rlxGC* tfc_ralux_runtime_GC_GLOBAL_GC;
 
 // runtime methods
-EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, RlxObj obj);
 EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc);
 EXPORT EXPORT_FUNC void __rlxrt_free_obj(RlxObj obj);
 EXPORT EXPORT_FUNC long long __rlxrt_get_pointer(RlxObj obj);

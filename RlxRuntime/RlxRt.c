@@ -30,10 +30,11 @@
 struct rlxGCData {
     void (*tfc_ralux_runtime_GCData_ref)(RlxObj);
     void (*tfc_ralux_runtime_GCData_deref)(RlxObj);
+    bool visited;
 };
 
 struct rlxClass {
-    void (*__rlxrt_gc_track)(RlxObj, SetT, SetT);
+    void (*__rlxrt_gc_track)(RlxObj, SetT);
     void (*__rlxrt_gc_free)(RlxObj);
 };
 
@@ -55,6 +56,7 @@ struct rlxGC {
 struct rlxStandardGCData {
     void (*tfc_ralux_runtime_GCData_ref)(RlxObj obj);
     void (*tfc_ralux_runtime_GCData_deref)(RlxObj obj);
+    bool visited;
 
     RlxGC gc;
     int scopeRefs;
@@ -80,59 +82,72 @@ EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size, R
     return obj;
 }
 
-internal void intern__rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj) {
-    if (obj == 0) return;
-    if (!add(refd, obj)) {
-        if (freshRefs != 0) add(freshRefs, obj);
-    }
-}
-
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
-    SetT refd = createSet();
-    SetT fred = createSet();
     SetT fref = createSet();
 
+    printf("roots %i\n", setSize(gc->roots));
+    printf("objects %i\n", setSize(gc->allObjs));
+
+    int numVisited = 0;
     for (int i = 0; i < setSize(gc->roots); i++) {
         RlxObj root = setGet(gc->roots, i);
-        intern__rlxrt_mark_obj(0, refd, root);
-        root->clazz->__rlxrt_gc_track(root, fref, refd);
+        root->clazz->__rlxrt_gc_track(root, fref);
+        struct rlxGCData* inf = root->gc_info;
+        inf->visited = true;
+        numVisited++;
     }
 
-    // TODO: test better
     SetT frefSwap = createSet();
     while (setSize(fref) != 0) {
         for (int i = 0; i < setSize(fref); i++) {
             RlxObj root = setGet(fref, i);
-            intern__rlxrt_mark_obj(0, refd, root);
-            root->clazz->__rlxrt_gc_track(root, frefSwap, refd);
+
+            struct rlxGCData* inf = root->gc_info;
+            bool wasVisited = inf->visited;
+            if (!wasVisited) {
+                root->clazz->__rlxrt_gc_track(root, frefSwap);
+                inf->visited = true;
+                numVisited++;
+            }
         }
         clear(fref);
         SetT temp = fref;
         fref = frefSwap;
         frefSwap = temp;
     }
-    setFree(fref);
     setFree(frefSwap);
-    
+    setFree(fref);
+
+    printf("visited %i\n", numVisited);
+
+    SetT freed = createSet();
     for (int i = 0; i < setSize(gc->allObjs); i++) {
         RlxObj obj = setGet(gc->allObjs, i);
-        if (!contains(refd, obj))
-            setAdd(fred, obj);
+        struct rlxGCData* inf = obj->gc_info;
+        bool wasVisited = inf->visited;
+        if (!wasVisited)
+            setAdd(freed, obj);
+        inf->visited = false;
     }
-    for (int i = 0; i < setSize(fred); i++) {
-        RlxObj obj = setGet(fred, i);
+    printf("freeing %i\n", setSize(freed));
+    for (int i = setSize(freed) - 1; i >= 0; i--) {
+        RlxObj obj = setGet(freed, i);
         setRemove(gc->allObjs, obj);
         __rlxrt_free_obj(obj);
     }
-    freeSet(refd);
-    freeSet(fred);
+    setFree(freed);
+
+    printf("survived %i\n", setSize(gc->allObjs));
 }
 
 // runtime functions
-EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj) {
-    if (obj == 0) return;
-    if (!add(refd, obj)) {
-        if (freshRefs != 0) add(freshRefs, obj);
+EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, RlxObj obj) {
+    if (freshRefs != 0) {
+        struct rlxGCData* inf = obj->gc_info;
+        bool wasVisited = inf->visited;
+        if (!wasVisited) {
+            add(freshRefs, obj);
+        }
     }
 }
 
@@ -165,11 +180,12 @@ EXPORT EXPORT_FUNC void __rlxrt_init_gc() {
 }
 
 EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc) {
-    void** gc_data = rlx_malloc(sizeof(struct rlxStandardGCData));
-    gc_data[0] = __rlxrt_standard_ref;
-    gc_data[1] = __rlxrt_standard_deref;
-    gc_data[2] = gc;
-    gc_data[3] = 0;
+    struct rlxStandardGCData* gc_data = (struct rlxStandardGCData*) rlx_malloc(sizeof(struct rlxStandardGCData));
+    gc_data->tfc_ralux_runtime_GCData_ref = __rlxrt_standard_ref;
+    gc_data->tfc_ralux_runtime_GCData_deref = __rlxrt_standard_deref;
+    gc_data->visited = false;
+    gc_data->gc = gc;
+    gc_data->scopeRefs = 0;
     obj->gc_info = (struct rlxGCData*) gc_data;
     add(gc->allObjs, obj);
 }
