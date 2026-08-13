@@ -53,6 +53,7 @@ public class Hello {
         compiler.verbose();
         compiler.stub();
         compiler.compile();
+	    compiler.prepareMachine();
         compiler.optimize(3, 4, true);
         compiler.write();
     }

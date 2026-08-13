@@ -17,3 +17,5 @@
 #define EXPORT_FUNC __stdcall __attribute__((fastcall))
 
 #define internal __attribute__((always_inline)) __inline__ __attribute__((fastcall))
+
+#include <stddef.h>

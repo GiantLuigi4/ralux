@@ -75,24 +75,9 @@ internal void ensureCapacity(SimpleSet* set, int size) {
         int grow = capacity;
         void** old = set->data;
         int cap = capacity + grow;
-        void** newData = malloc(cap * sz);
-        set->data = newData;
-        __builtin_memcpy(newData, old, size * sz);
-        free(old);
+        set->data = __builtin_realloc(set->data, cap * sz);
         set->capacity = cap;
     }
-}
-
-internal void memmov(void* src, void* dst, int count) {
-    void** tmp = malloc(count * sz);
-    // TODO: optimize
-    for (int i = 0; i < count; i++) {
-        tmp[i] = ((void**)src)[i];
-    }
-    for (int i = 0; i < count; i++) {
-        ((void**)dst)[i] = tmp[i];
-    }
-    free(tmp);
 }
 
 internal void shift(struct simpleSet* set, int index, int offset, int size, void** data) {
@@ -102,11 +87,17 @@ internal void shift(struct simpleSet* set, int index, int offset, int size, void
     int dest = index + offset;
     int len = size - index;
     int delt = len;
-    memmov(data + start, data + dest, delt);
-    // memcpy(set->data + start, set->data + dest, delt);
+    if (delt <= 0) {
+        int count = -delt;
+        for (int i = count - 1; i >= 0; i--) {
+            data[dest + i] = data[start + i];
+        }
+    } else {
+        __builtin_memmove(data + dest, data + start, (size_t)delt * sizeof(*data));
+    }
 }
 
-internal void setAdd(SimpleSet* set, void* key) {
+internal bool setAdd(SimpleSet* set, void* key) {
     char exists = 0;
     int index = search(set, key, &exists);
     if (!exists) {
@@ -120,6 +111,7 @@ internal void setAdd(SimpleSet* set, void* key) {
         data[index] = key;
         set->size++;
     }
+    return (bool)exists;
 }
 
 internal void setRemove(SimpleSet* set, void* key) {

@@ -80,6 +80,13 @@ EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size, R
     return obj;
 }
 
+internal void intern__rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj) {
+    if (obj == 0) return;
+    if (!add(refd, obj)) {
+        if (freshRefs != 0) add(freshRefs, obj);
+    }
+}
+
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     SetT refd = createSet();
     SetT fred = createSet();
@@ -87,7 +94,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
     for (int i = 0; i < setSize(gc->roots); i++) {
         RlxObj root = setGet(gc->roots, i);
-        __rlxrt_mark_obj(0, refd, root);
+        intern__rlxrt_mark_obj(0, refd, root);
         root->clazz->__rlxrt_gc_track(root, fref, refd);
     }
 
@@ -96,7 +103,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     while (setSize(fref) != 0) {
         for (int i = 0; i < setSize(fref); i++) {
             RlxObj root = setGet(fref, i);
-            __rlxrt_mark_obj(0, refd, root);
+            intern__rlxrt_mark_obj(0, refd, root);
             root->clazz->__rlxrt_gc_track(root, frefSwap, refd);
         }
         clear(fref);
@@ -124,8 +131,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 // runtime functions
 EXPORT EXPORT_FUNC void __rlxrt_mark_obj(SetT freshRefs, SetT refd, RlxObj obj) {
     if (obj == 0) return;
-    if (!contains(refd, obj)) {
-        add(refd, obj);
+    if (!add(refd, obj)) {
         if (freshRefs != 0) add(freshRefs, obj);
     }
 }

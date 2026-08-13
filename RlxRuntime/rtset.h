@@ -25,8 +25,8 @@ internal bool contains(SetT set, void* key) {
     return setContains(set, key);
 }
 
-internal void add(SetT set, void* key) {
-    setAdd(set, key);
+internal bool add(SetT set, void* key) {
+    return setAdd(set, key);
 }
 
 internal void erase(SetT set, void* key) {

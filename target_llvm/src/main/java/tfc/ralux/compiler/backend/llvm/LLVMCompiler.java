@@ -166,6 +166,20 @@ public class LLVMCompiler extends Compiler {
     }
 	
 	@Override
+	public void prepareMachine() {
+		root.toTargetMachine(
+				new Target(
+						Architecture.X86_64,
+						Vendor.APPLE,
+						OperatingSystem.WINDOWS,
+						Environment.MSVC
+				),
+				CPU.GENERIC,
+				LLVM.LLVMCodeGenLevelAggressive
+		);
+	}
+	
+	@Override
 	public void optimize(int backend, int rlx, boolean lowerIntrinsics) {
 		LLVMOptimizer optimizer = new LLVMOptimizer();
 		
@@ -205,14 +219,18 @@ public class LLVMCompiler extends Compiler {
 			optimizer.mergeFunctions(); // Merges identical functions (ICF)
 
 			// Optimize loops
+			optimizer.loopClosedFormSSA();
 			optimizer.loopIdiom();
 			optimizer.loopRotate();
 			optimizer.loopUnrollAndJam();
+			optimizer.loopClosedFormSSA();
+			optimizer.loopLICM();
 			optimizer.loopUnswitch();
 //			optimizer.loopLICM();
 			optimizer.loopDeletion();
 //			optimizer.loopReroll();
 			optimizer.loopIndVar();
+			optimizer.sink();
 
 			// Optimize math
 			optimizer.reassociate();
@@ -226,6 +244,7 @@ public class LLVMCompiler extends Compiler {
 
 			// first O3
 			optimizer.opt(backend);
+			optimizer.sink();
 
 			// O3 may have exposed more optimization potential
 			optimizer.functionAttrs();
@@ -245,6 +264,7 @@ public class LLVMCompiler extends Compiler {
 			optimizer.calledValuePropagation();
 			optimizer.correlatedPropagation();
 			optimizer.ipSCCP();
+			optimizer.sink();
 
 			// hyperAggressiveOptimizer
 			root.hyperAggressiveOptimizer(false, optimizer);
@@ -284,6 +304,7 @@ public class LLVMCompiler extends Compiler {
 			optimizer.functionAttrs();
 
 			optimizer.opt(backend);
+			optimizer.sink();
 
 			// Post populate
 			optimizer.slpVectorize();
@@ -352,15 +373,12 @@ public class LLVMCompiler extends Compiler {
 				optimizer.simplifyControlFlow();
 				optimizer.stripSymbols();
 				optimizer.combineInstructionsAggressive();
-			} else {
-				optimizer.lowerExpect();
-				optimizer.lowerConstantIntrinsics();
 			}
+			optimizer.lowerExpect();
+			optimizer.lowerConstantIntrinsics();
 		}
 		
-		// Clean up any trailing or double commas
-		
-		// 1. Create Options (replaces PassManagerBuilder)
+		// Create Options
 		LLVMPassBuilderOptionsRef options = LLVM.LLVMCreatePassBuilderOptions();
 		if (rlx >= 4) {
 			LLVM.LLVMPassBuilderOptionsSetMergeFunctions(options, 1);
@@ -370,13 +388,12 @@ public class LLVMCompiler extends Compiler {
 			LLVM.LLVMPassBuilderOptionsSetSLPVectorization(options, 1);
 		}
 		
-		// 2. Run Passes
+		// Run Passes
 		// IMPORTANT: If you are doing vectorization (SLP/Loop), pass your LLVMTargetMachineRef
 		// instead of `null` so the passes know the target architecture's vector widths!
-		LLVMTargetMachineRef tm = null; // Replace with your target machine if available
+		LLVMTargetMachineRef tm = root.getTarget();
 		optimizer.invoke(root.getModule(), tm, options);
 		
-		// 4. Cleanup
 		LLVM.LLVMDisposePassBuilderOptions(options);
 		
 		if (enableVerbose) root.dump();
@@ -384,16 +401,6 @@ public class LLVMCompiler extends Compiler {
 
     @Override
     public void write() {
-        root.toTargetMachine(
-                new Target(
-                        Architecture.X86_64,
-                        Vendor.APPLE,
-                        OperatingSystem.WINDOWS,
-                        Environment.MSVC
-                ),
-                CPU.GENERIC,
-                LLVM.LLVMCodeGenLevelAggressive
-        );
         root.dumpToFile(new File(compiling.getName() + ".ll").getAbsolutePath());
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
         try {

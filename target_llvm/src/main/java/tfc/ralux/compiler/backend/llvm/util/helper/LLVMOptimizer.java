@@ -55,6 +55,7 @@ public class LLVMOptimizer {
 	public void mergeFunctions() { makePass("mergefunc", Level.MODULE); }
 	public void lowerSwitch() { makePass("lower-switch", Level.MODULE); }
 	public void inferAttributes() { makePass("inferattrs", Level.MODULE); }
+	public void extractBlocks() { makePass("extract-blocks", Level.MODULE); }
 	
 	// --- CGSCC PASSES (Call Graph SCC) ---
 	public void functionAttrs() { makePass("function-attrs", Level.CGSCC); }
@@ -86,6 +87,8 @@ public class LLVMOptimizer {
 	public void mldstMotion() { makePass("mldst-motion", Level.FUNCTION); }
 	public void lowerAtomic() { makePass("lower-atomic", Level.FUNCTION); }
 	public void earlyCSEMemSSA() { makePass("early-cse<memssa>", Level.FUNCTION); }
+	public void loopClosedFormSSA() { makePass("lcssa", Level.FUNCTION); }
+	public void sink() { makePass("sink", Level.FUNCTION); }
 	
 	// --- LOOP PASSES ---
 	public void loopRotate() { makePass("loop-rotate", Level.LOOP); }
@@ -142,6 +145,7 @@ public class LLVMOptimizer {
 	}
 	
 	enum Level {
+		UNIQUE(),
 		LOOP(),
 		FUNCTION(),
 		CGSCC(FUNCTION),
@@ -154,6 +158,8 @@ public class LLVMOptimizer {
 		}
 		
 		public boolean isCompatible(Level l) {
+			if (this == UNIQUE || l == UNIQUE)
+				return false;
 			if (this == l) return true;
 			
 			for (Level compatibleSubLevel : compatibleSubLevels) {

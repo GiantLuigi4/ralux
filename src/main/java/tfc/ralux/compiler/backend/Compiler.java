@@ -12,4 +12,6 @@ public abstract class Compiler {
     public abstract void optimize(int backend, int rlx, boolean lowerIntrinsics);
 
     public abstract void write();
+	
+	public abstract void prepareMachine();
 }

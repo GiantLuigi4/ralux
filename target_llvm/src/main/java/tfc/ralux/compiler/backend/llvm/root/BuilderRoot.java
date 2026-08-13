@@ -361,6 +361,7 @@ public class BuilderRoot extends ModuleRoot {
 	    optimizer.assumeAlignment();
 	    
 	    // erase branches
+	    optimizer.loopClosedFormSSA();
 	    optimizer.loopIdiom();
 //	    optimizer.loopSimplify();
 	    optimizer.loopIdiom();
@@ -371,6 +372,7 @@ public class BuilderRoot extends ModuleRoot {
 //		optimizer.loopFusion();
 		optimizer.simplifyControlFlow();
 	    if (!forFunction) {
+		    optimizer.loopClosedFormSSA();
 			optimizer.loopLICM();
 		    optimizer.loopUnswitch();
 	    }
@@ -380,6 +382,7 @@ public class BuilderRoot extends ModuleRoot {
 		optimizer.loopLICM();
 	    optimizer.inlineFunctions();
 		optimizer.conditionalConstantSparsePropagation();
+	    optimizer.sink();
 	    
 	    optimizer.simplifyInstructions();
 		optimizer.loopIndVar();
@@ -395,6 +398,7 @@ public class BuilderRoot extends ModuleRoot {
 		optimizer.combineInstructionsAggressive();
 		optimizer.slpVectorize();
 	    optimizer.inlineFunctions();
+	    optimizer.sink();
     }
 
     public void memSet(LLVMValueRef ptr, LLVMValueRef value, LLVMValueRef len, int alignment) {
@@ -505,4 +509,8 @@ public class BuilderRoot extends ModuleRoot {
         );
         return track(valueRef);
     }
+	
+	public LLVMTargetMachineRef getTarget() {
+		return targetMachineRef;
+	}
 }

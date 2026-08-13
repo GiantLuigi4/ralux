@@ -50,9 +50,10 @@ public class CompilerTest {
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);
         compiler.verbose();
-        compiler.stub();
-        compiler.compile();
-        compiler.optimize(3, 5, true);
+	    compiler.stub();
+	    compiler.compile();
+	    compiler.prepareMachine();
+	    compiler.optimize(3, 5, false);
 //        compiler.optimize(0, 0, false);
         compiler.write();
     }

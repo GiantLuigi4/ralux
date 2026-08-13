@@ -360,6 +360,7 @@ public class Snake {
         compiler.verbose();
         compiler.stub();
         compiler.compile();
+	    compiler.prepareMachine();
         compiler.optimize(3, 5, true);
         compiler.write();
     }
