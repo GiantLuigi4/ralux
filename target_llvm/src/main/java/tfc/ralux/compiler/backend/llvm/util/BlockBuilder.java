@@ -31,16 +31,20 @@ public class BlockBuilder {
         terminated = true;
     }
 
-    public void ret(LLVMValueRef valueRef) {
+    public LLVMValueRef ret(LLVMValueRef valueRef) {
         if (terminated) throw new RuntimeException("Already terminated");
-        root.track(LLVM.LLVMBuildRet(root.getBuilder(), valueRef));
+		LLVMValueRef vr = LLVM.LLVMBuildRet(root.getBuilder(), valueRef);
+        root.track(vr);
         terminated = true;
+		return vr;
     }
 
-    public void ret() {
+    public LLVMValueRef ret() {
         if (terminated) throw new RuntimeException("Already terminated");
-        root.track(LLVM.LLVMBuildRetVoid(root.getBuilder()));
+		LLVMValueRef vr = LLVM.LLVMBuildRetVoid(root.getBuilder());
+        root.track(vr);
         terminated = true;
+	    return vr;
     }
 
     public LLVMBasicBlockRef getDirect() {

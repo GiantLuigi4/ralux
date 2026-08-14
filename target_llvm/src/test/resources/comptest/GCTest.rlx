@@ -20,7 +20,7 @@ public class GCTest {
         }
         GC.collect(gc);
         Debug.write(100);
-        for (int i1 = 0; i1 < 32; i1++) {
+        for (int i1 = 0; i1 < 5; i1++) {
             Debug.write(0);
         }
         return 0;

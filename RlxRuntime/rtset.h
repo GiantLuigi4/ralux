@@ -3,21 +3,8 @@
 #include "pch.h"
 #include "RlxRt.h"
 
-int hash(void* ptr) {
-    return (int) ptr;
-}
-
-int comparison(void* left, void* right) {
-    return (int) (((long long) left) - ((long long) right));
-    // if (left < right) return -1;
-    // if (left == right) return 0;
-    // return 1;
-}
-
 internal SetT createSet() {
     SetT set = setCreate();
-    set->compare = comparison;
-    set->hash = hash;
     return set;
 }
 

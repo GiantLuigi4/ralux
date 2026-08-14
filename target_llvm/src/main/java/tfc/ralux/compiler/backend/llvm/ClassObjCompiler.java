@@ -147,7 +147,7 @@ public class ClassObjCompiler {
 			));
 			LLVMValueRef ptrptr = root.ptrCast(classValue, root.pointerType(root.pointerType(root.VOID)), "to_ptr_ptr");
 			
-			root.setValueI8(classObject, classValue);
+			root.setValue(classObject, classValue);
 			
 			{
 				LLVMValueRef ptr = root.ptrCast(
@@ -155,7 +155,7 @@ public class ClassObjCompiler {
 						root.pointerType(root.VOID),
 						"to_ptr"
 				);
-				root.setValueI8(root.pointerType(root.VOID), ptrptr, root.integer(0, 32), ptr);
+				root.setValue(root.pointerType(root.VOID), ptrptr, root.integer(0, 32), ptr);
 			}
 			{
 				LLVMValueRef ptr = root.ptrCast(
@@ -163,7 +163,7 @@ public class ClassObjCompiler {
 						root.pointerType(root.VOID),
 						"to_ptr"
 				);
-				root.setValueI8(root.pointerType(root.VOID), ptrptr, root.integer(1, 32), ptr);
+				root.setValue(root.pointerType(root.VOID), ptrptr, root.integer(1, 32), ptr);
 			}
 		}
 

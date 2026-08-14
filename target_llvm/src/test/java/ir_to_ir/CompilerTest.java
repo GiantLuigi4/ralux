@@ -35,7 +35,9 @@ public class CompilerTest {
 //            parse(translator, module, "comptest/BranchTest.rlx");
 //            parse(translator, module, "comptest/ABITest.rlx");
 //            parse(translator, module, "comptest/IOViaDebug.rlx");
-            parse(translator, module, "comptest/GCTest.rlx");
+//            parse(translator, module, "comptest/GCTest.rlx");
+//            parse(translator, module, "comptest/GCTest1.rlx");
+            parse(translator, module, "comptest/GCTest2.rlx");
 //            parse(translator, module, "comptest/Wides.rlx");
 //            parse(translator, module, "comptest/Fields.rlx");
         } catch (Throwable err) {
@@ -43,7 +45,9 @@ public class CompilerTest {
         }
         translator.prepare(module);
 //        module.setMain(module.getClass("comptest.IOViaDebug").getFunctions().get(0));
-        module.setMain(module.getClass("comptest.GCTest").getFunctions().get(0));
+//        module.setMain(module.getClass("comptest.GCTest").getFunctions().get(0));
+//	    module.setMain(module.getClass("comptest.GCTest1").getFunctions().get(1));
+        module.setMain(module.getClass("comptest.GCTest2").getFunctions().get(2));
 //        module.setMain(module.getClass("comptest.Wides").getFunctions().get(0));
 //        module.setMain(module.getClass("comptest.Fields").getFunctions().get(0));
 
@@ -53,8 +57,8 @@ public class CompilerTest {
 	    compiler.stub();
 	    compiler.compile();
 	    compiler.prepareMachine();
-	    compiler.optimize(3, 5, true);
-//        compiler.optimize(0, 0, false);
+//	    compiler.optimize(3, 5, true);
+        compiler.optimize(0, 0, false);
         compiler.write();
     }
 }

@@ -99,8 +99,8 @@ public class IntToString {
 		LLVMTypeRef i32 = root.getIntType(32);
         LLVMValueRef index = root.allocA(i32, "index");
         LLVMValueRef interm = root.allocA(typeRef, "interm");
-        root.setValueI8(index, root.integer(0, 32));
-        root.setValueI8(interm, arg1);
+        root.setValue(index, root.integer(0, 32));
+        root.setValue(interm, arg1);
 
         BlockBuilder sign = functionBuilder.block("sign");
 
@@ -121,7 +121,7 @@ public class IntToString {
             value = root.getValue(typeRef, interm, "value");
             LLVMValueRef dig = root.simod(value, ten, "get_last_digit");
             value = root.sidiv(value, ten, "div_by_10");
-            root.setValueI8(interm, value);
+            root.setValue(interm, value);
 
             dig = root.select(
                     conditionPN,
@@ -135,7 +135,7 @@ public class IntToString {
                     "as_int8"
             ), fortyEight, "offset_to_utf"));
             value = root.sisum(value, one, "index_incr");
-            root.setValueI8(index, value);
+            root.setValue(index, value);
 
             body.jump(header);
         }
@@ -157,7 +157,7 @@ public class IntToString {
                     fortyFive,
                     "as_int8"
             ), fortyEight, "offset_to_utf"));
-            root.setValueI8(index, root.sisum(root.getValue(i32, index, "tmp_get_idx"), one, "incr_idx"));
+            root.setValue(index, root.sisum(root.getValue(i32, index, "tmp_get_idx"), one, "incr_idx"));
             neg.jump(reverse);
         }
 
@@ -166,7 +166,7 @@ public class IntToString {
         LLVMValueRef ipm1 = root.sisub(ip, one, "index_minus_one");
         LLVMValueRef ip1 = root.sisum(ip, one, "index_plus_one");
         LLVMValueRef ip1d2 = root.sidiv(ip1, root.integer(2, 32), "div_by_2");
-        root.setValueI8(index, root.integer(0, 32));
+        root.setValue(index, root.integer(0, 32));
 
         BlockBuilder conclusion = functionBuilder.block("conclusion");
         {
@@ -189,7 +189,7 @@ public class IntToString {
             root.setValueI8(arg0, right_indx, left);
 
             indx = root.sisum(indx, one, "incr_indx");
-            root.setValueI8(index, indx);
+            root.setValue(index, indx);
             body.jump(header);
         }
 

@@ -92,8 +92,8 @@ public class StringToInt {
         LLVMValueRef interm = root.allocA(typeRef, "interm");
 
         // set initials
-        root.setValueI8(index, zeroI32);
-        root.setValueI8(interm, zero);
+        root.setValue(index, zeroI32);
+        root.setValue(interm, zero);
 
         // blocks
         BlockBuilder header = functionBuilder.block("header");
@@ -117,12 +117,12 @@ public class StringToInt {
             LLVMValueRef chr = root.getValue(root.BYTE_TYPE, str, indx, "get_char");
             LLVMValueRef dig = root.sisub(chr, fortyEight_byte, "sub_45");
             indx = root.sisum(indx, one, "add_1");
-            root.setValueI8(index, indx);
+            root.setValue(index, indx);
 	        
 	        LLVMValueRef itemp = root.getValue(typeRef, interm, "get_interm");
 	        itemp = root.simul(itemp, ten, "mul_by_10");
 	        itemp = root.sisum(itemp, root.bitcastTruncOrExt(typeRef, dig,"cast_to_type"), "add_digit");
-            root.setValueI8(interm, itemp);
+            root.setValue(interm, itemp);
 
             body.jump(header);
         }

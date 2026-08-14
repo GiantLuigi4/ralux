@@ -7,10 +7,18 @@ struct simpleSet {
     int size;
     int capacity;
     void** data;
-    
-    int (*compare)(void*, void*);
-    int (*hash)(void*);
 };
+
+//internal int hash(void* ptr) {
+//    return (int) ptr;
+//}
+
+internal int compare(void* left, void* right) {
+//    return (int) (((long long) left) - ((long long) right));
+     if (left < right) return -1;
+     if (left == right) return 0;
+     return 1;
+}
 
 internal SimpleSet* setCreate() {
     SimpleSet* ptr = malloc(sizeof(SimpleSet));
@@ -33,8 +41,6 @@ internal int search(SimpleSet* set, void* element, char* exists) {
     int middle = size >> 1;
     int leftBound = 0;
     int rightBound = size;
-
-    int (*compare)(void*, void*) = set->compare;
 
     while (leftBound < rightBound) {
         void** elem = data[middle];
