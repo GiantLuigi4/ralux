@@ -622,9 +622,7 @@ public class FunctionCompiler {
 				root.integer(0, 64),
 				"non_null"
 		);
-		BlockBuilder trueBranch = re;
-		BlockBuilder falseBranch = nn;
-		root.track(LLVM.LLVMBuildCondBr(root.getBuilder(), condition, trueBranch.getDirect(), falseBranch.getDirect()));
+		root.track(LLVM.LLVMBuildCondBr(root.getBuilder(), condition, re.getDirect(), nn.getDirect()));
 		
 		nn.enableBuilding();
 		{
@@ -644,6 +642,7 @@ public class FunctionCompiler {
 		
 		re.enableBuilding();
 	}
+	
 	private void preRet(LLVMValueRef before, Supplier<LLVMValueRef> returnVal) {
 		if (vars.isEmpty()) {
 			if (returnVal != null) {
