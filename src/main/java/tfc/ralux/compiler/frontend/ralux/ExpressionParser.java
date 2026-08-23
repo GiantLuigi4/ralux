@@ -228,8 +228,15 @@ public class ExpressionParser {
                         };
                     } else if (terminal.getText().startsWith("'")) {
 						String str = terminal.getText().substring(1, terminal.getText().length() - 1);
-						
-						return new ConstInstr<>(str.charAt(str.length() - 1), RlxTypes.CHAR);
+	                    return switch (str) {
+		                    case "\\n" -> new ConstInstr<>('\n', RlxTypes.CHAR);
+		                    case "\\t" -> new ConstInstr<>('\t', RlxTypes.CHAR);
+		                    case "\\r" -> new ConstInstr<>('\r', RlxTypes.CHAR);
+		                    case "\\b" -> new ConstInstr<>('\b', RlxTypes.CHAR);
+		                    case "\\s" -> new ConstInstr<>('\s', RlxTypes.CHAR);
+		                    case "\\f" -> new ConstInstr<>('\f', RlxTypes.CHAR);
+		                    default -> new ConstInstr<>(str.charAt(str.length() - 1), RlxTypes.CHAR);
+	                    };
                     } else {
 	                    throw new RuntimeException("TODO");
                     }

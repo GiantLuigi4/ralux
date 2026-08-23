@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.frontend.ralux.parse;// Generated from D:/programs/jetbrains/workspaces/ralux/grammar/Ralux.g4 by ANTLR 4.13.2
+package tfc.ralux.compiler.frontend.ralux.parse;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**

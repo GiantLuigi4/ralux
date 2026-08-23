@@ -58,6 +58,26 @@ public class STDLib {
                 text, 1, labelPuts
         ));
     }
+	
+    public LLVMValueRef wprint(LLVMValueRef text) {
+        if (typePuts == null) {
+            typePuts = new FunctionType(
+                    root,
+                    root.getIntType(32)
+            ).withArgs(root.WSTRING_TYPE).build();
+
+            fPutS = root.function("wprintf", typePuts);
+
+            labelPuts = root.track(Util.memUTF("callPuts"));
+        }
+
+        return root.track(LLVM.LLVMBuildCall2(
+                root.getBuilder(),
+				fPutS.getType(),
+                fPutS.getDirect(),
+                text, 1, labelPuts
+        ));
+    }
 
     protected LLVMValueRef seriouslyMicrosoft() {
         if (typeSeriouslyMicrosoft == null) {

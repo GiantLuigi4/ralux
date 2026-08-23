@@ -65,7 +65,7 @@ public class ArrayVarInstr extends BaseInstr implements AccessableValue {
 	
 	@Override
 	public boolean dependsOn(RlxInstr other) {
-		return other.equals(wrapped);
+		return wrapped == other || wrapped.dependsOn(other);
 	}
 	
 	@Override

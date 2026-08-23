@@ -341,6 +341,10 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         addInstr(ri);
         return ri;
     }
+	
+	public void writeString(ValueInstr valueInstr) {
+		addInstr(new DebugWriteString(valueInstr));
+	}
 
     public ValueInstr readInt(RlxType type) {
         DebugReadInt ri = new DebugReadInt(type);

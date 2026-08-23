@@ -127,15 +127,28 @@ public class RlxModule {
     }
 
     public RlxFunction findMethod(RlxCls owner, String name, List<ValueInstr> params) {
+		List<RlxFunction> matchingName = new ArrayList<>();
         for (RlxFunction function : owner.getFunctions()) {
             if (function.enclosure.name.equals(name)) {
+				matchingName.add(function);
                 if (function.enclosure.isApplicable(params)) {
                     return function;
                 }
             }
         }
         // TODO: display arg types
-        throw new RuntimeException("Could not find method " + name + " on class " + owner);
+	    String feedback = "Could not find method " + name + " on class " + owner + "\nSearching for method applicable to:\n";
+		feedback += name + "(";
+	    for (ValueInstr param : params) {
+		    feedback += param.valueType() + ",";
+	    }
+		feedback += ")";
+		feedback += "\nFound functions:\n";
+	    for (RlxFunction rlxFunction : matchingName) {
+		    feedback += rlxFunction.enclosure + "\n";
+	    }
+		
+        throw new RuntimeException(feedback);
     }
 
     public RlxModule withDebugUtils() {
@@ -180,6 +193,38 @@ public class RlxModule {
 	    );
 	    readChar.ret(readChar.readChar());
 	    cls.addFunction(readChar);
+
+		RlxType C_ARR = new RlxType(RlxTypes.BYTE);
+	    RlxFunction writeStr = new RlxFunction(
+			    RlxFunction.ACC_PUBLIC,
+			    true, true,
+			    new RlxEnclosure(
+					    RlxTypes.VOID,
+					    "write",
+					    List.of(C_ARR)
+			    )
+	    );
+	    VarInstr vi = new VarInstr(C_ARR, 0);
+		writeStr.addInstr(vi);
+	    writeStr.print(vi.get(writeStr));
+		writeStr.ret();
+	    cls.addFunction(writeStr);
+		
+		C_ARR = new RlxType(RlxTypes.CHAR);
+	    writeStr = new RlxFunction(
+			    RlxFunction.ACC_PUBLIC,
+			    true, true,
+			    new RlxEnclosure(
+					    RlxTypes.VOID,
+					    "write",
+					    List.of(C_ARR)
+			    )
+	    );
+	    vi = new VarInstr(C_ARR, 0);
+		writeStr.addInstr(vi);
+	    writeStr.writeString(vi.get(writeStr));
+		writeStr.ret();
+	    cls.addFunction(writeStr);
 
         addClass(cls);
 

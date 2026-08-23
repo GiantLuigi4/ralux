@@ -4,60 +4,128 @@ use ralux.debug.Debug;
 
 public class Snake {
     public static int main() {
-        char[] string = new char[14];
-        string[0] = 'I';
-        string[1] = 'n';
-        string[2] = 'p';
-        string[3] = 'u';
-        string[4] = 't';
-        string[5] = ' ';
-        string[6] = 'S';
-        string[7] = 'i';
-        string[8] = 'z';
-        string[9] = 'e';
-        string[10] = '\n';
-        string[12] = '>';
-        string[13] = (char) 0;
-        Debug.writeString(string);
+        byte[] string = new byte[14];
+        string[0] = (byte) 'I';
+        string[1] = (byte) 'n';
+        string[2] = (byte) 'p';
+        string[3] = (byte) 'u';
+        string[4] = (byte) 't';
+        string[5] = (byte) ' ';
+        string[6] = (byte) 'S';
+        string[7] = (byte) 'i';
+        string[8] = (byte) 'z';
+        string[9] = (byte) 'e';
+        string[10] = (byte) '\n';
+        string[11] = (byte) '>';
+        string[12] = (byte) ' ';
+        string[13] = (byte) 0;
+        Debug.write(string);
         string = null;
 
         int boardSize = Debug.readInt32();
 
-        byte[] data = new byte[boardSize];
+        byte[] data = new byte[boardSize * boardSize];
+        for (int i = 0; i < (boardSize * boardSize); i++) data[i] = 0;
 
         byte w = (byte) 'w';
         byte a = (byte) 'a';
         byte s = (byte) 's';
         byte d = (byte) 'd';
-        byte x = (byte) 'x';
 
         int headX = boardSize / 2;
         int headY = boardSize / 2;
 
+        byte[] raster = new byte[boardSize];
+
+        int tailX = boardSize / 2;
+        int tailY = boardSize / 2;
+
+        int appleX = 0;
+        int appleY = 0;
+
+        int grow = 1;
+
         while (true) {
             byte dir = (byte) Debug.readChar();
 
-            int mX = 0;
-            int mY = 0;
-            if (dir == w) {
-                mX = 1;
-            } else if (dir == a) {
-                mX = -1;
-            } else if (dir == w) {
-                mY = 1;
-            } else if (dir == s) {
-                mY = -1;
-            } else {
-                //continue;
+            int mX = calcDir(dir, d, a) - 1;
+            int mY = calcDir(dir, s, w) - 1;
+            if (mX == mY) {
+                dir = 0;
+                // TODO; continue
+            }
+
+            if (dir != 0) {
+                data[headY * boardSize + headX] = dir;
             }
 
             headX += mX;
             headY += mY;
 
-            Debug.write(headX);
-            Debug.write(headY);
+            if (dir == 0) {
+                grow++;
+            }
+
+            if (headX < 0 || headX >= boardSize) {
+                headX -= mX;
+                grow++;
+                dir = 0;
+                // TODO: continue;
+            }
+            if (headY < 0 || headY >= boardSize) {
+                headY -= mY;
+                grow++;
+                dir = 0;
+                // TODO: continue;
+            }
+
+            if (headX == appleX && headY == appleY && dir != 0) {
+                grow += 1;
+            }
+
+            if (grow >= 0) {
+                grow--;
+            } else {
+                dir = data[tailY * boardSize + tailX];
+                data[tailY * boardSize + tailX] = 0;
+
+                mX = calcDir(dir, d, a) - 1;
+                mY = calcDir(dir, s, w) - 1;
+
+                tailX += mX;
+                tailY += mY;
+            }
+
+            for (int y = 0; y < boardSize; y++) {
+                for (int x = 0; x < boardSize; x++) {
+                    int index = y * boardSize + x;
+                    byte value = data[index];
+                    if (x == headX && y == headY) {
+                        raster[x] = '0';
+                    } else if (x == tailX && y == tailY) {
+                        raster[x] = '.';
+                    } else if (x == appleX && y == appleY) {
+                        raster[x] = 'a';
+                    } else if (value == 0) {
+                        raster[x] = ' ';
+                    } else {
+                        raster[x] = 'o';
+                    }
+                }
+                Debug.write(raster);
+            }
         }
 
         return 0;
+    }
+
+    public static byte calcDir(byte input, byte refU, byte refD) {
+        if (input == refU) {
+            return 2;
+        }
+        if (input == refD) {
+            return 0;
+        }
+        return 1;
     }
 }

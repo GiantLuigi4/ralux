@@ -20,6 +20,7 @@ import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
+import tfc.rlxir.instr.debug.DebugWriteString;
 import tfc.rlxir.instr.debug.TwoValueDebug;
 import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.*;
@@ -361,8 +362,8 @@ public class FunctionCompiler {
         LLVMValueRef array = instr.array.getCompilerData();
         LLVMValueRef index = instr.index.getCompilerData();
         LLVMValueRef value = instr.value.getCompilerData();
-//        root.setValue(array, index, value);
-	    throw new RuntimeException("TODO");
+        root.setValue(compiler.typeData(instr.valueType()), array, index, value);
+//	    throw new RuntimeException("TODO");
 //        instr.setCompilerData(value);
     }
 
@@ -597,6 +598,13 @@ public class FunctionCompiler {
                                 ((TwoValueDebug) instr).right.getCompilerData()
                         ));
                     }
+	                case DEBUG_WRITE -> {
+		                DebugWriteString dbg = (DebugWriteString) instr;
+						ensureData(dbg.value);
+						
+						LLVMValueRef vr = dbg.value.getCompilerData();
+						root.stdLib.wprint(vr);
+	                }
                     case MAKE_ARRAY -> compileArrayDef((MArrayInstr) instr);
                     case ARRAY_GET -> compileArrayGet((ArrayGet) instr);
                     case ARRAY_SET -> compileArraySet((ArraySet) instr);

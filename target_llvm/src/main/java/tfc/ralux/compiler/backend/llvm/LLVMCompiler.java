@@ -504,7 +504,9 @@ public class LLVMCompiler extends Compiler {
 		}
 		
 		if (rlxType.isArray()) {
-			throw new RuntimeException("TODO");
+//			throw new RuntimeException("TODO");
+			// TODO: proper rlx array type
+			tr = root.pointerType(typeData(rlxType.arrayOf));
 		}
 		if (rlxType.isPtr()) {
 //			throw new RuntimeException("TODO");
