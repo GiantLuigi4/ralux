@@ -55,7 +55,7 @@ public class ClassObjCompiler {
                     int offset = clazz.getFieldOffset(field);
 
                     FunctionBuilder markObj = rt.rtMarkObj.getCompilerData();
-                    PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(3));
+                    PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(2));
                     args.put(0, val0);
 //                    args.put(1, val1);
 
@@ -72,7 +72,7 @@ public class ClassObjCompiler {
                             root.getBuilder(),
                             markObj.getType(),
                             markObj.getDirect(),
-                            args, 3,
+                            args, 2,
                             ""
                     ));
                 } else if (field.type.isArray()) throw new RuntimeException("TODO");

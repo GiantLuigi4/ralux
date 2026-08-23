@@ -8,7 +8,7 @@ import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
-import tfc.ralux.compiler.backend.llvm.util.ProgramLocator;
+import tfc.rlxir.util.ProgramLocator;
 import tfc.ralux.compiler.backend.llvm.util.helper.LLVMOptimizer;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.CPU;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.Target;
@@ -22,6 +22,8 @@ import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.util.linker.LLD;
+import tfc.rlxir.util.linker.Linker;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -164,20 +166,6 @@ public class LLVMCompiler extends Compiler {
             stubClass(aClass);
         }
     }
-	
-	@Override
-	public void prepareMachine() {
-		root.toTargetMachine(
-				new Target(
-						Architecture.X86_64,
-						Vendor.APPLE,
-						OperatingSystem.WINDOWS,
-						Environment.MSVC
-				),
-				CPU.GENERIC,
-				LLVM.LLVMCodeGenLevelAggressive
-		);
-	}
 	
 	@Override
 	public void optimize(int backend, int rlx, boolean lowerIntrinsics) {
@@ -398,11 +386,29 @@ public class LLVMCompiler extends Compiler {
 		
 		if (enableVerbose) root.dump();
 	}
+	
+	@Override
+	public void prepareMachine() {
+		// for mold: clang --target=x86_64-unknown-linux-gnu -c module.ll -o module.o
+		// mold -m elf_x86_64 -static -o module.exe module.o
+		
+		root.toTargetMachine(
+				new Target(
+						Architecture.X86_64,
+						Vendor.APPLE,
+						OperatingSystem.WINDOWS,
+						Environment.MSVC
+				),
+				CPU.GENERIC,
+				LLVM.LLVMCodeGenLevelAggressive
+		);
+	}
 
     @Override
     public void write() {
         root.dumpToFile(new File(compiling.getName() + ".ll").getAbsolutePath());
         root.writeToFile(new File(compiling.getName() + ".obj").getAbsolutePath());
+//        root.writeAssemblyToFile(new File(compiling.getName() + ".asm").getAbsolutePath());
         try {
             System.out.flush();
             System.err.flush();
@@ -417,6 +423,32 @@ public class LLVMCompiler extends Compiler {
 				fl = file;
 		        break;
 	        }
+	        
+	        Linker linker = new LLD();
+			
+			linker.addLibPath(fl + "/lib/windows");
+			linker.addLibPath("lib");
+			
+			linker.addLibrary("RlxRt");
+	  
+			// clang runtime
+	        linker.addLibrary("clang_rt.builtins-x86_64.lib");
+			
+	        // windows runtime
+	        linker
+			        .addLibrary("vcruntime")
+			        .addLibrary("libcmt")
+					.addLibrary("ucrt")
+					.addLibrary("msvc");
+			
+			linker.release(true).debug("strip");
+			
+			linker.entrypoint("main");
+			linker.link("module.exe", "module.obj");
+			
+//			linker.addLibrary("user32");
+//			linker.addLibrary("kernel32");
+//			linker.addLibrary("advapi32");
 			
             String linkCmd = "lld-link.exe " +
                     "/libpath:\"" + fl + "/lib/windows\" " +

@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.frontend.ralux.parse;// Generated from C:/Users/User/IdeaProjects/RaluxYetAgain/grammar/Ralux.g4 by ANTLR 4.13.1
+package tfc.ralux.compiler.frontend.ralux.parse;// Generated from D:/programs/jetbrains/workspaces/ralux/grammar/Ralux.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -190,6 +190,12 @@ public interface RaluxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCtor(RaluxParser.CtorContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link RaluxParser#aCtor}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitACtor(RaluxParser.ACtorContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link RaluxParser#params}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -201,6 +207,12 @@ public interface RaluxVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitQualif(RaluxParser.QualifContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link RaluxParser#aqualif}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAqualif(RaluxParser.AqualifContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link RaluxParser#dOperand}.
 	 * @param ctx the parse tree

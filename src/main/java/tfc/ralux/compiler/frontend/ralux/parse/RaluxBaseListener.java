@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.frontend.ralux.parse;// Generated from C:/Users/User/IdeaProjects/RaluxYetAgain/grammar/Ralux.g4 by ANTLR 4.13.1
+package tfc.ralux.compiler.frontend.ralux.parse;// Generated from D:/programs/jetbrains/workspaces/ralux/grammar/Ralux.g4 by ANTLR 4.13.2
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -376,6 +376,18 @@ public class RaluxBaseListener implements RaluxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterACtor(RaluxParser.ACtorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitACtor(RaluxParser.ACtorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterParams(RaluxParser.ParamsContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -395,6 +407,18 @@ public class RaluxBaseListener implements RaluxListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitQualif(RaluxParser.QualifContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAqualif(RaluxParser.AqualifContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAqualif(RaluxParser.AqualifContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

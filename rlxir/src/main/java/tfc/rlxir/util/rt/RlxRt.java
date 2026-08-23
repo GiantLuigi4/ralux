@@ -59,7 +59,7 @@ public class RlxRt {
                     true,
                     RlxTypes.BOOLEAN,
                     "__rlxrt_mark_obj",
-                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.VOID_PTR, RlxTypes.VOID_PTR)
+                    Arrays.asList(RlxTypes.VOID_PTR, RlxTypes.VOID_PTR)
             )
     ).exportName("__rlxrt_mark_obj");
     public final RlxFunction rtRef = new RlxFunction(

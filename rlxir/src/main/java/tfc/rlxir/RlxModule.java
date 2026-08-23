@@ -168,6 +168,18 @@ public class RlxModule {
             readInt.ret(readInt.readInt(anInt));
             cls.addFunction(readInt);
         }
+		
+	    RlxFunction readChar = new RlxFunction(
+			    RlxFunction.ACC_PUBLIC,
+			    true, true,
+			    new RlxEnclosure(
+					    RlxTypes.CHAR,
+					    "readChar",
+					    RlxTypes.EMPTY_LIST
+			    )
+	    );
+	    readChar.ret(readChar.readChar());
+	    cls.addFunction(readChar);
 
         addClass(cls);
 

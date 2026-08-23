@@ -56,6 +56,39 @@ public class RlxType extends CompilerDataHolder<RlxType> {
             return CastOp.NONE;
         }
 
+		if (type.typ == 'c' || type.typ == 's') {
+			switch (toType.type.typ) {
+				case 'i': {
+					if (type.bits < toType.type.bits) {
+						return CastOp.EXTEND;
+					} else if (type.bits == toType.type.bits) {
+						return CastOp.NONE;
+					} else {
+						return CastOp.TRUNCATE;
+					}
+				}
+				case 'c': throw new RuntimeException("Should already have been handled...");
+				
+				case 'f': return CastOp.INT_FLOAT;
+			}
+		}
+
+		if (toType.type.typ == 'c' || toType.type.typ == 's') {
+			switch (type.typ) {
+				case 'i': {
+					if (toType.type.bits < type.bits) {
+						return CastOp.TRUNCATE;
+					} else if (toType.type.bits == type.bits) {
+						return CastOp.NONE;
+					} else {
+						return CastOp.EXTEND;
+					}
+				}
+				case 'c': throw new RuntimeException("Should already have been handled...");
+				
+				case 'f': return CastOp.INT_FLOAT;
+			}
+		}
 
         if (type == RlxTypes.BOOLEAN.type) {
             if (toType.type.typ == 'i') return CastOp.EXTEND;
@@ -80,7 +113,8 @@ public class RlxType extends CompilerDataHolder<RlxType> {
         } else if (type.typ == 'f' && toType.type.typ == 'i') {
             return CastOp.FLOAT_INT;
         }
-        throw new RuntimeException("Illegal cast");
+		
+        throw new RuntimeException("Illegal cast: " + type + " to " + toType);
     }
 
     public CastOp bitCastOp(RlxType toType) {

@@ -154,6 +154,18 @@ public class STDLib {
         return stringToInt(root.getIntType(bits), str);
     }
 
+    public LLVMValueRef readChar() {
+        int baseStrLen = 2;
+		
+        LLVMValueRef str = root.allocA(root.BYTE_TYPE, baseStrLen, "str_buf");
+        root.memSet(str, root.integer(0, 8), root.integer(1, 32), 8);
+        LLVMValueRef length = root.integer(baseStrLen, 32);
+        readTo(str, length);
+		LLVMValueRef ref = root.getValue(root.BYTE_TYPE, str, "getChr");
+		ref = root.bitcastOrExtend(root.getIntType(16), ref, "cast_i16");
+        return ref;
+    }
+
     // TODO:
     public LLVMValueRef hasInput(FunctionBuilder functionBuilder) {
         if (typeFeof == null) {

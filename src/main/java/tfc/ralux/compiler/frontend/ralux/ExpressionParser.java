@@ -226,13 +226,19 @@ public class ExpressionParser {
                             case "null" -> new ConstInstr<>(0, RlxTypes.VOID_PTR_PTR);
                             default -> throw new RuntimeException("Unknown constant: " + terminal.getText());
                         };
-                    } else throw new RuntimeException("TODO");
+                    } else if (terminal.getText().startsWith("'")) {
+						String str = terminal.getText().substring(1, terminal.getText().length() - 1);
+						
+						return new ConstInstr<>(str.charAt(str.length() - 1), RlxTypes.CHAR);
+                    } else {
+	                    throw new RuntimeException("TODO");
+                    }
                 } else if (node instanceof RaluxParser.AssignmentContext) {
                     return parser.parseAssign((RaluxParser.AssignmentContext) node, true);
                 } else if (node instanceof RaluxParser.CallContext) {
                     return parser.parseCall((RaluxParser.CallContext) node);
                 } else if (node instanceof RaluxParser.QualifContext qualif) {
-                    return MethodParser.getVarVal(parser.module,parser.owner, parser.currentScope, qualif);
+                    return parser.getVarVal(parser.module,parser.owner, parser.currentScope, qualif);
                 }
             } else throw new RuntimeException("TODO");
         }

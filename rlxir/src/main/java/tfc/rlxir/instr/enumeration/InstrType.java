@@ -14,9 +14,10 @@ public enum InstrType {
     // jump instrs
     CONST_JUMP, COND_JUMP,
     // debug instrs
-    DEBUG_PRINT, DEBUG_READ_INT, DEBUG_HAS_INPUT, DEBUG_RANDOM,
+    DEBUG_PRINT, DEBUG_READ_CHAR, DEBUG_READ_INT, DEBUG_HAS_INPUT, DEBUG_RANDOM,
     // array instrs
     MAKE_ARRAY, ARRAY_GET, ARRAY_SET,
+	ARRAY_VAR,
     // obj instrs
     ALLOC, CALL, GET_FIELD, SET_FIELD,
 }

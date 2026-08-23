@@ -5,9 +5,10 @@ import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.BaseInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
+import tfc.rlxir.instr.value.AccessableValue;
 import tfc.rlxir.typing.RlxType;
 
-public class VarInstr extends BaseInstr {
+public class VarInstr extends BaseInstr implements AccessableValue {
     public final RlxType type;
     public final int paramFrom;
     String debugName = "var";
@@ -33,7 +34,7 @@ public class VarInstr extends BaseInstr {
 
     @Deprecated(forRemoval = true)
     public void set(ValueInstr value) {
-        if (type != value.valueType()) {
+        if (!type.equals(value.valueType())) {
             throw new RuntimeException(type + " variable cannot be set as a " + value.valueType() + ". Are you missing a cast?");
         }
         function.addInstr(new SetInstr(this, value));
@@ -46,9 +47,9 @@ public class VarInstr extends BaseInstr {
 
     @Deprecated(forRemoval = true)
     public ValueInstr get() {
-        GetInstr instr = new GetInstr(this);
-        function.addInstr(instr);
-        return instr;
+	    GetInstr instr = new GetInstr(this);
+	    function.addInstr(instr);
+	    return instr;
     }
 
     @Override
@@ -79,4 +80,9 @@ public class VarInstr extends BaseInstr {
     public boolean canBeOrganized() {
         return false;
     }
+	
+	@Override
+	public RlxType valueType() {
+		return type;
+	}
 }

@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.frontend.ralux.parse;// Generated from C:/Users/User/IdeaProjects/RaluxYetAgain/grammar/Ralux.g4 by ANTLR 4.13.1
+package tfc.ralux.compiler.frontend.ralux.parse;// Generated from D:/programs/jetbrains/workspaces/ralux/grammar/Ralux.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
@@ -227,6 +227,13 @@ public class RaluxBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements 
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitACtor(RaluxParser.ACtorContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitParams(RaluxParser.ParamsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -235,6 +242,13 @@ public class RaluxBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements 
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitQualif(RaluxParser.QualifContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitAqualif(RaluxParser.AqualifContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

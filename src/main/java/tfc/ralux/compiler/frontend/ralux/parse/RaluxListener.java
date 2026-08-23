@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.frontend.ralux.parse;// Generated from C:/Users/User/IdeaProjects/RaluxYetAgain/grammar/Ralux.g4 by ANTLR 4.13.1
+package tfc.ralux.compiler.frontend.ralux.parse;// Generated from D:/programs/jetbrains/workspaces/ralux/grammar/Ralux.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -307,6 +307,16 @@ public interface RaluxListener extends ParseTreeListener {
 	 */
 	void exitCtor(RaluxParser.CtorContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link RaluxParser#aCtor}.
+	 * @param ctx the parse tree
+	 */
+	void enterACtor(RaluxParser.ACtorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link RaluxParser#aCtor}.
+	 * @param ctx the parse tree
+	 */
+	void exitACtor(RaluxParser.ACtorContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link RaluxParser#params}.
 	 * @param ctx the parse tree
 	 */
@@ -326,6 +336,16 @@ public interface RaluxListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitQualif(RaluxParser.QualifContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link RaluxParser#aqualif}.
+	 * @param ctx the parse tree
+	 */
+	void enterAqualif(RaluxParser.AqualifContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link RaluxParser#aqualif}.
+	 * @param ctx the parse tree
+	 */
+	void exitAqualif(RaluxParser.AqualifContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link RaluxParser#dOperand}.
 	 * @param ctx the parse tree

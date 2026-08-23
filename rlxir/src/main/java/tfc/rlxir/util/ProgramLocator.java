@@ -1,4 +1,4 @@
-package tfc.ralux.compiler.backend.llvm.util;
+package tfc.rlxir.util;
 
 import java.io.IOException;
 import java.nio.file.Path;

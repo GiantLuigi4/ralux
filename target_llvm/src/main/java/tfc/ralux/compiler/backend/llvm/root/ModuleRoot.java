@@ -72,6 +72,21 @@ public class ModuleRoot extends ContextRoot {
         }
         return true;
     }
+	
+    public boolean writeAssemblyToFile(String absolutePath) {
+        if (LLVM.LLVMTargetMachineEmitToFile(
+                targetMachineRef,
+                module,
+                Util.memUTF(absolutePath),
+                LLVM.LLVMAssemblyFile,
+                error
+        ) != 0) {
+            System.err.println("Failed to write module to file: " + error.getString());
+            LLVM.LLVMDisposeMessage(error);
+            return false;
+        }
+        return true;
+    }
 
     public void toTargetMachine(
             Target target,

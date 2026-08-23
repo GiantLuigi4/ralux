@@ -1,0 +1,63 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+
+public class Snake {
+    public static int main() {
+        char[] string = new char[14];
+        string[0] = 'I';
+        string[1] = 'n';
+        string[2] = 'p';
+        string[3] = 'u';
+        string[4] = 't';
+        string[5] = ' ';
+        string[6] = 'S';
+        string[7] = 'i';
+        string[8] = 'z';
+        string[9] = 'e';
+        string[10] = '\n';
+        string[12] = '>';
+        string[13] = (char) 0;
+        Debug.writeString(string);
+        string = null;
+
+        int boardSize = Debug.readInt32();
+
+        byte[] data = new byte[boardSize];
+
+        byte w = (byte) 'w';
+        byte a = (byte) 'a';
+        byte s = (byte) 's';
+        byte d = (byte) 'd';
+        byte x = (byte) 'x';
+
+        int headX = boardSize / 2;
+        int headY = boardSize / 2;
+
+        while (true) {
+            byte dir = (byte) Debug.readChar();
+
+            int mX = 0;
+            int mY = 0;
+            if (dir == w) {
+                mX = 1;
+            } else if (dir == a) {
+                mX = -1;
+            } else if (dir == w) {
+                mY = 1;
+            } else if (dir == s) {
+                mY = -1;
+            } else {
+                //continue;
+            }
+
+            headX += mX;
+            headY += mY;
+
+            Debug.write(headX);
+            Debug.write(headY);
+        }
+
+        return 0;
+    }
+}

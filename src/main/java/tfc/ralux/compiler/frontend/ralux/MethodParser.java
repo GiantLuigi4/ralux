@@ -2,12 +2,17 @@ package tfc.ralux.compiler.frontend.ralux;
 
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.*;
+import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
-import tfc.rlxir.instr.enumeration.CastOp;
 import tfc.rlxir.instr.global.ConstInstr;
+import tfc.rlxir.instr.value.AccessableValue;
+import tfc.rlxir.instr.value.arrays.ArrayGet;
+import tfc.rlxir.instr.value.arrays.ArrayVarInstr;
+import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
@@ -70,32 +75,95 @@ public class MethodParser {
         return field1.instr.from(base);
     }
 
-    public static VarInstr getVarRef(RlxModule module, RlxCls clazz, Scope scope, String text) {
-        if (text.contains(".")) {
-            String substr = text.substring(0, text.lastIndexOf('.'));
-            ValueInstr var = getVarVal(module, clazz, scope, substr);
+    public AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, String nt, String name, List<RaluxParser.ExprContext> exprContexts) {
+		String text = "";
+		if (nt != null && !nt.isEmpty()) {
+			text = nt + ".";
+		}
+		text += name;
+		
+		if (text.contains(".")) {
+	        String substr = text.substring(0, text.lastIndexOf('.'));
+			
+	        ValueInstr var = getVarVal(module, clazz, scope, null, substr, new ArrayList<>());
             return getVarRef(var, text.substring(text.lastIndexOf('.') + 1));
-        } else {
+		} else {
             VarInstr var = scope.getVar(text);
-            if (var != null) return var;
+            if (var != null) return array(var, exprContexts);
             RlxField o = clazz.getField(text);
             if (o != null) return o.instr; // TODO: pretty sure this is wrong
             throw new RuntimeException("Symbol not found: " + text);
-        }
+		}
     }
-
-    public static VarInstr getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.QualifContext qualifContext) {
-        return getVarRef(module, clazz, scope, qualifContext.getText());
-    }
-
-    public static ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, String text) {
+	
+//		String text = "";
+//		if (nt != null) {
+//			text = nt.getText() + ".";
+//		}
+//		text += aqf.WORD().getText();
+//
+//        if (text.contains(".")) {
+//	        String substr = text.substring(0, text.lastIndexOf('.'));
+//
+//			module.getClass(text);
+//	        text = aqf.WORD().getText();
+//
+//	        ValueInstr var = getVarVal(module, clazz, scope, null, aqf);
+//            return getVarRef(var, text.substring(text.lastIndexOf('.') + 1));
+//        } else {
+//	        text = aqf.WORD().getText();
+//
+//            VarInstr var = scope.getVar(text);
+//            if (var != null) return array(var, aqf);
+//            RlxField o = clazz.getField(text);
+//            if (o != null) return o.instr; // TODO: pretty sure this is wrong
+//            throw new RuntimeException("Symbol not found: " + text);
+//        }
+//    }
+	
+	private AccessableValue array(AccessableValue val, List<RaluxParser.ExprContext> aqf) {
+		for (RaluxParser.ExprContext exprContext : aqf) {
+			val = new ArrayVarInstr(val.get(), ExpressionParser.parseValue(this, exprContext));
+			((RlxInstr) val).setFunction(function);
+		}
+//		throw new RuntimeException("TODO");
+		return val;
+	}
+	
+    public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, String nt, String name, List<RaluxParser.ExprContext> exprContexts) {
+		String text = name;
+		if ((nt != null && !nt.isEmpty()) || !exprContexts.isEmpty()) {
+			// don't cache
+			return getVarRef(module, owner, currentScope, nt, name, exprContexts).get(currentScope.function);
+		}
+		
         VarInstr instr = currentScope.getVar(text);
         if (instr != null) return currentScope.getCached(text);
-        return getVarRef(module, owner, currentScope, text).get(currentScope.function);
+        return getVarRef(module, owner, currentScope, nt, name, exprContexts).get(currentScope.function);
     }
-
-    public static ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.QualifContext qualif) {
-        return getVarVal(module, owner, currentScope, qualif.getText());
+	
+    public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.Named_typeContext nt, RaluxParser.AqualifContext aqf) {
+		String text = aqf.WORD().getText();
+		if ((nt != null && !nt.isEmpty()) || !aqf.expr().isEmpty()) {
+			// don't cache
+			return getVarRef(module, owner, currentScope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr()).get(currentScope.function);
+		}
+		
+        VarInstr instr = currentScope.getVar(text);
+        if (instr != null) return currentScope.getCached(text);
+        return getVarRef(module, owner, currentScope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr()).get(currentScope.function);
+    }
+	
+	private AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.Named_typeContext nt, RaluxParser.AqualifContext aqf) {
+		return getVarRef(module, clazz, scope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr());
+	}
+	
+	public AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.QualifContext qualifContext) {
+		return getVarRef(module, clazz, scope, qualifContext.named_type(), qualifContext.aqualif());
+	}
+	
+	public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.QualifContext qualif) {
+        return getVarVal(module, owner, currentScope, qualif.named_type(), qualif.aqualif());
     }
 
     public ValueInstr parseAssign(RaluxParser.AssignmentContext statement, boolean forExpr) {
@@ -133,7 +201,7 @@ public class MethodParser {
         }
 
         String name = statement.getChild(0).getText();
-        VarInstr var = getVarRef(module, owner, currentScope, (RaluxParser.QualifContext) statement.getChild(0));
+	    AccessableValue var = getVarRef(module, owner, currentScope, (RaluxParser.QualifContext) statement.getChild(0));
         boolean inScope = currentScope.containsVar(name);
 
         ValueInstr val;
@@ -144,7 +212,7 @@ public class MethodParser {
         ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(2));
 
         ParseTree tree = statement.getChild(0);
-        Util.setLineColumn(instr, (TerminalNodeImpl) tree.getChild(tree.getChildCount() - 1), source);
+        Util.setLineColumn(instr, (TerminalNodeImpl) ((RaluxParser.AqualifContext) tree.getChild(tree.getChildCount() - 1)).WORD(), source);
         var.set(function, function.cast(switch (op) {
             case "=" -> instr;
             case "+=" -> function.sum(val, instr);
@@ -152,7 +220,7 @@ public class MethodParser {
             case "*=" -> function.mul(val, instr);
             case "/=" -> function.div(val, instr);
             default -> throw new RuntimeException("Unsupported assignment operation " + op);
-        }, var.type));
+        }, var.valueType()));
 
         if (inScope) {
             currentScope.dirtyVar(name);
@@ -439,6 +507,20 @@ public class MethodParser {
             ValueInstr val = function.alloc(type1);
             // TODO: call constructor
             return val;
-        } else throw new RuntimeException("TODO");
+        } else if (node.getChild(0) instanceof RaluxParser.ACtorContext ctor) {
+	        System.out.println(ctor);
+	        RlxType type1 = RaluxToIR.parseType(module, owner, ctor.getChild(1), currentScope); // type
+	        ValueInstr size = ExpressionParser.parseValue(this, ctor.getChild(3));
+			// TODO: deal with nested array inits?
+	        //       probably via standard lib call to prefill?
+	        MArrayInstr val = new MArrayInstr(
+					size, type1
+	        );
+			function.addInstr(val);
+	  
+			return val;
+        } else {
+	        throw new RuntimeException("TODO");
+        }
     }
 }

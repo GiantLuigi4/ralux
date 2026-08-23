@@ -6,10 +6,7 @@ import tfc.rlxir.instr.action.ConditionalJumpInstr;
 import tfc.rlxir.instr.action.JumpInstr;
 import tfc.rlxir.instr.action.ReturnInstr;
 import tfc.rlxir.instr.base.ValueInstr;
-import tfc.rlxir.instr.debug.DebugHasInput;
-import tfc.rlxir.instr.debug.DebugPrint;
-import tfc.rlxir.instr.debug.DebugReadInt;
-import tfc.rlxir.instr.debug.TwoValueDebug;
+import tfc.rlxir.instr.debug.*;
 import tfc.rlxir.instr.enumeration.*;
 import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
@@ -337,6 +334,12 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     public void print(ValueInstr data) {
         DebugPrint print = new DebugPrint(data);
         addInstr(print);
+    }
+
+    public ValueInstr readChar() {
+	    DebugReadChar ri = new DebugReadChar();
+        addInstr(ri);
+        return ri;
     }
 
     public ValueInstr readInt(RlxType type) {

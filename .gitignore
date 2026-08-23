@@ -11,6 +11,8 @@
 
 # execution outputs
 /*.obj
+/*.o
+/*.asm
 /*.exe
 /*.ll
 /module.lib

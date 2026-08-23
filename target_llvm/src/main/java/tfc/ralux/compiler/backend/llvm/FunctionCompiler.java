@@ -89,10 +89,13 @@ public class FunctionCompiler {
                             root.loadFloat(((Number) cst.data).doubleValue(), conversions.typeFor(cst.type));
                     case BOOLEAN -> root.integer(((Number) cst.data).byteValue(), 1);
                     case PTR -> valConstPtr(cst);
+	                case CHAR -> root.integer(((Number) (short) (char) cst.data).intValue(), conversions.typeFor(cst.type));
                     default -> throw new RuntimeException("Unsupported constant type: " + cst.valueType().type);
                 });
             }
-            default -> throw new RuntimeException("Data not able to be ensured for instruction type " + instr.type());
+            default -> {
+	            throw new RuntimeException("Data not able to be ensured for instruction type " + instr.type());
+            }
         }
     }
 
@@ -575,6 +578,10 @@ public class FunctionCompiler {
                     }
                     case DEBUG_READ_INT -> {
                         LLVMValueRef value = root.stdLib.readInt(((DebugReadInt) instr).type.type.bits);
+                        instr.setCompilerData(value);
+                    }
+	                case DEBUG_READ_CHAR -> {
+                        LLVMValueRef value = root.stdLib.readChar();
                         instr.setCompilerData(value);
                     }
                     case DEBUG_HAS_INPUT -> {

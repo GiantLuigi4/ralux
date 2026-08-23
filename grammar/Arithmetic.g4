@@ -15,6 +15,7 @@ expr: expr '.#'
     | expr ('<'|'>'|'<='|'>='|'=='|'!='|'.='|'.!=') expr
     | expr ('&&'|'||') expr
     | fb_expr
+    | expr '[' expr ']'
 ;
 
 fb_expr: NUMBER | CONSTANT // const&number
