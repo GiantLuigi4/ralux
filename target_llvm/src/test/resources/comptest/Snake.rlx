@@ -22,6 +22,14 @@ public class Snake {
         Debug.write(string);
         string = null;
 
+        byte[] failStr = new byte[6];
+        failStr[0] = 'D';
+        failStr[1] = 'e';
+        failStr[2] = 'a';
+        failStr[3] = 'd';
+        failStr[4] = '.';
+        failStr[5] = (byte) 0;
+
         int boardSize = Debug.readInt32();
 
         byte[] data = new byte[boardSize * boardSize];
@@ -35,7 +43,8 @@ public class Snake {
         int headX = boardSize / 2;
         int headY = boardSize / 2;
 
-        byte[] raster = new byte[boardSize];
+        byte[] raster = new byte[boardSize + 1];
+        raster[boardSize] = (byte) 0;
 
         int tailX = boardSize / 2;
         int tailY = boardSize / 2;
@@ -45,41 +54,43 @@ public class Snake {
 
         int grow = 1;
 
+        int omX = 0;
+        int omY = 0;
+
         while (true) {
             byte dir = (byte) Debug.readChar();
 
             int mX = calcDir(dir, d, a) - 1;
             int mY = calcDir(dir, s, w) - 1;
             if (mX == mY) {
-                dir = 0;
-                // TODO; continue
+                continue;
             }
 
-            if (dir != 0) {
-                data[headY * boardSize + headX] = dir;
+            if (omX != 0 && omX == -mX) {
+                continue;
             }
+            if (omY != 0 && omY == -mY) {
+                continue;
+            }
+
+            data[headY * boardSize + headX] = dir;
 
             headX += mX;
             headY += mY;
 
-            if (dir == 0) {
-                grow++;
-            }
-
             if (headX < 0 || headX >= boardSize) {
                 headX -= mX;
-                grow++;
-                dir = 0;
-                // TODO: continue;
+                continue;
             }
             if (headY < 0 || headY >= boardSize) {
                 headY -= mY;
-                grow++;
-                dir = 0;
-                // TODO: continue;
+                continue;
             }
 
-            if (headX == appleX && headY == appleY && dir != 0) {
+            omX = mX;
+            omY = mY;
+
+            if (headX == appleX && headY == appleY) {
                 grow += 1;
             }
 
@@ -96,12 +107,18 @@ public class Snake {
                 tailY += mY;
             }
 
+            byte occupied = data[headY * boardSize + headX];
+
             for (int y = 0; y < boardSize; y++) {
                 for (int x = 0; x < boardSize; x++) {
                     int index = y * boardSize + x;
                     byte value = data[index];
                     if (x == headX && y == headY) {
-                        raster[x] = '0';
+                        if (occupied != 0) {
+                            raster[x] = 'X';
+                        } else {
+                            raster[x] = 'O';
+                        }
                     } else if (x == tailX && y == tailY) {
                         raster[x] = '.';
                     } else if (x == appleX && y == appleY) {
@@ -113,6 +130,11 @@ public class Snake {
                     }
                 }
                 Debug.write(raster);
+            }
+
+            if (occupied != 0) {
+                Debug.write(failStr);
+                break;
             }
         }
 

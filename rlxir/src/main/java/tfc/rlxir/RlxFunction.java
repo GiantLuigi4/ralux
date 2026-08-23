@@ -49,6 +49,10 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
     }
 
     public void buildBlock(RlxBlock block) {
+		if (block == null) {
+			this.currentBlock = null;
+			return;
+		}
         if (block.isTerminated())
             throw new RuntimeException("Block has already been terminated, cannot be continued.");
         this.currentBlock = block;
@@ -492,4 +496,8 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         addInstr(instr);
         return instr;
     }
+	
+	public void cont() {
+	
+	}
 }
