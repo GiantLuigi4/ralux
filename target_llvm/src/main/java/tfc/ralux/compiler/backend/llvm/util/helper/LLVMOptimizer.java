@@ -107,6 +107,10 @@ public class LLVMOptimizer {
 		makePass("default<O" + backend + ">", Level.MODULE);
 	}
 	
+	public void opt(String backend) {
+		makePass("default<O" + backend + ">", Level.MODULE);
+	}
+	
 	public void invoke(LLVMModuleRef module, LLVMTargetMachineRef tm, LLVMPassBuilderOptionsRef options) {
 		if (current != null) {
 			builders.add(current);

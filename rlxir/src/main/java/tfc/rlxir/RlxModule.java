@@ -225,6 +225,22 @@ public class RlxModule {
 	    writeStr.writeString(vi.get(writeStr));
 		writeStr.ret();
 	    cls.addFunction(writeStr);
+	    
+	    RlxFunction random = new RlxFunction(
+			    RlxFunction.ACC_PUBLIC,
+			    true, true,
+			    new RlxEnclosure(
+					    RlxTypes.INT,
+					    "random",
+					    List.of(RlxTypes.INT, RlxTypes.INT)
+			    )
+	    );
+	    VarInstr vi0 = new VarInstr(RlxTypes.INT, 0);
+	    random.addInstr(vi0);
+	    VarInstr vi1 = new VarInstr(RlxTypes.INT, 1);
+	    random.addInstr(vi1);
+	    random.ret(random.random(vi0.get(random), vi1.get(random)));
+	    cls.addFunction(random);
 
         addClass(cls);
 

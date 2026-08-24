@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BuilderRoot extends ModuleRoot {
-    public final LLVMTypeRef VOID;
+	public final LLVMTypeRef VOID;
     public STDLib stdLib;
     LLVMBuilderRef builder = LLVM.LLVMCreateBuilderInContext(context);
     LLVMDIBuilderRef debug;
@@ -158,6 +158,17 @@ public class BuilderRoot extends ModuleRoot {
     public LLVMValueRef allocA(LLVMTypeRef type, LLVMValueRef length, String name) {
         return track(LLVM.LLVMBuildArrayAlloca(builder, type, length, name));
     }
+	
+	public LLVMValueRef calloc(LLVMTypeRef type, LLVMValueRef length, String name) {
+		return ptrCast(
+				stdLib.calloc(
+						length,
+						integer(1, 32)
+				),
+				pointerType(type),
+				name
+		);
+	}
 
     public void setValue(LLVMValueRef pointer, LLVMValueRef value) {
         track(LLVM.LLVMBuildStore(builder, value, pointer));
@@ -426,7 +437,13 @@ public class BuilderRoot extends ModuleRoot {
         return value;
     }
 
-    public LLVMValueRef ptrCast(LLVMValueRef valueRef, LLVMTypeRef type, String name) {
+    public LLVMValueRef intCast(LLVMValueRef valueRef, LLVMTypeRef type, String name) {
+        return track(LLVM.LLVMBuildIntCast(
+                builder, valueRef, type, name
+        ));
+    }
+	
+	public LLVMValueRef ptrCast(LLVMValueRef valueRef, LLVMTypeRef type, String name) {
         return track(LLVM.LLVMBuildPointerCast(
                 builder, valueRef, type, name
         ));

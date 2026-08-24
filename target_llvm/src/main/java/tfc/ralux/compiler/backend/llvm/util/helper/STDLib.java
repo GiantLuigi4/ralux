@@ -33,13 +33,38 @@ public class STDLib {
     FunctionBuilder _kbhit;
 
     FunctionBuilder fRandom;
+	
+	FunctionType typeCalloc;
+    FunctionBuilder calloc;
 
     public STDLib(BuilderRoot root) {
         this.root = root;
     }
-
-    //int puts(const char *str);
-    public LLVMValueRef print(LLVMValueRef text) {
+	
+	public LLVMValueRef calloc(LLVMValueRef elements, LLVMValueRef size) {
+		if (calloc == null) {
+			typeCalloc = new FunctionType(
+					root,
+					root.VOID_PTR
+			).withArgs(root.LONG_TYPE, root.LONG_TYPE).build();
+			
+			calloc = root.function("calloc", typeCalloc);
+		}
+		
+		PointerPointer<LLVMValueRef> args0 = root.track(new PointerPointer<>(2));
+		args0.put(0, elements);
+		args0.put(1, size);
+		return root.track(LLVM.LLVMBuildCall2(
+				root.getBuilder(),
+				calloc.getType(),
+				calloc.getDirect(),
+				args0, 2,
+				"callCalloc"
+		));
+	}
+	
+	//int puts(const char *str);
+	public LLVMValueRef print(LLVMValueRef text) {
         if (typePuts == null) {
             typePuts = new FunctionType(
                     root,
@@ -50,15 +75,14 @@ public class STDLib {
 
             labelPuts = root.track(Util.memUTF("callPuts"));
         }
-
-        return root.track(LLVM.LLVMBuildCall2(
-                root.getBuilder(),
+		
+		return root.track(LLVM.LLVMBuildCall2(
+				root.getBuilder(),
 				fPutS.getType(),
-                fPutS.getDirect(),
-                text, 1, labelPuts
-        ));
+				fPutS.getDirect(),
+				text, 1, labelPuts
+		));
     }
-	
     public LLVMValueRef wprint(LLVMValueRef text) {
         if (typePuts == null) {
             typePuts = new FunctionType(

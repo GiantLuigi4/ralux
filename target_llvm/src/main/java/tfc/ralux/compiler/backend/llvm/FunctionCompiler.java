@@ -164,6 +164,8 @@ public class FunctionCompiler {
         instr.setCompilerData(switch (instr.mode) {
             case BIT ->
                     root.bitcast(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "bitcast_" + instr.value.valueType() + "_to_" + instr.toType);
+            case INT ->
+                    root.intCast(instr.value.getCompilerData(), conversions.typeFor(instr.toType), "intcast_" + instr.value.valueType() + "_to_" + instr.toType);
             case INT_FLOAT ->
                     root.castSIToFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_si_fp_" + instr.value.valueType() + "_to_" + instr.toType);
             case FLOAT_INT ->
@@ -234,7 +236,8 @@ public class FunctionCompiler {
 
     private void compileArrayDef(MArrayInstr instr) {
         ensureData(instr.size);
-        lastVar = root.allocA(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
+//        lastVar = root.allocA(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
+        lastVar = root.calloc(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
         instr.setCompilerData(lastVar);
     }
 

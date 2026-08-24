@@ -77,17 +77,20 @@ public class LLVMCompiler extends Compiler {
             ).build());
             BlockBuilder blockBuilder = builder.block("entry");
             root.buildBlock(blockBuilder);
-            PointerPointer<LLVMValueRef> args = new PointerPointer<>(0);
-            root.track(args);
-            LLVMValueRef valOut = root.integer(0, 32);
-
-            root.track(LLVM.LLVMBuildCall2(
-                    root.getBuilder(),
-                    ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getType(),
-                    ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getDirect(),
-                    args, 0,
-                    ""
-            ));
+			
+	        LLVMValueRef valOut = root.integer(0, 32);
+	        PointerPointer<LLVMValueRef> args = new PointerPointer<>(0);
+	        root.track(args);
+			
+	        if (compiling.rt != null) {
+	            root.track(LLVM.LLVMBuildCall2(
+			            root.getBuilder(),
+			            ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getType(),
+			            ((FunctionBuilder) compiling.rt.rtInit.getCompilerData()).getDirect(),
+			            args, 0,
+			            ""
+	            ));
+            }
 
             if (function.enclosure.result.type == PrimitiveType.INT) {
                 root.track(valOut = LLVM.LLVMBuildCall2(
@@ -376,9 +379,6 @@ public class LLVMCompiler extends Compiler {
 			LLVM.LLVMPassBuilderOptionsSetSLPVectorization(options, 1);
 		}
 		
-		// Run Passes
-		// IMPORTANT: If you are doing vectorization (SLP/Loop), pass your LLVMTargetMachineRef
-		// instead of `null` so the passes know the target architecture's vector widths!
 		LLVMTargetMachineRef tm = root.getTarget();
 		optimizer.invoke(root.getModule(), tm, options);
 		
@@ -437,9 +437,10 @@ public class LLVMCompiler extends Compiler {
 	        // windows runtime
 	        linker
 			        .addLibrary("vcruntime")
-			        .addLibrary("libcmt")
+//			        .addLibrary("libcmt")
 					.addLibrary("ucrt")
-					.addLibrary("msvc");
+					.addLibrary("msvc")
+	        ;
 			
 			linker.release(true).debug("strip");
 			
@@ -459,10 +460,10 @@ public class LLVMCompiler extends Compiler {
 
 //                    "/defaultlib:libvcruntime " +
                     "/defaultlib:vcruntime " +
-		            "/defaultlib:libcmt " +
+//		            "/defaultlib:libcmt " +
 		            "/defaultlib:ucrt " +
-
                     "/defaultlib:msvcrt " +
+
 //                    "/defaultlib:libconcrt " +
 //                    "/defaultlib:libucrt " +
 //                    "/defaultlib:user32 " +

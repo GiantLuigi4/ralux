@@ -23,7 +23,8 @@ public class CompilerTest {
         Translator translator = new RaluxToIR();
 
         RlxModule module = new RlxModule("module");
-        module.withDebugUtils().withRuntime();
+//        module.withDebugUtils().withRuntime();
+        module.withDebugUtils();
 
         try {
             parse(translator, module, "std/tfc/ralux/runtime/Object.rlx");

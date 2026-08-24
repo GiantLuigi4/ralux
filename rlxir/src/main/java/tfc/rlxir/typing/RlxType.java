@@ -60,11 +60,11 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 			switch (toType.type.typ) {
 				case 'i': {
 					if (type.bits < toType.type.bits) {
-						return CastOp.EXTEND;
+						return CastOp.INT;
 					} else if (type.bits == toType.type.bits) {
 						return CastOp.NONE;
 					} else {
-						return CastOp.TRUNCATE;
+						return CastOp.INT;
 					}
 				}
 				case 'c': throw new RuntimeException("Should already have been handled...");
@@ -77,11 +77,11 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 			switch (type.typ) {
 				case 'i': {
 					if (toType.type.bits < type.bits) {
-						return CastOp.TRUNCATE;
+						return CastOp.INT;
 					} else if (toType.type.bits == type.bits) {
 						return CastOp.NONE;
 					} else {
-						return CastOp.EXTEND;
+						return CastOp.INT;
 					}
 				}
 				case 'c': throw new RuntimeException("Should already have been handled...");
@@ -91,18 +91,18 @@ public class RlxType extends CompilerDataHolder<RlxType> {
 		}
 
         if (type == RlxTypes.BOOLEAN.type) {
-            if (toType.type.typ == 'i') return CastOp.EXTEND;
+            if (toType.type.typ == 'i') return CastOp.INT;
             if (toType.type.typ == 'f') return CastOp.INT_FLOAT;
             throw new RuntimeException("TODO");
         } else if (toType == RlxTypes.BOOLEAN) return CastOp.NONE;
 
         if (type.typ == toType.type.typ && type.typ == 'i') {
             if (type.bits < toType.type.bits) {
-                return CastOp.EXTEND;
+                return CastOp.INT;
             } else if (type.bits == toType.type.bits) {
                 throw new RuntimeException("Should already have been handled...");
             } else {
-                return CastOp.TRUNCATE;
+                return CastOp.INT;
             }
         } else if (type.typ == toType.type.typ && type.typ == 'f') {
             if (type.bits != toType.type.bits)
