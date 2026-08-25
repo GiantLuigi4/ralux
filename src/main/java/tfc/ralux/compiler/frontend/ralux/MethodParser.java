@@ -551,15 +551,23 @@ public class MethodParser {
 		} else if (node.getChild(0) instanceof RaluxParser.ACtorContext ctor) {
 			System.out.println(ctor);
 			RlxType type1 = RaluxToIR.parseType(module, owner, ctor.getChild(1), currentScope); // type
+			RlxType atype = new RlxType(type1);
+			ValueInstr val0 = function.alloc(atype);
 			ValueInstr size = ExpressionParser.parseValue(this, ctor.getChild(3));
 			// TODO: deal with nested array inits?
 			//       probably via standard lib call to prefill?
 			MArrayInstr val = new MArrayInstr(
 					size, type1
 			);
+			RlxCls cls = module.getClass("tfc.ralux.runtime.ArrayObj");
+			if (cls == null) {
+				cls = owner; // assumption: current class IS the array class
+			}
 			function.addInstr(val);
+			cls.getField("data").instr.from(val0).set(function, val);
+			cls.getField("length").instr.from(val0).set(function, size);
 			
-			return val;
+			return val0;
 		} else {
 			throw new RuntimeException("TODO");
 		}

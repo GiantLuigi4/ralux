@@ -31,7 +31,7 @@ public class CompilerTest {
 
         try {
             parse(translator, module, "std/tfc/ralux/runtime/Object.rlx");
-//            parse(translator, module, "std/tfc/ralux/runtime/ArrayObj.rlx");
+            parse(translator, module, "std/tfc/ralux/runtime/ArrayObj.rlx");
 
 //            parse(translator, module, "comptest/TestClass.rlx");
 //            parse(translator, module, "comptest/TestClass1.rlx");
@@ -67,9 +67,10 @@ public class CompilerTest {
         compiler.verbose();
 	    compiler.stub();
 	    compiler.compile();
+	    compiler.setupDebug();
 	    compiler.prepareMachine();
 //	    compiler.optimize(3, 5, true);
-        compiler.optimize(0, 0, false);
+//        compiler.optimize(0, 0, false);
         compiler.write();
 		
 		StringBuilder builder = new StringBuilder();

@@ -50,7 +50,7 @@ public class FieldInstr extends VarInstr {
 
     @Override
     public void set(RlxFunction function, ValueInstr value) {
-        if (type != value.valueType()) {
+        if (!type.equals(value.valueType())) {
             throw new RuntimeException(type + " variable cannot be set as a " + value.valueType() + ". Are you missing a cast?");
         }
         function.addInstr(new FieldSetInstr(this, value));

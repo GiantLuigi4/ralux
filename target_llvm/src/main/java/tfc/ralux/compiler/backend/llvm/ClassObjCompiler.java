@@ -13,6 +13,8 @@ import tfc.ralux.compiler.frontend.ralux.RlxClassData;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxField;
 import tfc.rlxir.RlxModule;
+import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.typing.RlxTypes;
 import tfc.rlxir.util.rt.RlxRt;
 
 public class ClassObjCompiler {
@@ -55,7 +57,12 @@ public class ClassObjCompiler {
 			}
 			
             for (RlxField field : clazz.getFields()) {
-                if (field.type.clazz != null) {
+                if (field.type.clazz != null || field.type.isArray()) {
+					if (field.type.isArray() && field.type.arrayOf == RlxTypes.VOID) {
+						// this is a special case, we do not want to do anything here
+						continue;
+					}
+					
                     int offset = clazz.getFieldOffset(field);
 
                     FunctionBuilder markObj = rt.rtMarkObj.getCompilerData();
@@ -79,7 +86,9 @@ public class ClassObjCompiler {
                             args, 2,
                             ""
                     ));
-                } else if (field.type.isArray()) throw new RuntimeException("TODO");
+                } else {
+//	                throw new RuntimeException("TODO");
+                }
             }
 
             builder.ret();

@@ -1,9 +1,12 @@
 pkg comptest;
 
 use ralux.debug.Debug;
+use tfc.ralux.runtime.GC;
 
 public class Snake {
+    [+ Extern comptest_Snake_main +]
     public static int main() {
+        GC gc = GC.getGlobalGC();
         byte[] string = new byte[14];
         string[0] = 'I';
         string[1] = 'n';
@@ -21,6 +24,7 @@ public class Snake {
         string[13] = 0b;
         Debug.write(string);
         string = null;
+        GC.collect(gc);
 
         byte[] failStr = new byte[6];
         failStr[0] = 'D';
@@ -138,9 +142,16 @@ public class Snake {
             }
         }
 
+        GC.collect(gc);
+        data = null;
+        failStr = null;
+        raster = null;
+        GC.collect(gc);
+
         return 0;
     }
 
+    [+ Extern comptest_Snake_calcDir +]
     public static byte calcDir(byte input, byte refU, byte refD) {
         if (input == refU) {
             return 1b;

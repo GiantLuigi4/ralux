@@ -107,4 +107,15 @@ public class RlxCls extends CompilerDataHolder<RlxCls> {
         }
         return offset;
     }
+	
+	public int getByteSize() {
+		IndexedHashSet<RlxField>.Index index = fieldsSet.getRoot();
+		
+		int offset = 0;
+		while (index != null) {
+			offset += index.getElem().type.getElementByteSize();
+			index = index.getNext();
+		}
+		return offset;
+	}
 }

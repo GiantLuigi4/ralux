@@ -170,13 +170,43 @@ public class LLVMCompiler extends Compiler {
         }
     }
 	
+	private void dbgFunction(RlxFunction function) {
+		FunctionBuilder builder = function.getCompilerData();
+		if (builder == null) return;
+		LLVMValueRef vr = builder.getDirect();
+		LLVM.LLVMSetLinkage(vr, LLVM.LLVMExternalLinkage);
+		
+		LLVM.LLVMSetDLLStorageClass(vr, 2);
+		builder.addAttr("dso_local");
+		
+		String rawName = function.getExportName();
+		if (rawName == null) return;
+		String safeName = rawName.replace('#', '_')
+				.replace('.', '_')
+				.replace("::", "_");
+		LLVM.LLVMSetValueName(vr, safeName);
+		LLVM.LLVMSetVisibility(vr, LLVM.LLVMDefaultVisibility);
+	}
+	
+	@Override
+	public void setupDebug() {
+		for (RlxCls aClass : compiling.getClasses()) {
+			for (RlxFunction function : aClass.getFunctions()) {
+				if (function.getExportName() == null) {
+					dbgFunction(function);
+				}
+			}
+		}
+		dbgFunction(compiling.getMainFunction());
+	}
+	
 	@Override
 	public void optimize(int backend, int rlx, boolean lowerIntrinsics) {
 		LLVMOptimizer optimizer = new LLVMOptimizer();
 		
-		optimizer.globalVarOpt();
-		optimizer.assumeAlignment();
-		optimizer.inferAttributes();
+//		optimizer.globalVarOpt();
+//		optimizer.assumeAlignment();
+//		optimizer.inferAttributes();
 		
 		if (rlx >= 5) {
 			optimizer.internalize("main");
@@ -470,14 +500,21 @@ public class LLVMCompiler extends Compiler {
 //                    "/defaultlib:kernel32 " +
 //                    "/defaultlib:advapi32 " +
                     "/subsystem:console " +
-                    "/fixed /cetcompat /incremental:no /ltcg " +
-                    "/release " +
-                    "/debug:none " +
+
+//                    "/fixed /cetcompat /incremental:no" +
+//                    "/release " +
+//                    "/debug:none " +
+//		            "/verbose " +
+//		            "/merge:.text=.text " +
+//                    "-opt:ref -opt:icf -opt:lbr " +
+//		            "/ltcg " +
+		            
+                    "/incremental:no " +
+                    "/debug:full " +
                     "/verbose " +
-                    "/merge:.text=.text " +
-                    "-opt:ref -opt:icf -opt:lbr " +
-//                    "/debug:full " +
-                    "-entry:main module.obj /out:module.exe";
+		            "-opt:noref -opt:noicf " +
+              
+		            "-entry:main module.obj /out:module.exe";
 
             System.out.println("Linking using:");
             System.out.println(linkCmd);

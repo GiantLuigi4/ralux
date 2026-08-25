@@ -327,6 +327,14 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         return instr;
     }
 
+    public ValueInstr ptrCast(ValueInstr value, RlxType toType) {
+        if (value.valueType().equals(toType)) return value;
+
+        CastInstr instr = new CastInstr(value, toType, CastOp.PTR);
+        addInstr(instr);
+        return instr;
+    }
+
     public ValueInstr cast(ValueInstr value, RlxType toType, CastOp op) {
         if (value.valueType().equals(toType)) return value;
 

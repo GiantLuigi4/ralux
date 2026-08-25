@@ -14,4 +14,6 @@ public abstract class Compiler {
     public abstract void write();
 	
 	public abstract void prepareMachine();
+	
+	public abstract void setupDebug();
 }

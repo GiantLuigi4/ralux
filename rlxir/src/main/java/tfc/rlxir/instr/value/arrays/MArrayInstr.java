@@ -4,6 +4,7 @@ import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.typing.RlxTypes;
 
 public class MArrayInstr extends ValueInstr {
     public final ValueInstr size;
@@ -21,7 +22,7 @@ public class MArrayInstr extends ValueInstr {
 
     @Override
     public RlxType valueType() {
-        return RlxType.array(baseType);
+        return RlxTypes.VOID_PTR;
     }
 
     @Override

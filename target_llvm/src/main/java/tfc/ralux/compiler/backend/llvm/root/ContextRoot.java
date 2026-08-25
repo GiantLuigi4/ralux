@@ -16,6 +16,7 @@ public class ContextRoot {
 	public final LLVMTypeRef CSTRING_TYPE = LLVM.LLVMPointerType(BYTE_TYPE, 0);
     public final LLVMTypeRef WSTRING_TYPE = LLVM.LLVMPointerType(CHAR_TYPE, 0);
 	public final LLVMTypeRef VOID_PTR = LLVM.LLVMPointerType(VOID_TYPE, 0);
+	public final LLVMTypeRef VOID_PTR_PTR = LLVM.LLVMPointerType(VOID_PTR, 0);
 
     List<Object> keepInMem = new ArrayList<>();
 

@@ -12,6 +12,7 @@ import tfc.ralux.compiler.frontend.ralux.RlxClassData;
 import tfc.ralux.compiler.util.Pair;
 import tfc.rlxir.RlxBlock;
 import tfc.rlxir.RlxCls;
+import tfc.rlxir.RlxField;
 import tfc.rlxir.RlxFunction;
 import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.action.ConditionalJumpInstr;
@@ -234,7 +235,7 @@ public class FunctionCompiler {
                             ty
                     )
             );
-        } else if (instr.type.isPtr()) {
+        } else if (instr.type.onGC()) {
             root.setValue(
                     lastVar,
 //                    root.ptrCast(
@@ -249,12 +250,21 @@ public class FunctionCompiler {
             curr.enableBuilding();
         }
 		
+	    if (instr.paramFrom != -1 && instr.valueType().onGC()) {
+		    LLVMValueRef alloc = instr.getCompilerData();
+		    LLVMValueRef g = root.getValue(
+				    compiler.typeData(instr.valueType()),
+				    alloc,
+				    "get_" + instr.debugName()
+		    );
+		    refInplace(g);
+	    }
+		
 		vars.add(instr);
     }
 
     private void compileArrayDef(MArrayInstr instr) {
         ensureData(instr.size);
-//        lastVar = root.allocA(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
         lastVar = root.calloc(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
         instr.setCompilerData(lastVar);
     }
@@ -325,10 +335,10 @@ public class FunctionCompiler {
     private void compileVarSet(SetInstr instr) {
         ensureData(instr.value);
         LLVMValueRef alloc = instr.var.getCompilerData();
-        if (instr.value.valueType().isPtr()) {
+        if (instr.value.valueType().onGC()) {
             ref(instr.value.getCompilerData());
         }
-        if (instr.var.type.isPtr()) {
+        if (instr.var.type.onGC()) {
             LLVMValueRef oldRef = root.getValue(compiler.typeData(instr.var.type), alloc, "get_old_var");
             deref(oldRef);
         }
@@ -372,7 +382,17 @@ public class FunctionCompiler {
 
         LLVMValueRef array = instr.array.getCompilerData();
         LLVMValueRef index = instr.index.getCompilerData();
-        instr.setCompilerData(root.getValue(compiler.typeData(instr.valueType()), array, index, "get_value"));
+	    
+	    RlxCls cls = compiler.compiling.getClass("tfc.ralux.runtime.ArrayObj");
+	    RlxField field = cls.getField("data");
+	    int off = cls.getFieldOffset(field);
+	    LLVMValueRef v0 = array;
+	    v0 = extractField(v0, root.VOID_PTR, off);
+	    v0 = root.getValue(compiler.typeData(new RlxType(instr.valueType())), v0, "get_field_data");
+
+//	    v0 = root.getValue(root.VOID_PTR_PTR, v0, root.integer(off, 32), "getData");
+		
+        instr.setCompilerData(root.getValue(compiler.typeData(instr.valueType()), v0, index, "get_value"));
     }
 
     private void compileArraySet(ArraySet instr) {
@@ -383,9 +403,17 @@ public class FunctionCompiler {
         LLVMValueRef array = instr.array.getCompilerData();
         LLVMValueRef index = instr.index.getCompilerData();
         LLVMValueRef value = instr.value.getCompilerData();
-        root.setValue(compiler.typeData(instr.valueType()), array, index, value);
-//	    throw new RuntimeException("TODO");
-//        instr.setCompilerData(value);
+	    
+	    RlxCls cls = compiler.compiling.getClass("tfc.ralux.runtime.ArrayObj");
+	    RlxField field = cls.getField("data");
+	    int off = cls.getFieldOffset(field);
+	    LLVMValueRef v0 = array;
+	    v0 = extractField(v0, root.VOID_PTR, off);
+	    v0 = root.getValue(compiler.typeData(new RlxType(instr.valueType())), v0, "get_field_data");
+
+//	    v0 = root.getValue(root.VOID_PTR_PTR, v0, root.integer(off, 32), "getData");
+		
+        root.setValue(compiler.typeData(instr.valueType()), v0, index, value);
     }
 
     private void compileNegation(NegInstr instr) {
@@ -479,16 +507,23 @@ public class FunctionCompiler {
                 "getGC"
         ));
         args.put(0, gc);
-        args.put(1, root.integer(type.getByteSizeObj(), 32));
-        args.put(2, root.track(
-                LLVM.LLVMBuildCall2(
-                        root.getBuilder(),
-                        ((FunctionBuilder)((RlxClassData)instr.type.clazz.getCompilerData()).loadFunc).getType(),
-                        ((FunctionBuilder)((RlxClassData)instr.type.clazz.getCompilerData()).loadFunc).getDirect(),
-                        noArg, 0,
-                        ""
-                )
-        ));
+		RlxCls cls;
+		if (type.isArray()) {
+			cls = compiler.compiling.getClass("tfc.ralux.runtime.ArrayObj");
+		} else {
+			cls = instr.type.clazz;
+		}
+	    RlxClassData cd = cls.getCompilerData();
+	    args.put(1, root.integer(cls.getByteSize(), 32));
+	    args.put(2, root.track(
+			    LLVM.LLVMBuildCall2(
+					    root.getBuilder(),
+					    ((FunctionBuilder) cd.loadFunc).getType(),
+					    ((FunctionBuilder) cd.loadFunc).getDirect(),
+					    noArg, 0,
+					    ""
+			    )
+	    ));
 
         LLVMValueRef valueRef = root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
@@ -568,8 +603,8 @@ public class FunctionCompiler {
 		                    ensureData(ret.valueInstr);
 		                    LLVMValueRef vr = ret.valueInstr.getCompilerData();
 		                    
-		                    if (ret.valueInstr.valueType().isPtr()) {
-			                    ref(vr);
+		                    if (ret.valueInstr.valueType().onGC()) {
+			                    refInplace(vr);
 		                    }
 							
 							return vr;
@@ -594,8 +629,19 @@ public class FunctionCompiler {
                         LLVMValueRef str;
                         if (print.value.valueType().isArray()) {
                             str = print.value.getCompilerData();
-                        } else
-                            str = root.stdLib.intToString(root.getIntType(print.printType().type.bits), print.value.getCompilerData());
+	                        LLVMValueRef vr = str;
+	                        
+	                        RlxCls cls = compiler.compiling.getClass("tfc.ralux.runtime.ArrayObj");
+	                        RlxField field = cls.getField("data");
+	                        int off = cls.getFieldOffset(field);
+	                        LLVMValueRef v0 = vr;
+	                        v0 = extractField(v0, root.VOID_PTR, off);
+	                        v0 = root.getValue(compiler.typeData(new RlxType(RlxTypes.BYTE)), v0, "get_field_data");
+							
+							str = v0;
+                        } else {
+	                        str = root.stdLib.intToString(root.getIntType(print.printType().type.bits), print.value.getCompilerData());
+                        }
                         root.stdLib.print(str);
                     }
                     case DEBUG_READ_INT -> {
@@ -622,9 +668,17 @@ public class FunctionCompiler {
 	                case DEBUG_WRITE -> {
 		                DebugWriteString dbg = (DebugWriteString) instr;
 						ensureData(dbg.value);
+		                
+		                LLVMValueRef vr = dbg.value.getCompilerData();
+		                
+		                RlxCls cls = compiler.compiling.getClass("tfc.ralux.runtime.ArrayObj");
+		                RlxField field = cls.getField("data");
+		                int off = cls.getFieldOffset(field);
+		                LLVMValueRef v0 = vr;
+		                v0 = extractField(v0, root.VOID_PTR, off);
+		                v0 = root.getValue(compiler.typeData(new RlxType(RlxTypes.CHAR)), v0, "get_field_data");
 						
-						LLVMValueRef vr = dbg.value.getCompilerData();
-						root.stdLib.wprint(vr);
+						root.stdLib.wprint(v0);
 	                }
                     case MAKE_ARRAY -> compileArrayDef((MArrayInstr) instr);
                     case ARRAY_GET -> compileArrayGet((ArrayGet) instr);
@@ -679,6 +733,35 @@ public class FunctionCompiler {
 		re.enableBuilding();
 	}
 	
+	private void refInplace(LLVMValueRef obj) {
+		BlockBuilder nn = builder.block("non_null");
+		BlockBuilder re = builder.block("resume");
+		LLVMValueRef condition = root.compareInt(
+				ECompOp.EQ,
+				root.ptrCast(obj, conversions.I64, "cast_to_int"),
+				root.integer(0, 64),
+				"non_null"
+		);
+		root.track(LLVM.LLVMBuildCondBr(root.getBuilder(), condition, re.getDirect(), nn.getDirect()));
+		
+		nn.enableBuilding();
+		{
+			FunctionBuilder builder1 = compiler.compiling.rt.rtRef.getCompilerData();
+			PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(1));
+			args.put(0, obj);
+			root.track(LLVM.LLVMBuildCall2(
+					root.getBuilder(),
+					builder1.getType(),
+					builder1.getDirect(),
+					args, 1,
+					""
+			));
+		}
+		nn.jump(re);
+		
+		re.enableBuilding();
+	}
+	
 	private void preRet(LLVMValueRef before, Supplier<LLVMValueRef> returnVal) {
 		if (vars.isEmpty()) {
 			if (returnVal != null) {
@@ -691,7 +774,7 @@ public class FunctionCompiler {
 		}
 		boolean hasPtr = false;
 		for (VarInstr var : vars) {
-			if (var.type.isPtr()) {
+			if (var.type.onGC()) {
 				hasPtr = true;
 				break;
 			}
@@ -708,7 +791,7 @@ public class FunctionCompiler {
 		
 		LLVM.LLVMPositionBuilderBefore(root.getBuilder(), before);
 		for (VarInstr var : vars) {
-			if (var.type.isPtr()) {
+			if (var.type.onGC()) {
 				GetInstr instr = new GetInstr(var);
 				compileVarGet(instr);
 				ensureData(instr);

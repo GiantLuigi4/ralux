@@ -268,4 +268,8 @@ public class RlxType extends CompilerDataHolder<RlxType> {
     public boolean isPtr() {
         return clazz != null;
     }
+	
+	public boolean onGC() {
+		return isPtr() || (isArray() && arrayOf != RlxTypes.VOID);
+	}
 }

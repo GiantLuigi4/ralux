@@ -1,5 +1,6 @@
 package tfc.ralux.compiler.backend.llvm.util;
 
+import org.bytedeco.llvm.LLVM.LLVMAttributeRef;
 import org.bytedeco.llvm.LLVM.LLVMTypeRef;
 import org.bytedeco.llvm.LLVM.LLVMValueRef;
 import org.bytedeco.llvm.global.LLVM;
@@ -55,4 +56,13 @@ public class FunctionBuilder {
         }
         return true;
     }
+	
+	public void addAttr(String name) {
+		String attrName = name;
+		int kind = LLVM.LLVMGetEnumAttributeKindForName(attrName, attrName.length());
+		if (kind != 0) {
+			LLVMAttributeRef attr = LLVM.LLVMCreateEnumAttribute(root.getContext(), kind, 0);
+			LLVM.LLVMAddAttributeAtIndex(getDirect(), -1, attr);
+		}
+	}
 }
