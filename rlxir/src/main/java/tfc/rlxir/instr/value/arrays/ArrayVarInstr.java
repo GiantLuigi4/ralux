@@ -11,8 +11,8 @@ import tfc.rlxir.instr.value.vars.SetInstr;
 import tfc.rlxir.typing.RlxType;
 
 public class ArrayVarInstr extends BaseInstr implements AccessableValue {
-	ValueInstr wrapped;
-	ValueInstr index;
+	public final ValueInstr wrapped;
+	public final ValueInstr index;
 	
 	public ArrayVarInstr(
 			ValueInstr wrapped,

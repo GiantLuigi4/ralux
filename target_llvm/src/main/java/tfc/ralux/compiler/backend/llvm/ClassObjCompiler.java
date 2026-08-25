@@ -50,6 +50,10 @@ public class ClassObjCompiler {
 //            LLVMValueRef val1 = trackFunc.getArg(2, voidPtr);
             LLVMValueRef object = trackFunc.getArg(0, voidPtr);
 
+			if (clazz.qualifiedName().equals("tfc.ralux.runtime.ArrayObj")) {
+				// TODO: needs to iterate over all elements of the array if it's an array objects
+			}
+			
             for (RlxField field : clazz.getFields()) {
                 if (field.type.clazz != null) {
                     int offset = clazz.getFieldOffset(field);

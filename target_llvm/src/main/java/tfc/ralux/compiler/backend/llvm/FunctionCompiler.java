@@ -31,6 +31,7 @@ import tfc.rlxir.instr.value.obj.AllocInstr;
 import tfc.rlxir.instr.value.obj.CallInstr;
 import tfc.rlxir.instr.value.vars.*;
 import tfc.rlxir.typing.RlxType;
+import tfc.rlxir.typing.RlxTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -158,16 +159,33 @@ public class FunctionCompiler {
             default -> throw new RuntimeException("TODO: " + instr.op);
         });
     }
-
+	
+	private LLVMValueRef validateIC(CastInstr instr) {
+		LLVMValueRef vr = instr.value.getCompilerData();
+		if (instr.value.valueType() == RlxTypes.WIDE) {
+			vr = root.intCast(vr, conversions.typeFor(RlxTypes.LONG), "intcast_" + instr.value.valueType() + "_to_" + RlxTypes.LONG);
+		}
+		return root.intCast(vr, conversions.typeFor(instr.toType), "intcast_" + instr.value.valueType() + "_to_" + instr.toType);
+	}
+	
+	private LLVMValueRef validateIF(CastInstr instr) {
+		LLVMValueRef vr = instr.value.getCompilerData();
+		if (instr.value.valueType() == RlxTypes.WIDE && instr.toType != RlxTypes.QUADRUPLE) {
+			vr = root.intCast(vr, conversions.typeFor(RlxTypes.LONG), "intcast_" + instr.value.valueType() + "_to_" + RlxTypes.LONG);
+		}
+		return root.castSIToFP(conversions.typeFor(instr.toType), vr, "cast_si_fp_" + instr.value.valueType() + "_to_" + instr.toType);
+	}
+	
     private void compileCast(CastInstr instr) {
         ensureData(instr.value);
+		
         instr.setCompilerData(switch (instr.mode) {
             case BIT ->
                     root.bitcast(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "bitcast_" + instr.value.valueType() + "_to_" + instr.toType);
             case INT ->
-                    root.intCast(instr.value.getCompilerData(), conversions.typeFor(instr.toType), "intcast_" + instr.value.valueType() + "_to_" + instr.toType);
+                    validateIC(instr);
             case INT_FLOAT ->
-                    root.castSIToFP(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_si_fp_" + instr.value.valueType() + "_to_" + instr.toType);
+                    validateIF(instr);
             case FLOAT_INT ->
                     root.castFPToSI(conversions.typeFor(instr.toType), instr.value.getCompilerData(), "cast_fp_si_" + instr.value.valueType() + "_to_" + instr.toType);
             case TRUNCATE ->
@@ -181,8 +199,8 @@ public class FunctionCompiler {
             default -> throw new RuntimeException("NYI cast mode: " + instr.mode);
         });
     }
-
-    LLVMValueRef lastVar = null;
+	
+	LLVMValueRef lastVar = null;
 	List<VarInstr> vars = new ArrayList<>();
 
     private void compileVarDef(VarInstr instr) {

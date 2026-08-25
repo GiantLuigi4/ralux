@@ -13,6 +13,8 @@ import tfc.rlxir.instr.value.AccessableValue;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArrayVarInstr;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
+import tfc.rlxir.instr.value.vars.FieldInstr;
+import tfc.rlxir.instr.value.vars.FieldSetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
@@ -148,7 +150,7 @@ public class MethodParser {
 			// don't cache
 			return getVarRef(module, owner, currentScope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr()).get(currentScope.function);
 		}
-		
+
 //		VarInstr instr = currentScope.getVar(text);
 //		if (instr != null) return currentScope.getCached(text);
 		return getVarRef(module, owner, currentScope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr()).get(currentScope.function);

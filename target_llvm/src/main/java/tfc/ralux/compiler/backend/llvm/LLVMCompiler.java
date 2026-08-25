@@ -455,7 +455,7 @@ public class LLVMCompiler extends Compiler {
                     "/libpath:\"" + fl + "/lib/windows\" " +
                     "/libpath:lib " +
                     "/defaultlib:clang_rt.builtins-x86_64.lib " +
-//                    "/defaultlib:MiniCRT " +
+                    "/defaultlib:MiniCRT " +
                     "/defaultlib:RlxRt " +
 
 //                    "/defaultlib:libvcruntime " +

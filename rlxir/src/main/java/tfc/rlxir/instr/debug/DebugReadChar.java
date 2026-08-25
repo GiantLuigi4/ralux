@@ -7,8 +7,6 @@ import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 
 public class DebugReadChar extends ValueInstr {
-    public final RlxType type = RlxTypes.CHAR;
-
     public DebugReadChar() {
     }
 
@@ -19,7 +17,7 @@ public class DebugReadChar extends ValueInstr {
 
     @Override
     public RlxType valueType() {
-        return type;
+        return RlxTypes.CHAR;
     }
 
     @Override

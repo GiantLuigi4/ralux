@@ -1,0 +1,12 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+
+public class Wide {
+    public static int main() {
+        wide wd = 50;
+        Debug.write((int) wd);
+        Debug.write((int) (half) wd);
+        return wd;
+    }
+}

@@ -150,4 +150,3 @@ public class Snake {
         return 0b;
     }
 }
-x

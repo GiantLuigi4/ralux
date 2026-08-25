@@ -1,0 +1,7 @@
+pkg tfc.ralux.runtime;
+
+public class ArrayObj {
+    void[] data;
+    int length;
+    bool ofObjects;
+}

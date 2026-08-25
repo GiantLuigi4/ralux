@@ -6,9 +6,12 @@ import tfc.ralux.compiler.backend.llvm.RLXToLLVM;
 import tfc.ralux.compiler.frontend.Translator;
 import tfc.ralux.compiler.frontend.ralux.RaluxToIR;
 import tfc.rlxir.RlxModule;
+import tfc.rlxir.writer.IRWriter;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class CompilerTest {
     static void parse(Translator translator, RlxModule module, String dir) throws IOException {
@@ -23,11 +26,12 @@ public class CompilerTest {
         Translator translator = new RaluxToIR();
 
         RlxModule module = new RlxModule("module");
-//        module.withDebugUtils().withRuntime();
-        module.withDebugUtils();
+        module.withDebugUtils().withRuntime();
+//        module.withDebugUtils();
 
         try {
             parse(translator, module, "std/tfc/ralux/runtime/Object.rlx");
+//            parse(translator, module, "std/tfc/ralux/runtime/ArrayObj.rlx");
 
 //            parse(translator, module, "comptest/TestClass.rlx");
 //            parse(translator, module, "comptest/TestClass1.rlx");
@@ -40,6 +44,7 @@ public class CompilerTest {
 //            parse(translator, module, "comptest/GCTest1.rlx");
 //            parse(translator, module, "comptest/GCTest2.rlx");
 //            parse(translator, module, "comptest/Wides.rlx");
+//            parse(translator, module, "comptest/Wide.rlx");
 //            parse(translator, module, "comptest/Fields.rlx");
 	        
 	        parse(translator, module, "comptest/Snake.rlx");
@@ -55,6 +60,7 @@ public class CompilerTest {
 //        module.setMain(module.getClass("comptest.Fields").getFunctions().get(0));
 
 	    module.setMain(module.getClass("comptest.Snake").getFunctions().get(0));
+//	    module.setMain(module.getClass("comptest.Wide").getFunctions().get(0));
 
         Backend backend = new RLXToLLVM();
         Compiler compiler = backend.compilerFor(module);
@@ -62,8 +68,18 @@ public class CompilerTest {
 	    compiler.stub();
 	    compiler.compile();
 	    compiler.prepareMachine();
-	    compiler.optimize(3, 5, true);
-//        compiler.optimize(0, 0, false);
+//	    compiler.optimize(3, 5, true);
+        compiler.optimize(0, 0, false);
         compiler.write();
+		
+		StringBuilder builder = new StringBuilder();
+	    IRWriter.writeModule(builder, module);
+		try {
+			FileOutputStream fos = new FileOutputStream("module.rlir");
+			fos.write(builder.toString().getBytes(StandardCharsets.UTF_8));
+			fos.flush();
+			fos.close();
+		} catch (Throwable ignored) {
+		}
     }
 }

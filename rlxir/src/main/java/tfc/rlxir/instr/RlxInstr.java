@@ -27,4 +27,15 @@ public abstract class RlxInstr extends DebuggerDataHolder<RlxInstr> {
     public RlxFunction getFunction() {
         return function;
     }
+	
+	private String label;
+	
+	public RlxInstr setInstructionLabel(String label) {
+		this.label = label;
+		return this;
+	}
+	
+	public String instructionLabel() {
+		return label;
+	}
 }

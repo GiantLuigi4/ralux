@@ -85,4 +85,10 @@ public class VarInstr extends BaseInstr implements AccessableValue {
 	public RlxType valueType() {
 		return type;
 	}
+	
+	@Override
+	public String instructionLabel() {
+		if (debugName != null) return debugName;
+		return super.instructionLabel();
+	}
 }
