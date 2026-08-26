@@ -1,5 +1,7 @@
 package tfc.ralux.compiler.backend.llvm;
 
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.*;
 import org.bytedeco.llvm.global.LLVM;
@@ -8,6 +10,9 @@ import tfc.ralux.compiler.backend.llvm.root.BuilderRoot;
 import tfc.ralux.compiler.backend.llvm.util.BlockBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionBuilder;
 import tfc.ralux.compiler.backend.llvm.util.FunctionType;
+import tfc.ralux.compiler.util.linker.LLD;
+import tfc.ralux.compiler.util.linker.Linker;
+import tfc.ralux.compiler.util.natives.CLibraries;
 import tfc.rlxir.util.ProgramLocator;
 import tfc.ralux.compiler.backend.llvm.util.helper.LLVMOptimizer;
 import tfc.ralux.compiler.backend.llvm.util.helper.target.CPU;
@@ -22,8 +27,6 @@ import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
 import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
-import tfc.rlxir.util.linker.LLD;
-import tfc.rlxir.util.linker.Linker;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -116,7 +119,7 @@ public class LLVMCompiler extends Compiler {
         if (enableVerbose) {
             root.dump();
         }
-
+		
         root.validate();
     }
 
@@ -432,6 +435,36 @@ public class LLVMCompiler extends Compiler {
 				CPU.GENERIC,
 				LLVM.LLVMCodeGenLevelAggressive
 		);
+		
+//		try {
+//			PointerPointer<LLVMMemoryBufferRef> memBufPtr = root.track(new PointerPointer<>(1));
+//			BytePointer errMsg = new BytePointer(8);
+//
+//			int result = LLVM.LLVMCreateMemoryBufferWithContentsOfFile(
+//					"lib/RlxRt.ll", memBufPtr, errMsg);
+//			if (result != 0) {
+//				String err = new String(errMsg.getStringBytes(), "UTF8");
+//				throw new RuntimeException("Failed to read file: " + err);
+//			}
+//			LLVMMemoryBufferRef memBuf = root.track(new LLVMMemoryBufferRef(root.track(memBufPtr.get(0))));
+//
+//			errMsg = new BytePointer(8);
+//			PointerPointer<LLVMModuleRef> modulePtr = root.track(new PointerPointer<>(1));
+//			result = LLVM.LLVMParseIRInContext(
+//					root.getContext(),
+//					root.track(memBuf.getPointer(0)),
+//					modulePtr,
+//					errMsg
+//			);
+//			if (result != 0) {
+//				String err = new String(errMsg.getStringBytes(), "UTF-8");
+//				throw new RuntimeException("Parse failed: " + err);
+//			}
+//			LLVMModuleRef module = root.track(new LLVMModuleRef(modulePtr.get(0)));
+//			LLVM.LLVMLinkModules2(root.getModule(), module);
+//		} catch (Throwable ignored) {
+//			throw new RuntimeException(ignored);
+//		}
 	}
 
     @Override
@@ -454,67 +487,50 @@ public class LLVMCompiler extends Compiler {
 		        break;
 	        }
 	        
-	        Linker linker = new LLD();
+			String platform = "windows";
 			
-			linker.addLibPath(fl + "/lib/windows");
+	        Linker linker = new LLD(platform);
+			
+			linker.addLibPath(fl + "/lib/" + platform);
 			linker.addLibPath("lib");
 			
 			linker.addLibrary("RlxRt");
 	  
 			// clang runtime
 	        linker.addLibrary("clang_rt.builtins-x86_64.lib");
+	        
+	        for (String necessaryLibrary : CLibraries.necessaryLibraries(platform)) {
+		        linker.addLibrary(necessaryLibrary);
+	        }
 			
-	        // windows runtime
-	        linker
-			        .addLibrary("vcruntime")
-//			        .addLibrary("libcmt")
-					.addLibrary("ucrt")
-					.addLibrary("msvc")
-	        ;
+//			if (platform.equals("windows")) {
+//				// windows runtime
+//				linker.addLibrary("user32");
+//				linker.addLibrary("kernel32");
+//				linker.addLibrary("advapi32");
+//			}
 			
 			linker.release(true).debug("strip");
+	        
+	        linker.protectDataExecution(true)
+			        .merge(".text")
+			        .verbose(true)
+					.useLTO(true)
+			        .allowRelocations(false)
+			        .incrementalLink(false)
+			        .enforceControlFlow(true)
+			        .protectDataExecution(true);
+			
+			linker
+					.opt("dead_ref", true)
+					.opt("comdat_folding", true)
+					.opt("long_branches", true)
+			;
 			
 			linker.entrypoint("main");
 			linker.link("module.exe", "module.obj");
 			
-//			linker.addLibrary("user32");
-//			linker.addLibrary("kernel32");
-//			linker.addLibrary("advapi32");
-			
-            String linkCmd = "lld-link.exe " +
-                    "/libpath:\"" + fl + "/lib/windows\" " +
-                    "/libpath:lib " +
-                    "/defaultlib:clang_rt.builtins-x86_64.lib " +
-                    "/defaultlib:MiniCRT " +
-                    "/defaultlib:RlxRt " +
-
-//                    "/defaultlib:libvcruntime " +
-                    "/defaultlib:vcruntime " +
-//		            "/defaultlib:libcmt " +
-		            "/defaultlib:ucrt " +
-                    "/defaultlib:msvcrt " +
-
-//                    "/defaultlib:libconcrt " +
-//                    "/defaultlib:libucrt " +
-//                    "/defaultlib:user32 " +
-//                    "/defaultlib:kernel32 " +
-//                    "/defaultlib:advapi32 " +
-                    "/subsystem:console " +
-
-                    "/fixed /cetcompat /incremental:no " +
-                    "/release " +
-                    "/debug:none " +
-		            "/verbose " +
-		            "/merge:.text=.text " +
-                    "-opt:ref -opt:icf -opt:lbr " +
-		            "/ltcg " +
-		            
-//                    "/incremental:no " +
-//                    "/debug:full " +
-//                    "/verbose " +
-//		            "-opt:noref -opt:noicf " +
-              
-		            "-entry:main module.obj /out:module.exe";
+			String linkCmd = linker.buildCommand();
 
             System.out.println("Linking using:");
             System.out.println(linkCmd);

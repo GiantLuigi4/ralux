@@ -9,10 +9,12 @@ import static org.bytedeco.llvm.global.LLVM.*;
 
 public class RLXToLLVM extends Backend {
     static {
-        LLVMInitializeNativeTarget();
-        LLVMInitializeNativeAsmPrinter();
+	    LLVMInitializeAllTargetInfos();
+	    LLVMInitializeNativeTarget();
+	    LLVMInitializeNativeAsmPrinter();
         LLVMInitializeAllTargets();
         LLVMInitializeAllAsmPrinters();
+	    LLVMInitializeAllAsmParsers();
     }
 
     @Override

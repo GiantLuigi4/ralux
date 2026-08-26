@@ -71,7 +71,7 @@ public class CompilerTest {
 	    compiler.compile();
 //	    compiler.setupDebug();
 	    compiler.prepareMachine();
-//	    compiler.optimize(3, 5, true);
+	    compiler.optimize(3, 5, true);
 //        compiler.optimize(0, 0, false);
         compiler.write();
 		

@@ -159,6 +159,9 @@ public class ClassObjCompiler {
 						// this is a special case, we do not want to do anything here
 						continue;
 					}
+	                
+	                BlockBuilder btrack = trackFunc.block("track");
+	                BlockBuilder bskip = trackFunc.block("skip");
 					
                     int offset = clazz.getFieldOffset(field);
 
@@ -174,8 +177,13 @@ public class ClassObjCompiler {
 		                            voidPtr, offset
 		                    ), "get_field_value"
                     );
-
-                    args.put(1, val2);
+	                args.put(1, val2);
+	                
+	                LLVMValueRef asLong = root.ptrCast(val2, root.LONG_TYPE, "as_long");
+	                LLVMValueRef vcomp = root.compareInt(ECompOp.NE, asLong, root.integer(0, 64), "check_nonnull");
+	                builder.conditionalJump(vcomp, btrack, bskip);
+					
+					btrack.enableBuilding();
                     root.track(LLVM.LLVMBuildCall2(
                             root.getBuilder(),
                             markObj.getType(),
@@ -183,6 +191,10 @@ public class ClassObjCompiler {
                             args, 2,
                             ""
                     ));
+					btrack.jump(bskip);
+					
+					bskip.enableBuilding();
+					builder = bskip;
                 } else {
 //	                throw new RuntimeException("TODO");
                 }

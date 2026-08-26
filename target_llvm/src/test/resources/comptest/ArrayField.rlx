@@ -12,6 +12,7 @@ public class ArrayField {
 
         GC.collect(gc);
         ArrayField testObj = new ArrayField();
+        GC.collect(gc);
         testObj.fields = new Object[10];
         GC.collect(gc);
         Object[] inner = testObj.fields;

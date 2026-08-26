@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: www.w3schools.com/dsa/dsa_data_hashsets.php
+
 #define prealloc 16
 #define sz sizeof(void**)
 #define SimpleSet struct simpleSet
