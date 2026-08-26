@@ -69,7 +69,7 @@ public class RaluxToIR extends Translator {
                     type = RlxTypes.typeByName(terminal.getText());
                 } else {
                     // TODO: check for other cases?
-                    return resolveClass(module, cls, child, scope);
+                    type = resolveClass(module, cls, element, scope);
                 }
             } else throw new RuntimeException("TODO");
         } else {

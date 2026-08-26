@@ -46,8 +46,9 @@ public class CompilerTest {
 //            parse(translator, module, "comptest/Wides.rlx");
 //            parse(translator, module, "comptest/Wide.rlx");
 //            parse(translator, module, "comptest/Fields.rlx");
+            parse(translator, module, "comptest/ArrayField.rlx");
 	        
-	        parse(translator, module, "comptest/Snake.rlx");
+//	        parse(translator, module, "comptest/Snake.rlx");
         } catch (Throwable err) {
             throw new RuntimeException(err);
         }
@@ -58,8 +59,9 @@ public class CompilerTest {
 //        module.setMain(module.getClass("comptest.GCTest2").getFunctions().get(2));
 //        module.setMain(module.getClass("comptest.Wides").getFunctions().get(0));
 //        module.setMain(module.getClass("comptest.Fields").getFunctions().get(0));
+        module.setMain(module.getClass("comptest.ArrayField").getFunctions().get(0));
 
-	    module.setMain(module.getClass("comptest.Snake").getFunctions().get(0));
+//	    module.setMain(module.getClass("comptest.Snake").getFunctions().get(0));
 //	    module.setMain(module.getClass("comptest.Wide").getFunctions().get(0));
 
         Backend backend = new RLXToLLVM();
@@ -67,7 +69,7 @@ public class CompilerTest {
         compiler.verbose();
 	    compiler.stub();
 	    compiler.compile();
-	    compiler.setupDebug();
+//	    compiler.setupDebug();
 	    compiler.prepareMachine();
 //	    compiler.optimize(3, 5, true);
 //        compiler.optimize(0, 0, false);

@@ -501,18 +501,18 @@ public class LLVMCompiler extends Compiler {
 //                    "/defaultlib:advapi32 " +
                     "/subsystem:console " +
 
-//                    "/fixed /cetcompat /incremental:no" +
-//                    "/release " +
-//                    "/debug:none " +
-//		            "/verbose " +
-//		            "/merge:.text=.text " +
-//                    "-opt:ref -opt:icf -opt:lbr " +
-//		            "/ltcg " +
+                    "/fixed /cetcompat /incremental:no " +
+                    "/release " +
+                    "/debug:none " +
+		            "/verbose " +
+		            "/merge:.text=.text " +
+                    "-opt:ref -opt:icf -opt:lbr " +
+		            "/ltcg " +
 		            
-                    "/incremental:no " +
-                    "/debug:full " +
-                    "/verbose " +
-		            "-opt:noref -opt:noicf " +
+//                    "/incremental:no " +
+//                    "/debug:full " +
+//                    "/verbose " +
+//		            "-opt:noref -opt:noicf " +
               
 		            "-entry:main module.obj /out:module.exe";
 

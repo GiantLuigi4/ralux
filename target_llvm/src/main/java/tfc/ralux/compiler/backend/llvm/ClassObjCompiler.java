@@ -17,6 +17,8 @@ import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 import tfc.rlxir.util.rt.RlxRt;
 
+import java.lang.reflect.Field;
+
 public class ClassObjCompiler {
     protected static LLVMValueRef extractField(BuilderRoot root, LLVMValueRef obj, LLVMTypeRef type, int offset) {
         LLVMTypeRef tr = root.pointerType(type);
@@ -53,7 +55,102 @@ public class ClassObjCompiler {
             LLVMValueRef object = trackFunc.getArg(0, voidPtr);
 
 			if (clazz.qualifiedName().equals("tfc.ralux.runtime.ArrayObj")) {
-				// TODO: needs to iterate over all elements of the array if it's an array objects
+				RlxField aOfObj = clazz.getField("ofObjects");
+				int off = clazz.getFieldOffset(aOfObj);
+				
+//				LLVMValueRef strVr = LLVM.LLVMBuildGlobalStringPtr(root.getBuilder(), "TextA", "TextA");
+//				LLVMValueRef str1Vr = LLVM.LLVMBuildGlobalStringPtr(root.getBuilder(), "TextB", "TextB");
+//				LLVMValueRef str2Vr = LLVM.LLVMBuildGlobalStringPtr(root.getBuilder(), "TextC", "TextC");
+				
+				LLVMValueRef v0 = object;
+				v0 = extractField(root, v0, compiler.typeData(RlxTypes.BOOLEAN), off);
+				v0 = root.getValue(compiler.typeData(RlxTypes.BOOLEAN), v0, "get_isObj_data");
+				LLVMValueRef isObject = v0;
+				
+				BlockBuilder bpreloop = trackFunc.block("pre_loop");
+				BlockBuilder bloop = trackFunc.block("loop");
+				BlockBuilder bend = trackFunc.block("end");
+				BlockBuilder bgetdata = trackFunc.block("get_data");
+				BlockBuilder bskip = trackFunc.block("skip");
+				builder.conditionalJump(isObject, bpreloop, bskip);
+				
+				RlxField alen = clazz.getField("length");
+				off = clazz.getFieldOffset(alen);
+				
+				
+				bpreloop.enableBuilding();
+				
+				LLVMValueRef var = root.track(root.allocA(
+						root.getIntType(32),
+						"track_index"
+				));
+				root.setValue(var, root.integer(0, 32));
+				
+				
+				v0 = object;
+				v0 = extractField(root, v0, root.INT_TYPE, off);
+				v0 = root.getValue(root.INT_TYPE, v0, "get_length_data");
+				LLVMValueRef quantity = v0;
+				
+				LLVMValueRef shouldSkip = root.compareInt(ECompOp.EQ, root.integer(0, 32), quantity, "check_loop");
+				
+				bpreloop.conditionalJump(shouldSkip, bend, bgetdata);
+				
+				bgetdata.enableBuilding();
+				
+				aOfObj = clazz.getField("data");
+				off = clazz.getFieldOffset(aOfObj);
+				v0 = object;
+				v0 = extractField(root, v0, root.VOID_PTR_PTR, off);
+				v0 = root.getValue(root.VOID_PTR_PTR, v0, "get_array_data");
+				bgetdata.jump(bloop);
+				
+				BlockBuilder bnonnull = trackFunc.block("non_null");
+				BlockBuilder bcontinue = trackFunc.block("continue");
+				{
+					bloop.enableBuilding();
+//					root.stdLib.print(strVr);
+					
+					LLVMValueRef index = root.track(root.getValue(root.INT_TYPE, var, "get_index_ptr"));
+					
+					LLVMValueRef ptr = root.getValue(root.VOID_PTR, v0, index, "get_value");
+					LLVMValueRef asLong = root.ptrCast(ptr, root.LONG_TYPE, "as_long");
+					
+					LLVMValueRef vcomp = root.compareInt(ECompOp.NE, asLong, root.integer(0, 64), "check_nonnull");
+					bloop.conditionalJump(vcomp, bnonnull, bcontinue);
+					
+					bnonnull.enableBuilding();
+					{
+						FunctionBuilder markObj = rt.rtMarkObj.getCompilerData();
+						PointerPointer<LLVMValueRef> args = root.track(new PointerPointer<>(2));
+						args.put(0, val0);
+						args.put(1, ptr);
+						root.track(LLVM.LLVMBuildCall2(
+								root.getBuilder(),
+								markObj.getType(),
+								markObj.getDirect(),
+								args, 2,
+								""
+						));
+					}
+					
+					bnonnull.jump(bcontinue);
+					
+					bcontinue.enableBuilding();
+					LLVMValueRef vr = root.sisum(index, root.integer(1, 32), "incr_index");
+					root.setValue(var, vr);
+					
+					LLVMValueRef shouldEnd = root.compareInt(ECompOp.LT, index, quantity, "check_loop");
+					bcontinue.conditionalJump(shouldEnd, bloop, bend);
+				}
+				
+				bskip.enableBuilding();
+//				root.stdLib.print(str2Vr);
+				bskip.ret();
+				
+				bend.enableBuilding();
+//				root.stdLib.print(str1Vr);
+				builder = bend;
 			}
 			
             for (RlxField field : clazz.getFields()) {

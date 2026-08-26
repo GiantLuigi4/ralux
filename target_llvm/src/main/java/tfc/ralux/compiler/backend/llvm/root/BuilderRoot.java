@@ -169,6 +169,17 @@ public class BuilderRoot extends ModuleRoot {
 				name
 		);
 	}
+	
+	public LLVMValueRef calloc(LLVMTypeRef type, LLVMValueRef length, LLVMValueRef elementSize, String name) {
+		return ptrCast(
+				stdLib.calloc(
+						length,
+						elementSize
+				),
+				pointerType(type),
+				name
+		);
+	}
 
     public void setValue(LLVMValueRef pointer, LLVMValueRef value) {
         track(LLVM.LLVMBuildStore(builder, value, pointer));
@@ -215,9 +226,9 @@ public class BuilderRoot extends ModuleRoot {
         indices.put(0, track(LLVM.LLVMBuildZExtOrBitCast(
                 builder, index, getIntType(64), "as_int64"
         )));
-	    LLVMTypeRef elementType = getIntType(8);
+//	    LLVMTypeRef elementType = getIntType(8);
         LLVMValueRef gep = track(LLVM.LLVMBuildInBoundsGEP2(
-                builder, elementType, pointer,
+                builder, type, pointer,
                 indices, 1,
                 name + "_gep"
         ));

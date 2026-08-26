@@ -75,7 +75,14 @@ public class FunctionCompiler {
         }
         throw new RuntimeException("Const ptr must be 0 (null)");
     }
-
+	
+	private int getBool(Object data) {
+		if (data instanceof Boolean bool) {
+			return bool ? 1 : 0;
+		}
+		return ((Number) data).byteValue();
+	}
+	
     protected void ensureData(ValueInstr instr) {
         if (instr.getCompilerData() != null) return;
 
@@ -90,7 +97,7 @@ public class FunctionCompiler {
                     case HALF, FLOAT -> root.loadFloat(((Number) cst.data).floatValue(), conversions.typeFor(cst.type));
                     case DOUBLE, QUADRUPLE ->
                             root.loadFloat(((Number) cst.data).doubleValue(), conversions.typeFor(cst.type));
-                    case BOOLEAN -> root.integer(((Number) cst.data).byteValue(), 1);
+                    case BOOLEAN -> root.integer(getBool(cst.data), 1);
                     case PTR -> valConstPtr(cst);
 	                case CHAR -> root.integer(((Number) (short) (char) cst.data).intValue(), conversions.typeFor(cst.type));
                     default -> throw new RuntimeException("Unsupported constant type: " + cst.valueType().type);
@@ -101,8 +108,8 @@ public class FunctionCompiler {
             }
         }
     }
-
-    private void compileComp(CompareInstr instr) {
+	
+	private void compileComp(CompareInstr instr) {
         ensureData(instr.left);
         ensureData(instr.right);
 
@@ -265,7 +272,8 @@ public class FunctionCompiler {
 
     private void compileArrayDef(MArrayInstr instr) {
         ensureData(instr.size);
-        lastVar = root.calloc(conversions.typeFor(instr.baseType), instr.size.getCompilerData(), "array_of_" + instr.baseType);
+		LLVMValueRef size = instr.size.getCompilerData();
+        lastVar = root.calloc(conversions.typeFor(instr.baseType), size, root.integer(instr.baseType.getElementByteSize(), 32), "array_of_" + instr.baseType);
         instr.setCompilerData(lastVar);
     }
 
@@ -391,8 +399,8 @@ public class FunctionCompiler {
 	    v0 = root.getValue(compiler.typeData(new RlxType(instr.valueType())), v0, "get_field_data");
 
 //	    v0 = root.getValue(root.VOID_PTR_PTR, v0, root.integer(off, 32), "getData");
-		
-        instr.setCompilerData(root.getValue(compiler.typeData(instr.valueType()), v0, index, "get_value"));
+	    
+	    instr.setCompilerData(root.getValue(compiler.typeData(instr.valueType()), v0, index, "get_value"));
     }
 
     private void compileArraySet(ArraySet instr) {

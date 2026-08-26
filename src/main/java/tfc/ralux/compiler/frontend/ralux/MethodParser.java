@@ -554,6 +554,7 @@ public class MethodParser {
 			RlxType atype = new RlxType(type1);
 			ValueInstr val0 = function.alloc(atype);
 			ValueInstr size = ExpressionParser.parseValue(this, ctor.getChild(3));
+			ValueInstr isOfObjects = new ConstInstr<>(type1.onGC(), RlxTypes.BOOLEAN);
 			// TODO: deal with nested array inits?
 			//       probably via standard lib call to prefill?
 			MArrayInstr val = new MArrayInstr(
@@ -566,6 +567,7 @@ public class MethodParser {
 			function.addInstr(val);
 			cls.getField("data").instr.from(val0).set(function, val);
 			cls.getField("length").instr.from(val0).set(function, size);
+			cls.getField("ofObjects").instr.from(val0).set(function, isOfObjects);
 			
 			return val0;
 		} else {

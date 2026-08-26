@@ -46,7 +46,7 @@ public class STDLib {
 			typeCalloc = new FunctionType(
 					root,
 					root.VOID_PTR
-			).withArgs(root.LONG_TYPE, root.LONG_TYPE).build();
+			).withArgs(root.INT_TYPE, root.INT_TYPE).build();
 			
 			calloc = root.function("calloc", typeCalloc);
 		}

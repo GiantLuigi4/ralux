@@ -1,0 +1,36 @@
+pkg comptest;
+
+use ralux.debug.Debug;
+use tfc.ralux.runtime.Object;
+use tfc.ralux.runtime.GC;
+
+public class ArrayField {
+    Object[] fields;
+
+    public static int main() {
+        GC gc = GC.getGlobalGC();
+
+        GC.collect(gc);
+        ArrayField testObj = new ArrayField();
+        testObj.fields = new Object[10];
+        GC.collect(gc);
+        Object[] inner = testObj.fields;
+        inner[0] = new Object();
+        inner[1] = new Object();
+        Debug.write(inner[1].#);
+        inner[2] = new Object();
+        inner[3] = new Object();
+        inner[4] = new Object();
+        inner[5] = new Object();
+        inner[6] = new Object();
+        inner[7] = new Object();
+        inner[8] = new Object();
+        inner[9] = new Object();
+        inner = null;
+        GC.collect(gc);
+        testObj = null;
+        GC.collect(gc);
+
+        return 0;
+    }
+}
