@@ -327,25 +327,15 @@ public interface RaluxListener extends ParseTreeListener {
 	 */
 	void exitParams(RaluxParser.ParamsContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link RaluxParser#qualif}.
+	 * Enter a parse tree produced by {@link RaluxParser#var_ref}.
 	 * @param ctx the parse tree
 	 */
-	void enterQualif(RaluxParser.QualifContext ctx);
+	void enterVar_ref(RaluxParser.Var_refContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link RaluxParser#qualif}.
+	 * Exit a parse tree produced by {@link RaluxParser#var_ref}.
 	 * @param ctx the parse tree
 	 */
-	void exitQualif(RaluxParser.QualifContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link RaluxParser#aqualif}.
-	 * @param ctx the parse tree
-	 */
-	void enterAqualif(RaluxParser.AqualifContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link RaluxParser#aqualif}.
-	 * @param ctx the parse tree
-	 */
-	void exitAqualif(RaluxParser.AqualifContext ctx);
+	void exitVar_ref(RaluxParser.Var_refContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link RaluxParser#dOperand}.
 	 * @param ctx the parse tree

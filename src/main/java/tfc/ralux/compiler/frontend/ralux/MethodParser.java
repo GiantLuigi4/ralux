@@ -2,19 +2,14 @@ package tfc.ralux.compiler.frontend.ralux;
 
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import tfc.ralux.compiler.frontend.ralux.parse.RaluxParser;
 import tfc.rlxir.*;
-import tfc.rlxir.instr.RlxInstr;
 import tfc.rlxir.instr.base.ValueInstr;
 import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.AccessableValue;
-import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArrayVarInstr;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
-import tfc.rlxir.instr.value.vars.FieldInstr;
-import tfc.rlxir.instr.value.vars.FieldSetInstr;
 import tfc.rlxir.instr.value.vars.VarInstr;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
@@ -77,95 +72,110 @@ public class MethodParser {
 		return field1.instr.from(base);
 	}
 	
-	public AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, String nt, String name, List<RaluxParser.ExprContext> exprContexts) {
+	private String extractDotNotation(RaluxParser.Var_refContext ref) {
 		String text = "";
-		if (nt != null && !nt.isEmpty()) {
-			text = nt + ".";
-		}
-		text += name;
 		
-		if (text.contains(".")) {
-			String substr = text.substring(0, text.lastIndexOf('.'));
+		for (ParseTree child : ref.children) {
+			text += child.getText();
+		}
+		
+		return text;
+	}
+	
+	private AccessableValue discoverVar(AccessableValue base, RlxModule module, RlxCls clazz, Scope scope, String text) {
+		String[] split = text.split("\\.");
+		StringBuilder builder = new StringBuilder();
+		boolean first = true;
+		for (int i = 0; i < split.length; i++) {
+			String s = split[i];
 			
-			ValueInstr var = getVarVal(module, clazz, scope, null, substr, new ArrayList<>());
-			return getVarRef(var, text.substring(text.lastIndexOf('.') + 1));
-		} else {
-			VarInstr var = scope.getVar(text);
-			if (var != null) return array(var, exprContexts);
-			RlxField o = clazz.getField(text);
-			if (o != null) return o.instr; // TODO: pretty sure this is wrong
-			throw new RuntimeException("Symbol not found: " + text);
-		}
-	}
-
-//		String text = "";
-//		if (nt != null) {
-//			text = nt.getText() + ".";
-//		}
-//		text += aqf.WORD().getText();
-//
-//        if (text.contains(".")) {
-//	        String substr = text.substring(0, text.lastIndexOf('.'));
-//
-//			module.getClass(text);
-//	        text = aqf.WORD().getText();
-//
-//	        ValueInstr var = getVarVal(module, clazz, scope, null, aqf);
-//            return getVarRef(var, text.substring(text.lastIndexOf('.') + 1));
-//        } else {
-//	        text = aqf.WORD().getText();
-//
-//            VarInstr var = scope.getVar(text);
-//            if (var != null) return array(var, aqf);
-//            RlxField o = clazz.getField(text);
-//            if (o != null) return o.instr; // TODO: pretty sure this is wrong
-//            throw new RuntimeException("Symbol not found: " + text);
-//        }
-//    }
-	
-	private AccessableValue array(AccessableValue val, List<RaluxParser.ExprContext> aqf) {
-		for (RaluxParser.ExprContext exprContext : aqf) {
-			val = new ArrayVarInstr(val.get(), ExpressionParser.parseValue(this, exprContext));
-			((RlxInstr) val).setFunction(function);
-		}
-//		throw new RuntimeException("TODO");
-		return val;
-	}
-	
-	public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, String nt, String name, List<RaluxParser.ExprContext> exprContexts) {
-		String text = name;
-		if ((nt != null && !nt.isEmpty()) || !exprContexts.isEmpty()) {
-			// don't cache
-			return getVarRef(module, owner, currentScope, nt, name, exprContexts).get(currentScope.function);
+			if (!first) {
+				builder.append(".");
+			}
+			
+			builder.append(s);
+			
+			if (base == null) {
+				RlxCls clz = module.getClass(s);
+				if (clz != null) {
+					String check = split[i + 1];
+					RlxField field = clz.getField(check);
+					if (field.instr != null) {
+						// static get
+						field.instr.get(function);
+					}
+					
+					first = true;
+					builder = new StringBuilder();
+				}
+				
+				if (first) {
+					VarInstr instr = scope.getVar(s);
+					if (instr != null) base = instr;
+					first = false;
+					continue;
+				}
+			}
+			
+			if (base != null) {
+				RlxField field = base.valueType().clazz.getField(s);
+				if (field == null) {
+					throw new RuntimeException("Could not find field " + s + " on type " + base.valueType().clazz);
+				} else {
+					base = field.instr.from(base.get(function));
+				}
+				
+				first = false;
+			}
 		}
 		
-		VarInstr instr = currentScope.getVar(text);
-		if (instr != null) return currentScope.getCached(text);
-		return getVarRef(module, owner, currentScope, nt, name, exprContexts).get(currentScope.function);
-	}
-	
-	public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.Named_typeContext nt, RaluxParser.AqualifContext aqf) {
-//		String text = aqf.WORD().getText();
-		if ((nt != null && !nt.isEmpty()) || !aqf.expr().isEmpty()) {
-			// don't cache
-			return getVarRef(module, owner, currentScope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr()).get(currentScope.function);
+		if (base == null) {
+			// TODO: better error reporting
+			throw new RuntimeException("Could not resolve any value from " + text);
 		}
+		
+		return base;
+	}
+	
+	private AccessableValue getVarRef(AccessableValue base, RlxModule module, RlxCls clazz, Scope scope, RaluxParser.Var_refContext aqf) {
+		List<ParseTree> children = aqf.children;
+		
+		if (children.size() != 1) {
+			ParseTree second = children.get(1);
+			switch (second.getText()) {
+				case ".":
+					String text = extractDotNotation(aqf);
+					return discoverVar(base, module, clazz, scope, text);
+				case "[":
+					ParseTree first = children.get(0);
+					AccessableValue val = getVarRef(base, module, clazz, scope, (RaluxParser.Var_refContext) first);
+					
+					ParseTree element = children.get(2);
+					ValueInstr instr = ExpressionParser.parseValue(
+							this,
+							element
+					);
+					
+					return function.arrayVar(val.get(function), instr);
+			}
+		}
+		
+		return discoverVar(base, module, clazz, scope, children.get(0).getText());
+	}
 
-//		VarInstr instr = currentScope.getVar(text);
-//		if (instr != null) return currentScope.getCached(text);
-		return getVarRef(module, owner, currentScope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr()).get(currentScope.function);
+	private AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.Var_refContext aqf) {
+		return getVarRef(null, module, clazz, scope, aqf);
 	}
 	
-	private AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.Named_typeContext nt, RaluxParser.AqualifContext aqf) {
-		return getVarRef(module, clazz, scope, nt == null ? null : nt.getText(), aqf.WORD().getText(), aqf.expr());
+	public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.Var_refContext qualif) {
+		return getVarRef(module, owner, currentScope, qualif).get(function);
 	}
 	
-	public AccessableValue getVarRef(RlxModule module, RlxCls clazz, Scope scope, RaluxParser.QualifContext qualifContext) {
-		return getVarRef(module, clazz, scope, qualifContext.named_type(), qualifContext.aqualif());
-	}
-	
-	public ValueInstr getVarVal(RlxModule module, RlxCls owner, Scope currentScope, RaluxParser.QualifContext qualif) {
-		return getVarVal(module, owner, currentScope, qualif.named_type(), qualif.aqualif());
+	private TerminalNodeImpl firstTerminal(RaluxParser.Var_refContext ctx) {
+		ParseTree tree = ctx.getChild(0);
+		if (tree instanceof TerminalNodeImpl) return (TerminalNodeImpl) tree;
+		if (tree instanceof RaluxParser.Var_refContext) return firstTerminal((RaluxParser.Var_refContext) tree);
+		throw new RuntimeException("wat?");
 	}
 	
 	public ValueInstr parseAssign(RaluxParser.AssignmentContext statement, boolean forExpr) {
@@ -203,7 +213,7 @@ public class MethodParser {
 		}
 		
 		String name = statement.getChild(0).getText();
-		AccessableValue var = getVarRef(module, owner, currentScope, (RaluxParser.QualifContext) statement.getChild(0));
+		AccessableValue var = getVarRef(module, owner, currentScope, (RaluxParser.Var_refContext) statement.getChild(0));
 		boolean inScope = currentScope.containsVar(name);
 		
 		ValueInstr val;
@@ -214,7 +224,7 @@ public class MethodParser {
 		ValueInstr instr = ExpressionParser.parseValue(this, statement.getChild(2));
 		
 		ParseTree tree = statement.getChild(0);
-		Util.setLineColumn(instr, (TerminalNodeImpl) ((RaluxParser.AqualifContext) tree.getChild(tree.getChildCount() - 1)).WORD(), source);
+		Util.setLineColumn(instr, (TerminalNodeImpl) firstTerminal((RaluxParser.Var_refContext) tree), source);
 		var.set(function, function.cast(switch (op) {
 			case "=" -> instr;
 			case "+=" -> function.sum(val, instr);

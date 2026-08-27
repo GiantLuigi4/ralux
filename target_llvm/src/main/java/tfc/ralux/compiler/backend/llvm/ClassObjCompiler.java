@@ -40,7 +40,15 @@ public class ClassObjCompiler {
             clazz.setCompilerData(data);
         }
 
-        {
+		boolean hasInstFields = false;
+	    for (RlxField field : clazz.getFields()) {
+		    if (!field.isStatic()) {
+				hasInstFields = true;
+				break;
+		    }
+	    }
+		
+        if (hasInstFields) {
             FunctionType tyTrack = root.functionType(root.VOID).withArgs(
                     voidPtr, voidPtr, voidPtr
             ).build();
@@ -201,6 +209,8 @@ public class ClassObjCompiler {
             }
 
             builder.ret();
+        } else {
+			data.trackFunc = module.rt.rtNoop2.getCompilerData();
         }
 
         {

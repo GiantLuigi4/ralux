@@ -244,7 +244,7 @@ public class ExpressionParser {
                     return parser.parseAssign((RaluxParser.AssignmentContext) node, true);
                 } else if (node instanceof RaluxParser.CallContext) {
                     return parser.parseCall((RaluxParser.CallContext) node);
-                } else if (node instanceof RaluxParser.QualifContext qualif) {
+                } else if (node instanceof RaluxParser.Var_refContext qualif) {
                     return parser.getVarVal(parser.module,parser.owner, parser.currentScope, qualif);
                 }
             } else throw new RuntimeException("TODO");

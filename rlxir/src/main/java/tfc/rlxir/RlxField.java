@@ -15,4 +15,8 @@ public class RlxField {
                 isStatic, owner, type, this
         );
     }
+	
+	public boolean isStatic() {
+		return false;
+	}
 }

@@ -400,25 +400,13 @@ public class RaluxBaseListener implements RaluxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterQualif(RaluxParser.QualifContext ctx) { }
+	@Override public void enterVar_ref(RaluxParser.Var_refContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitQualif(RaluxParser.QualifContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterAqualif(RaluxParser.AqualifContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitAqualif(RaluxParser.AqualifContext ctx) { }
+	@Override public void exitVar_ref(RaluxParser.Var_refContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

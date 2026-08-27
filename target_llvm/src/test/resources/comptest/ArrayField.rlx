@@ -8,7 +8,7 @@ public class ArrayField {
     Object[] fields;
 
     public static int main() {
-        GC gc = GC.getGlobalGC();
+        tfc.ralux.runtime.GC gc = GC.getGlobalGC();
 
         GC.collect(gc);
         ArrayField testObj = new ArrayField();

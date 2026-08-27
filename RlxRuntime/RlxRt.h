@@ -34,6 +34,7 @@ EXPORT EXPORT_FUNC void __rlxrt_deref(RlxObj obj);
 EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj);
 EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj);
 EXPORT EXPORT_FUNC void __rlxrt_noop(RlxObj obj);
+EXPORT EXPORT_FUNC void __rlxrt_noop2(RlxObj obj, ArrayList list);
 
 // gc class functions
 EXPORT EXPORT_FUNC void* tfc_ralux_runtime_GC_allocate(RlxGC gc, int size);

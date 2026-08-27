@@ -202,17 +202,11 @@ public interface RaluxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitParams(RaluxParser.ParamsContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link RaluxParser#qualif}.
+	 * Visit a parse tree produced by {@link RaluxParser#var_ref}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitQualif(RaluxParser.QualifContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link RaluxParser#aqualif}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAqualif(RaluxParser.AqualifContext ctx);
+	T visitVar_ref(RaluxParser.Var_refContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link RaluxParser#dOperand}.
 	 * @param ctx the parse tree

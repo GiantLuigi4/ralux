@@ -54,6 +54,7 @@ struct rlxGC {
     SetT allObjs;
 };
 
+// TODO: memory overhead could be reduced by 8 bytes per object if the functions are stored in an object that gets stored to the class instance
 struct rlxStandardGCData {
     void (*tfc_ralux_runtime_GCData_ref)(RlxObj obj);
     void (*tfc_ralux_runtime_GCData_deref)(RlxObj obj);
@@ -233,6 +234,9 @@ EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj) {
 }
 
 EXPORT EXPORT_FUNC void __rlxrt_noop(RlxObj obj) {
+}
+
+EXPORT EXPORT_FUNC void __rlxrt_noop2(RlxObj obj, ArrayList list) {
 }
 
 EXPORT EXPORT_FUNC void __rlxrt_init() {

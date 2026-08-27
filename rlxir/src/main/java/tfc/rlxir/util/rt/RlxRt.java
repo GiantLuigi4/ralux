@@ -92,6 +92,16 @@ public class RlxRt {
                     Arrays.asList(RlxTypes.OBJ)
             )
     ).exportName("__rlxrt_noop");
+    public final RlxFunction rtNoop2 = new RlxFunction(
+            RlxFunction.ACC_PUBLIC,
+            true, true,
+            new RlxEnclosure(
+                    true,
+                    RlxTypes.VOID,
+                    "__rlxrt_noop2",
+                    Arrays.asList(RlxTypes.OBJ, RlxTypes.OBJ)
+            )
+    ).exportName("__rlxrt_noop2");
 
     public RlxRt(RlxCls rt) {
         this.cls = rt;
@@ -103,6 +113,7 @@ public class RlxRt {
         rt.addFunction(rtRef);
         rt.addFunction(rtDeref);
         rt.addFunction(rtNoop);
+        rt.addFunction(rtNoop2);
     }
 
     public static RlxRt inject(RlxModule module, RlxGc gc) {

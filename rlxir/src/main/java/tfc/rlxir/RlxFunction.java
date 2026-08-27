@@ -11,6 +11,7 @@ import tfc.rlxir.instr.enumeration.*;
 import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
 import tfc.rlxir.instr.value.arrays.ArraySet;
+import tfc.rlxir.instr.value.arrays.ArrayVarInstr;
 import tfc.rlxir.instr.value.arrays.MArrayInstr;
 import tfc.rlxir.instr.value.obj.AllocInstr;
 import tfc.rlxir.instr.value.obj.CallInstr;
@@ -385,6 +386,13 @@ public class RlxFunction extends CompilerDataHolder<RlxFunction> {
         addInstr(get);
         return get;
     }
+	
+	public AccessableValue arrayVar(ValueInstr valueInstr, ValueInstr instr) {
+		ArrayVarInstr var = new ArrayVarInstr(valueInstr, instr);
+//		addInstr(var);
+		var.setFunction(this);
+		return var;
+	}
 
     public void fori(
             CompareOp op,

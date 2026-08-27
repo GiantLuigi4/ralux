@@ -209,7 +209,7 @@ public class LLVMCompiler extends Compiler {
 		
 //		optimizer.globalVarOpt();
 //		optimizer.assumeAlignment();
-//		optimizer.inferAttributes();
+		optimizer.inferAttributes();
 		
 		if (rlx >= 5) {
 			optimizer.internalize("main");
@@ -436,35 +436,35 @@ public class LLVMCompiler extends Compiler {
 				LLVM.LLVMCodeGenLevelAggressive
 		);
 		
-//		try {
-//			PointerPointer<LLVMMemoryBufferRef> memBufPtr = root.track(new PointerPointer<>(1));
-//			BytePointer errMsg = new BytePointer(8);
-//
-//			int result = LLVM.LLVMCreateMemoryBufferWithContentsOfFile(
-//					"lib/RlxRt.ll", memBufPtr, errMsg);
-//			if (result != 0) {
-//				String err = new String(errMsg.getStringBytes(), "UTF8");
-//				throw new RuntimeException("Failed to read file: " + err);
-//			}
-//			LLVMMemoryBufferRef memBuf = root.track(new LLVMMemoryBufferRef(root.track(memBufPtr.get(0))));
-//
-//			errMsg = new BytePointer(8);
-//			PointerPointer<LLVMModuleRef> modulePtr = root.track(new PointerPointer<>(1));
-//			result = LLVM.LLVMParseIRInContext(
-//					root.getContext(),
-//					root.track(memBuf.getPointer(0)),
-//					modulePtr,
-//					errMsg
-//			);
-//			if (result != 0) {
-//				String err = new String(errMsg.getStringBytes(), "UTF-8");
-//				throw new RuntimeException("Parse failed: " + err);
-//			}
-//			LLVMModuleRef module = root.track(new LLVMModuleRef(modulePtr.get(0)));
-//			LLVM.LLVMLinkModules2(root.getModule(), module);
-//		} catch (Throwable ignored) {
-//			throw new RuntimeException(ignored);
-//		}
+		try {
+			PointerPointer<LLVMMemoryBufferRef> memBufPtr = root.track(new PointerPointer<>(1));
+			BytePointer errMsg = new BytePointer(8);
+
+			int result = LLVM.LLVMCreateMemoryBufferWithContentsOfFile(
+					"lib/RlxRt.ll", memBufPtr, errMsg);
+			if (result != 0) {
+				String err = new String(errMsg.getStringBytes(), "UTF8");
+				throw new RuntimeException("Failed to read file: " + err);
+			}
+			LLVMMemoryBufferRef memBuf = root.track(new LLVMMemoryBufferRef(root.track(memBufPtr.get(0))));
+
+			errMsg = new BytePointer(8);
+			PointerPointer<LLVMModuleRef> modulePtr = root.track(new PointerPointer<>(1));
+			result = LLVM.LLVMParseIRInContext(
+					root.getContext(),
+					root.track(memBuf.getPointer(0)),
+					modulePtr,
+					errMsg
+			);
+			if (result != 0) {
+				String err = new String(errMsg.getStringBytes(), "UTF-8");
+				throw new RuntimeException("Parse failed: " + err);
+			}
+			LLVMModuleRef module = root.track(new LLVMModuleRef(modulePtr.get(0)));
+			LLVM.LLVMLinkModules2(root.getModule(), module);
+		} catch (Throwable ignored) {
+			throw new RuntimeException(ignored);
+		}
 	}
 
     @Override
@@ -494,7 +494,7 @@ public class LLVMCompiler extends Compiler {
 			linker.addLibPath(fl + "/lib/" + platform);
 			linker.addLibPath("lib");
 			
-			linker.addLibrary("RlxRt");
+//			linker.addLibrary("RlxRt");
 	  
 			// clang runtime
 	        linker.addLibrary("clang_rt.builtins-x86_64.lib");

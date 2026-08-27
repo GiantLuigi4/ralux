@@ -241,14 +241,7 @@ public class RaluxBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements 
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQualif(RaluxParser.QualifContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitAqualif(RaluxParser.AqualifContext ctx) { return visitChildren(ctx); }
+	@Override public T visitVar_ref(RaluxParser.Var_refContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
