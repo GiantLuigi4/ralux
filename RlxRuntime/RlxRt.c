@@ -3,6 +3,8 @@
 #include "rtset.h"
 #include "list.h"
 #include "allocator.h"
+#include "hash_set.h"
+#include "array_set.h"
 
 // void segfaultHandler(int signal) {
 //     std::cerr << "Segmentation fault caught! Signal: " << signal << std::endl;
@@ -50,8 +52,8 @@ struct rlxGC {
     RlxCls clazz;
     struct rlxGCData* gc_info;
     int (*tfc_ralux_runtime_Object_hashCode)(RlxObj);
-    SetT roots;
-    SetT allObjs;
+    struct iterable_set* roots;
+    struct iterable_set* allObjs;
 };
 
 // TODO: memory overhead could be reduced by 8 bytes per object if the functions are stored in an object that gets stored to the class instance
@@ -87,16 +89,18 @@ EXPORT EXPORT_FUNC void** tfc_ralux_runtime_GC_allocateObj(RlxGC gc, int size, R
 EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     ArrayList fref = listCreate();
 
-    printf("roots %i\n", setSize(gc->roots));
-    printf("objects %i\n", setSize(gc->allObjs));
+    printf("roots %i\n", gc->roots->size);
+    printf("objects %i\n", gc->allObjs->size);
 
     int numVisited = 0;
-    for (int i = 0; i < setSize(gc->roots); i++) {
-        RlxObj root = setGet(gc->roots, i);
+    struct set_iterator* iterator = gc->roots->ops->createIterator(gc->roots);
+    while (iterator->hasNext(iterator)) {
+        RlxObj root = (RlxObj) iterator->current(iterator);
         struct rlxGCData* inf = root->gc_info;
         inf->visited = true;
         root->clazz->__rlxrt_gc_track(root, fref);
         numVisited++;
+        iterator->next(iterator);
 
         // TODO: probably should walk the object tree before continuing to minimize allocated working memory
     }
@@ -127,13 +131,15 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     printf("visited %i\n", numVisited);
 
     ArrayList freed = listCreate();
-    for (int i = 0; i < setSize(gc->allObjs); i++) {
-        RlxObj obj = setGet(gc->allObjs, i);
+    iterator = gc->allObjs->ops->createIterator(gc->allObjs);
+    while (iterator->hasNext(iterator)) {
+        RlxObj obj = (RlxObj) iterator->current(iterator);
         struct rlxGCData* inf = obj->gc_info;
         bool wasVisited = inf->visited;
         if (!wasVisited)
             listAdd(freed, obj);
         inf->visited = false;
+        iterator->next(iterator);
     }
     printf("freeing %i\n", listSize(freed));
 
@@ -146,12 +152,15 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     for (int i = listSize(freed) - 1; i >= 0; i--) {
 //    for (int i = 0; i < listSize(freed); i++) {
         RlxObj obj = listGet(freed, i);
-        setRemove(gc->allObjs, obj);
+
+        struct iterable_set* set = gc->allObjs;
+        set->ops->remove_element(set, obj);
+
         __rlxrt_free_obj(obj);
     }
     listFree(freed);
 
-    printf("survived %i\n", setSize(gc->allObjs));
+    printf("survived %i\n", gc->allObjs->size);
 }
 
 // runtime functions
@@ -203,7 +212,9 @@ EXPORT EXPORT_FUNC void __rlxrt_obj_created(RlxObj obj, RlxGC gc) {
     gc_data->gc = gc;
     gc_data->scopeRefs = 0;
     obj->gc_info = (struct rlxGCData*) gc_data;
-    add(gc->allObjs, obj);
+
+    struct iterable_set* set = gc_data->gc->allObjs;
+    set->ops->add_element(set, obj);
 }
 // #pragma optimize("", on)
 
@@ -221,7 +232,8 @@ EXPORT EXPORT_FUNC void __rlxrt_standard_ref(RlxObj obj) {
     STDGCD gc_data = (struct rlxStandardGCData*) obj->gc_info;
     gc_data->scopeRefs++;
     if (gc_data->scopeRefs == 1) {
-        add(gc_data->gc->roots, obj);
+        struct iterable_set* set = gc_data->gc->roots;
+        set->ops->add_element(set, obj);
     }
 }
 
@@ -229,7 +241,8 @@ EXPORT EXPORT_FUNC void __rlxrt_standard_deref(RlxObj obj) {
     STDGCD gc_data = (struct rlxStandardGCData*) obj->gc_info;
     gc_data->scopeRefs--;
     if (gc_data->scopeRefs == 0) {
-        erase(gc_data->gc->roots, obj);
+        struct iterable_set* set = gc_data->gc->roots;
+        set->ops->remove_element(set, obj);
     }
 }
 
@@ -246,7 +259,7 @@ EXPORT EXPORT_FUNC void __rlxrt_init() {
     // signal(SIGFPE, segfaultHandler);
     
     tfc_ralux_runtime_GC_GLOBAL_GC = calloc(1, sizeof(struct rlxGC));
-    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createSet();
-    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createSet();
+    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createArraySet(16);
+    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createArraySet(16);
     __rlxrt_init_gc();
 }

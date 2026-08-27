@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "set.h"
 #include "list.h"
+#include "hash_set.h"
+#include "array_set.h"
 
 #define SetT SimpleSet*
 
