@@ -22,7 +22,10 @@ public class CompilerHints {
     public static <T> void parseCompHint(List<T> compHints, String asText) {
         if (asText.startsWith("Extern")) {
             parseExtern(compHints, asText);
-        } else
-            throw new RuntimeException("TODO");
+        } else if (asText.startsWith("Override")) {
+			// no-op
+        } else {
+	        throw new RuntimeException("TODO");
+        }
     }
 }

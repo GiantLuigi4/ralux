@@ -23,6 +23,7 @@ import tfc.rlxir.instr.debug.DebugPrint;
 import tfc.rlxir.instr.debug.DebugReadInt;
 import tfc.rlxir.instr.debug.DebugWriteString;
 import tfc.rlxir.instr.debug.TwoValueDebug;
+import tfc.rlxir.instr.enumeration.InstrType;
 import tfc.rlxir.instr.global.ConstInstr;
 import tfc.rlxir.instr.value.*;
 import tfc.rlxir.instr.value.arrays.ArrayGet;
@@ -507,6 +508,7 @@ public class FunctionCompiler {
         root.track(args);
         root.track(noArg);
 
+		// TODO: this should be acquired a maximum of one time per function
         LLVMValueRef gc = root.track(LLVM.LLVMBuildCall2(
                 root.getBuilder(),
                 ((FunctionBuilder) compiler.compiling.rt.rtGlobalGC.getCompilerData()).getType(),
@@ -584,8 +586,8 @@ public class FunctionCompiler {
 	
     public void compile() {
         stubBlocks();
-
-        for (RlxBlock block : blocks) {
+		
+	    for (RlxBlock block : blocks) {
             if (compiler.enableVerbose)
                 System.out.println("- " + block.name);
 

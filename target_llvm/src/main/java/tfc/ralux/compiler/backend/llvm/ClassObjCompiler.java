@@ -12,7 +12,9 @@ import tfc.ralux.compiler.backend.llvm.util.FunctionType;
 import tfc.ralux.compiler.frontend.ralux.RlxClassData;
 import tfc.rlxir.RlxCls;
 import tfc.rlxir.RlxField;
+import tfc.rlxir.RlxFunction;
 import tfc.rlxir.RlxModule;
+import tfc.rlxir.typing.PrimitiveType;
 import tfc.rlxir.typing.RlxType;
 import tfc.rlxir.typing.RlxTypes;
 import tfc.rlxir.util.rt.RlxRt;
@@ -214,8 +216,41 @@ public class ClassObjCompiler {
         }
 
         {
-            // TODO: locate finalize function (if present)
-            data.finalizeFunc = module.rt == null ? null : module.rt.rtNoop.getCompilerData();
+	        data.finalizeFunc = module.rt == null ? null : module.rt.rtNoop.getCompilerData();
+	        if (clazz.qualifiedName().equals("tfc.ralux.runtime.ArrayObj")) {
+				// TODO: this actually can be included within the class itself once ABI is implemented, it does not need to be a hardcoded function
+		        
+		        FunctionType tyTrack = root.functionType(root.VOID).withArgs(
+				        voidPtr
+		        ).build();
+		        FunctionBuilder finalizeFunction = root.function(clazz.qualifiedName() + "::cls::<finalize>", tyTrack);
+		        
+		        BlockBuilder builder = finalizeFunction.block("entry");
+		        builder.enableBuilding();
+		        
+		        LLVMValueRef object = finalizeFunction.getArg(0, voidPtr);
+		        RlxField aOfObj = clazz.getField("data");
+		        int off = clazz.getFieldOffset(aOfObj);
+		        LLVMValueRef v0 = object;
+		        v0 = extractField(root, v0, root.VOID_PTR_PTR, off);
+		        v0 = root.getValue(root.VOID_PTR_PTR, v0, "get_array_data");
+		        
+				root.stdLib.free(v0);
+				
+		        builder.ret();
+				
+				data.finalizeFunc = finalizeFunction;
+	        } else {
+		        for (RlxFunction function : clazz.getFunctions()) {
+			        if (function.enclosure.name.equals("finalize") && function.enclosure.result.type == PrimitiveType.VOID && function.enclosure.descr.size() == 1) {
+				        RlxType ty = function.enclosure.descr.get(0);
+				        if (ty.isPtr() && ty.clazz != null && ty.clazz == clazz) {
+					        // this is the finalize function
+					        data.finalizeFunc = function.getCompilerData();
+				        }
+			        }
+		        }
+	        }
         }
 
         {

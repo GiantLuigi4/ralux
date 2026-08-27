@@ -10,25 +10,27 @@ public class ArrayField {
     public static int main() {
         tfc.ralux.runtime.GC gc = GC.getGlobalGC();
 
-        GC.collect(gc);
-        ArrayField testObj = new ArrayField();
-        GC.collect(gc);
-        testObj.fields = new Object[10];
-        GC.collect(gc);
-        testObj.fields[0] = new Object();
-        testObj.fields[1] = new Object();
-        Debug.write(testObj.fields[1].#);
-        testObj.fields[2] = new Object();
-        testObj.fields[3] = new Object();
-        testObj.fields[4] = new Object();
-        testObj.fields[5] = new Object();
-        testObj.fields[6] = new Object();
-        testObj.fields[7] = new Object();
-        testObj.fields[8] = new Object();
-        testObj.fields[9] = new Object();
-        GC.collect(gc);
-        testObj = null;
-        GC.collect(gc);
+        for (int i = 0; i < 2000000; i++) {
+            //GC.collect(gc);
+            ArrayField testObj = new ArrayField();
+            //GC.collect(gc);
+            testObj.fields = new Object[10];
+            //GC.collect(gc);
+            testObj.fields[0] = new Object();
+            testObj.fields[1] = new Object();
+            Debug.write(testObj.fields[1].#);
+            testObj.fields[2] = new Object();
+            testObj.fields[3] = new Object();
+            testObj.fields[4] = new Object();
+            testObj.fields[5] = new Object();
+            testObj.fields[6] = new Object();
+            testObj.fields[7] = new Object();
+            testObj.fields[8] = new Object();
+            testObj.fields[9] = new Object();
+            testObj = null;
+            GC.collect(gc);
+        }
+        //GC.collect(gc);
 
         return 0;
     }

@@ -36,6 +36,9 @@ public class STDLib {
 	
 	FunctionType typeCalloc;
     FunctionBuilder calloc;
+	
+	FunctionType typeFree;
+    FunctionBuilder free;
 
     public STDLib(BuilderRoot root) {
         this.root = root;
@@ -60,6 +63,27 @@ public class STDLib {
 				calloc.getDirect(),
 				args0, 2,
 				"callCalloc"
+		));
+	}
+	
+	public void free(LLVMValueRef memory) {
+		if (free == null) {
+			typeFree = new FunctionType(
+					root,
+					root.VOID
+			).withArgs(root.VOID_PTR).build();
+			
+			free = root.function("free", typeFree);
+		}
+		
+		PointerPointer<LLVMValueRef> args0 = root.track(new PointerPointer<>(1));
+		args0.put(0, memory);
+		root.track(LLVM.LLVMBuildCall2(
+				root.getBuilder(),
+				free.getType(),
+				free.getDirect(),
+				args0, 1,
+				""
 		));
 	}
 	

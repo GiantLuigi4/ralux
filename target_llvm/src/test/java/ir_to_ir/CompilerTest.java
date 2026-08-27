@@ -18,7 +18,12 @@ public class CompilerTest {
         try {
             translator.parse(module, new String(new FileInputStream(dir).readAllBytes()), dir);
         } catch (Throwable err) {
-            translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream(dir).readAllBytes()), dir);
+			try {
+				translator.parse(module, new String(CompilerTest.class.getClassLoader().getResourceAsStream(dir).readAllBytes()), dir);
+			} catch (Throwable ignored) {
+				err.printStackTrace();
+				throw new RuntimeException(ignored);
+			}
         }
     }
 

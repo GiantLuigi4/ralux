@@ -1,7 +1,16 @@
 pkg tfc.ralux.runtime;
 
+//use tfc.ralux.NativeABI;
+
 public class ArrayObj {
     void[] data;
     int length;
     boolean ofObjects;
+
+    [+ Override +]
+    public void finalize() {
+        //NativeABI.free(data);
+    }
+
+    // TODO: reallocate function
 }

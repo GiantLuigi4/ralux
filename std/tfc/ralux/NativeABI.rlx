@@ -11,4 +11,7 @@ public class NativeABI {
         [+ AbiType: void* +] void[] ptr,
         unsigned long new_size
     );
+    public static abi void free(
+        [+ AbiType: void* +] void[] ptr
+    );
 }
