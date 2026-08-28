@@ -15,6 +15,8 @@ struct set_iterator {
 struct set_ops {
     bool (*add_element)(struct iterable_set*, void*);
     bool (*remove_element)(struct iterable_set*, void*);
+    bool (*remove_element_fast)(struct iterable_set*, void*);
+    void (*compact)(struct iterable_set*);
     bool (*contains_element)(struct iterable_set*, void*);
     void (*clear)(struct iterable_set*);
     struct set_iterator* (*createIterator)(struct iterable_set*);

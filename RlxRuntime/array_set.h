@@ -94,6 +94,39 @@ internal bool as_remove_element(struct array_set* set, void* element) {
     return false;
 }
 
+internal bool as_remove_element_fast(struct array_set* set, void* element) {
+    void** data = set->data;
+
+    for (int i = 0; i < set->size; i++) {
+        void* obj = data[i];
+
+        if (obj == element) {
+            data[i] = 0;
+            return true; // already present
+        }
+    }
+
+    return false;
+}
+
+internal void as_compact(struct array_set* set) {
+    int offset = 0;
+    void** data = set->data;
+    for (int i = 0; (i + offset) < set->size; i++) {
+        bool done = false;
+        while (data[i + offset] == 0) {
+            offset += 1;
+            if (i + offset >= set->size) {
+                done = true;
+                break;
+            }
+        }
+        if (done) break;
+        data[i] = data[i + offset];
+    }
+    set->size = set->size - offset;
+}
+
 internal bool as_contains_element(struct array_set* set, void* element) {
     void** data = set->data;
 
@@ -123,7 +156,7 @@ internal void as_next(struct as_iterator* iterator) {
     iterator->index += 1;
 }
 
-internal void as_prev(struct as_iterator* iterator) {
+internal void as_previous(struct as_iterator* iterator) {
     iterator->index -= 1;
 }
 
@@ -137,7 +170,7 @@ internal bool as_hasNext(struct as_iterator* iterator) {
     return true;
 }
 
-internal bool as_hasPrev(struct as_iterator* iterator) {
+internal bool as_hasPrevious(struct as_iterator* iterator) {
     return iterator->index >= 0;
 }
 
@@ -146,9 +179,9 @@ internal struct set_iterator* as_createIterator(struct array_set* set) {
 
     iterator->current = (void* (*)(struct set_iterator*)) as_current;
     iterator->next = (void (*)(struct set_iterator*)) as_next;
-    iterator->previous = (void (*)(struct set_iterator*)) as_prev;
+    iterator->previous = (void (*)(struct set_iterator*)) as_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) as_hasNext;
-    iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrev;
+    iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrevious;
     iterator->set = set;
     iterator->index = 0;
 
@@ -160,9 +193,9 @@ internal struct set_iterator* as_createReverseIterator(struct array_set* set) {
 
     iterator->current = (void* (*)(struct set_iterator*)) as_current;
     iterator->next = (void (*)(struct set_iterator*)) as_next;
-    iterator->previous = (void (*)(struct set_iterator*)) as_prev;
+    iterator->previous = (void (*)(struct set_iterator*)) as_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) as_hasNext;
-    iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrev;
+    iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrevious;
     iterator->set = set;
     iterator->index = set->size - 1;
 
@@ -172,6 +205,8 @@ internal struct set_iterator* as_createReverseIterator(struct array_set* set) {
 static const struct set_ops as_ops = {
     .add_element = (bool (*)(struct iterable_set*, void*)) as_add_element,
     .remove_element = (bool (*)(struct iterable_set*, void*)) as_remove_element,
+    .remove_element_fast = (bool (*)(struct iterable_set*, void*)) as_remove_element_fast,
+    .compact = (void (*)(struct iterable_set*)) as_compact,
     .contains_element = (bool (*)(struct iterable_set*, void*)) as_contains_element,
     .clear = (void (*)(struct iterable_set*)) as_clear,
     .createIterator = (struct set_iterator* (*)(struct iterable_set*)) as_createIterator,

@@ -20,13 +20,13 @@ struct hash_set {
 
     int capacity;
     int size;
-    struct iterable_set** bins;
+    struct array_set** bins;
     int loadFactor;
 };
 
 internal bool hs_add_element(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct iterable_set* bin = set->bins[binId];
+    struct array_set* bin = set->bins[binId];
     if (bin == 0) {
         bin = createArraySet(4);
         set->bins[binId] = bin;
@@ -36,14 +36,14 @@ internal bool hs_add_element(struct hash_set* set, void* element) {
 //    printf("%i\n", binId);
 //    printf("%llu\n", bin);
 
-    bool value = bin->ops->add_element(bin, element);
+    bool value = as_add_element(bin, element);
     if (value) set->size++;
     return value;
 }
 
 internal bool hs_remove_element(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct iterable_set* bin = set->bins[binId];
+    struct array_set* bin = set->bins[binId];
     if (bin == 0) {
         return false;
     }
@@ -52,29 +52,53 @@ internal bool hs_remove_element(struct hash_set* set, void* element) {
 //    printf("%i\n", binId);
 //    printf("%llu\n", bin);
 
-    bool value = bin->ops->remove_element(bin, element);
+    bool value = as_remove_element(bin, element);
     if (value) set->size--;
 //    puts("removedElem");
     return value;
 }
 
+internal bool hs_remove_element_fast(struct hash_set* set, void* element) {
+    int binId = (((uintptr_t) element) / 47) % set->capacity;
+    struct array_set* bin = set->bins[binId];
+    if (bin == 0) {
+        return false;
+    }
+
+//    puts("removeElem");
+//    printf("%i\n", binId);
+//    printf("%llu\n", bin);
+
+    bool value = as_remove_element_fast(bin, element);
+    if (value) set->size--;
+//    puts("removedElem");
+    return value;
+}
+
+internal void hs_compact(struct hash_set* set) {
+    for (int i = 0; i < set->capacity; i++) {
+        struct array_set* bin = set->bins[i];
+        if (bin != 0) as_compact(bin);
+    }
+}
+
 internal bool hs_contains_element(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct iterable_set* bin = set->bins[binId];
+    struct array_set* bin = set->bins[binId];
     if (bin == 0) {
         return false;
     }
 
 //    puts("containsElem");
 
-    return bin->ops->contains_element(bin, element);
+    return as_contains_element(bin, element);
 }
 
 internal void hs_clear(struct hash_set* set) {
     for (int i = 0; i < set->capacity; i++) {
-        struct iterable_set* bin = set->bins[i];
+        struct array_set* bin = set->bins[i];
         if (bin != 0) {
-            bin->ops->clear(bin);
+            as_clear(bin);
         }
     }
     set->size = 0;
@@ -82,14 +106,14 @@ internal void hs_clear(struct hash_set* set) {
 
 /* ITERATOR */
 internal void* hs_current(struct hs_iterator* iterator) {
-    struct set_iterator* curr = iterator->currentIterator;
-    return curr->current(curr);
+    struct as_iterator* curr = iterator->currentIterator;
+    return as_current(curr);
 }
 
 internal void hs_next(struct hs_iterator* iterator) {
-    struct set_iterator* curr = iterator->currentIterator;
-    curr->next(curr);
-    if (curr->hasNext(curr)) return;
+    struct as_iterator* curr = iterator->currentIterator;
+    as_next(curr);
+    if (as_hasNext(curr)) return;
     free(curr);
 
 //    printf("HAS_NEXT: further check...\n");
@@ -105,7 +129,7 @@ internal void hs_next(struct hs_iterator* iterator) {
 
         struct iterable_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
-            iterator->currentIterator = bin->ops->createIterator(bin);
+            iterator->currentIterator = as_createIterator(bin);
             iterator->currentBin = checkBin;
             return;
         }
@@ -114,10 +138,10 @@ internal void hs_next(struct hs_iterator* iterator) {
     }
 }
 
-internal void hs_prev(struct hs_iterator* iterator) {
-    struct set_iterator* curr = iterator->currentIterator;
-    curr->previous(curr);
-    if (curr->hasPrevious(curr)) return;
+internal void hs_previous(struct hs_iterator* iterator) {
+    struct as_iterator* curr = iterator->currentIterator;
+    as_previous(curr);
+    if (as_hasPrevious(curr)) return;
     free(curr);
 
     int checkBin = iterator->currentBin - 1;
@@ -128,9 +152,9 @@ internal void hs_prev(struct hs_iterator* iterator) {
             return;
         }
 
-        struct iterable_set* bin = iterator->set->bins[checkBin];
+        struct array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
-            iterator->currentIterator = bin->ops->createReverseIterator(bin);
+            iterator->currentIterator = as_createReverseIterator(bin);
             iterator->currentBin = checkBin;
             return;
         }
@@ -140,9 +164,9 @@ internal void hs_prev(struct hs_iterator* iterator) {
 }
 
 internal bool hs_hasNext(struct hs_iterator* iterator) {
-    struct set_iterator* curr = iterator->currentIterator;
+    struct as_iterator* curr = iterator->currentIterator;
     if (curr == 0) return false; // no iterator exists
-    if (curr->hasNext(curr)) return true;
+    if (as_hasNext(curr)) return true;
 //    printf("Must check further\n");
 
     int checkBin = iterator->currentBin + 1;
@@ -151,7 +175,7 @@ internal bool hs_hasNext(struct hs_iterator* iterator) {
             return false;
         }
 
-        struct iterable_set* bin = iterator->set->bins[checkBin];
+        struct array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
 //            printf("Found bin: %llu with %i elements\n", bin, bin->size);
             return true;
@@ -161,16 +185,16 @@ internal bool hs_hasNext(struct hs_iterator* iterator) {
     }
 }
 
-internal bool hs_hasPrev(struct hs_iterator* iterator) {
-    struct set_iterator* curr = iterator->currentIterator;
+internal bool hs_hasPrevious(struct hs_iterator* iterator) {
+    struct as_iterator* curr = iterator->currentIterator;
     if (curr == 0) return false; // no iterator exists
-    if (curr->hasPrevious(curr)) return true;
+    if (as_hasPrevious(curr)) return true;
 
     int checkBin = iterator->currentBin - 1;
     while (true) {
         if (checkBin < 0) return false;
 
-        struct iterable_set* bin = iterator->set->bins[checkBin];
+        struct array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) return true;
 
         checkBin -= 1;
@@ -182,9 +206,9 @@ internal struct set_iterator* hs_createIterator(struct hash_set* set) {
 
     iterator->current = (void* (*)(struct set_iterator*)) hs_current;
     iterator->next = (void (*)(struct set_iterator*)) hs_next;
-    iterator->previous = (void (*)(struct set_iterator*)) hs_prev;
+    iterator->previous = (void (*)(struct set_iterator*)) hs_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) hs_hasNext;
-    iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrev;
+    iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrevious;
     iterator->set = set;
     iterator->currentBin = 0;
     if (set->capacity == 0 || set->size == 0) {
@@ -219,9 +243,9 @@ internal struct set_iterator* hs_createReverseIterator(struct hash_set* set) {
 
     iterator->current = (void* (*)(struct set_iterator*)) hs_current;
     iterator->next = (void (*)(struct set_iterator*)) hs_next;
-    iterator->previous = (void (*)(struct set_iterator*)) hs_prev;
+    iterator->previous = (void (*)(struct set_iterator*)) hs_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) hs_hasNext;
-    iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrev;
+    iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrevious;
     iterator->set = set;
     if (set->capacity == 0 || set->size == 0) {
         iterator->currentBin = 0;
@@ -237,9 +261,9 @@ internal struct set_iterator* hs_createReverseIterator(struct hash_set* set) {
             return iterator;
         }
 
-        struct iterable_set* bin = iterator->set->bins[checkBin];
+        struct array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
-            iterator->currentIterator = bin->ops->createReverseIterator(bin);
+            iterator->currentIterator = as_createReverseIterator(bin);
             iterator->currentBin = checkBin;
             break;
         }
@@ -253,6 +277,8 @@ internal struct set_iterator* hs_createReverseIterator(struct hash_set* set) {
 static const struct set_ops hs_ops = {
     .add_element = (bool (*)(struct iterable_set*, void*)) hs_add_element,
     .remove_element = (bool (*)(struct iterable_set*, void*)) hs_remove_element,
+    .remove_element_fast = (bool (*)(struct iterable_set*, void*)) hs_remove_element_fast,
+    .compact = (void (*)(struct iterable_set*)) hs_compact,
     .contains_element = (bool (*)(struct iterable_set*, void*)) hs_contains_element,
     .clear = (void (*)(struct iterable_set*)) hs_clear,
     .createIterator = (struct set_iterator* (*)(struct iterable_set*)) hs_createIterator,
@@ -264,7 +290,7 @@ internal struct iterable_set* createHashSet(int capacity, int loadFactor) {
     set->capacity = capacity;
     set->loadFactor = loadFactor;
     set->ops = &hs_ops;
-    set->bins = calloc(capacity, sizeof(struct iterable_set*));
+    set->bins = calloc(capacity, sizeof(struct array_set*));
 
     return set;
 }

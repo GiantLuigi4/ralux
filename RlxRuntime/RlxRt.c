@@ -52,8 +52,8 @@ struct rlxGC {
     RlxCls clazz;
     struct rlxGCData* gc_info;
     int (*tfc_ralux_runtime_Object_hashCode)(RlxObj);
-    struct iterable_set* roots;
-    struct iterable_set* allObjs;
+    struct hash_set* roots;
+    struct hash_set* allObjs;
 };
 
 // TODO: memory overhead could be reduced by 8 bytes per object if the functions are stored in an object that gets stored to the class instance
@@ -93,17 +93,17 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     printf("objects %i\n", gc->allObjs->size);
 
     int numVisited = 0;
-    struct set_iterator* iterator = gc->roots->ops->createIterator(gc->roots);
+    struct hs_iterator* iterator = hs_createIterator(gc->roots);
 //    printf("Iterator created...\n");
-    while (iterator->hasNext(iterator)) {
+    while (hs_hasNext(iterator)) {
 //        printf("Checked for next...\n");
-        RlxObj root = (RlxObj) iterator->current(iterator);
+        RlxObj root = (RlxObj) hs_current(iterator);
 //        printf("Got Element %llu...\n", root);
         struct rlxGCData* inf = root->gc_info;
         inf->visited = true;
         root->clazz->__rlxrt_gc_track(root, fref);
         numVisited++;
-        iterator->next(iterator);
+        hs_next(iterator);
 
         // TODO: probably should walk the object tree before continuing to minimize allocated working memory
     }
@@ -136,15 +136,15 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     printf("visited %i\n", numVisited);
 
     ArrayList freed = listCreate();
-    iterator = gc->allObjs->ops->createIterator(gc->allObjs);
+    iterator = hs_createIterator(gc->allObjs);
 //    printf("Iterator created1...\n");
-    while (iterator->hasNext(iterator)) {
+    while (hs_hasNext(iterator)) {
 //        printf("Checked for next1...\n");
-        RlxObj obj = (RlxObj) iterator->current(iterator);
+        RlxObj obj = (RlxObj) hs_current(iterator);
 //        printf("Got Element1 %llu...\n", obj);
 
         if (obj == 0) {
-            iterator->next(iterator);
+            hs_next(iterator);
             continue;
         }
 
@@ -153,7 +153,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
         if (!wasVisited)
             listAdd(freed, obj);
         inf->visited = false;
-        iterator->next(iterator);
+        hs_next(iterator);
     }
     free(iterator);
     printf("freeing %i\n", listSize(freed));
@@ -164,15 +164,17 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     // I can then in the consolidation pass check if the gc data is null, and if so, free the object itself and change the shift delta
 
     // go through in reverse order to minimize required shifting
+    struct hash_set* set = gc->allObjs;
     for (int i = listSize(freed) - 1; i >= 0; i--) {
 //    for (int i = 0; i < listSize(freed); i++) {
         RlxObj obj = listGet(freed, i);
 
-        struct iterable_set* set = gc->allObjs;
-        set->ops->remove_element(set, obj);
+//        printf("%i\n", i);
+        hs_remove_element_fast(set, obj);
 
         __rlxrt_free_obj(obj);
     }
+    hs_compact(set);
     listFree(freed);
 
     if (gc->allObjs->size != 0 && gc->allObjs->size != 2) {
@@ -278,7 +280,7 @@ EXPORT EXPORT_FUNC void __rlxrt_init() {
     // signal(SIGFPE, segfaultHandler);
     
     tfc_ralux_runtime_GC_GLOBAL_GC = calloc(1, sizeof(struct rlxGC));
-    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createHashSet(16, 8);
-    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createHashSet(16, 8);
+    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createHashSet(128, 8);
+    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createHashSet(128, 8);
     __rlxrt_init_gc();
 }
