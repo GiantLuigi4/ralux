@@ -59,6 +59,23 @@ internal bool as_add_element(struct array_set* set, void* element) {
     return true;
 }
 
+internal void as_shift(struct simpleSet* set, int index, int offset, int size, void** data) {
+    if (index == 0 && offset < 0) return;
+    if (index == size && offset > 0) return;
+    int start = index;
+    int dest = index + offset;
+    int len = size - index;
+    int delt = len;
+    if (delt <= 0) {
+        int count = -delt;
+        for (int i = count - 1; i >= 0; i--) {
+            data[dest + i] = data[start + i];
+        }
+    } else {
+        __builtin_memmove(data + dest, data + start, (size_t)delt * sizeof(*data));
+    }
+}
+
 internal bool as_remove_element(struct array_set* set, void* element) {
     void** data = set->data;
 
@@ -67,7 +84,9 @@ internal bool as_remove_element(struct array_set* set, void* element) {
 
         if (obj == element) {
             data[i] = 0;
+            as_shift(set, i + 1, -1, set->size, set->data);
             set->size -= 1;
+//            data[set->size] = 0;
             return true; // already present
         }
     }
@@ -95,6 +114,8 @@ internal void as_clear(struct array_set* set) {
 
 /* ITERATOR */
 internal void* as_current(struct as_iterator* iterator) {
+    if (iterator->index < 0) return 0;
+    if (iterator->index >= iterator->set->size) return 0;
     return iterator->set->data[iterator->index];
 }
 
@@ -107,14 +128,17 @@ internal void as_prev(struct as_iterator* iterator) {
 }
 
 internal bool as_hasNext(struct as_iterator* iterator) {
+//    printf("Check has next\n");
     int size = iterator->set->size;
+//    printf("SZ: %i\n", size);
     if (size == 0) return false;
-    if (iterator->index >= (size - 1)) return false;
+//    printf("Indx: %i\n", iterator->index);
+    if (iterator->index >= size) return false;
     return true;
 }
 
 internal bool as_hasPrev(struct as_iterator* iterator) {
-    return iterator->index > 0;
+    return iterator->index >= 0;
 }
 
 internal struct set_iterator* as_createIterator(struct array_set* set) {
@@ -131,19 +155,34 @@ internal struct set_iterator* as_createIterator(struct array_set* set) {
     return iterator;
 }
 
+internal struct set_iterator* as_createReverseIterator(struct array_set* set) {
+    struct as_iterator* iterator = malloc(sizeof(struct as_iterator));
+
+    iterator->current = (void* (*)(struct set_iterator*)) as_current;
+    iterator->next = (void (*)(struct set_iterator*)) as_next;
+    iterator->previous = (void (*)(struct set_iterator*)) as_prev;
+    iterator->hasNext = (bool (*)(struct set_iterator*)) as_hasNext;
+    iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrev;
+    iterator->set = set;
+    iterator->index = set->size - 1;
+
+    return iterator;
+}
+
 static const struct set_ops as_ops = {
     .add_element = (bool (*)(struct iterable_set*, void*)) as_add_element,
     .remove_element = (bool (*)(struct iterable_set*, void*)) as_remove_element,
     .contains_element = (bool (*)(struct iterable_set*, void*)) as_contains_element,
     .clear = (void (*)(struct iterable_set*)) as_clear,
     .createIterator = (struct set_iterator* (*)(struct iterable_set*)) as_createIterator,
+    .createReverseIterator = (struct set_iterator* (*)(struct iterable_set*)) as_createReverseIterator,
 };
 
 internal struct iterable_set* createArraySet(int capacity) {
     struct array_set* set = calloc(1, sizeof(struct array_set));
     set->capacity = capacity;
     set->ops = &as_ops;
-    set->data = calloc(sizeof(void*), capacity);
+    set->data = calloc(capacity, sizeof(void*));
 
     return set;
 }

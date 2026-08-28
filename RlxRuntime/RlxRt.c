@@ -94,8 +94,11 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
     int numVisited = 0;
     struct set_iterator* iterator = gc->roots->ops->createIterator(gc->roots);
+//    printf("Iterator created...\n");
     while (iterator->hasNext(iterator)) {
+//        printf("Checked for next...\n");
         RlxObj root = (RlxObj) iterator->current(iterator);
+//        printf("Got Element %llu...\n", root);
         struct rlxGCData* inf = root->gc_info;
         inf->visited = true;
         root->clazz->__rlxrt_gc_track(root, fref);
@@ -104,6 +107,8 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
         // TODO: probably should walk the object tree before continuing to minimize allocated working memory
     }
+    free(iterator);
+//    printf("Iterated roots...\n");
 
     if (listSize(fref) != 0) {
         ArrayList frefSwap = listCreate();
@@ -132,8 +137,17 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
     ArrayList freed = listCreate();
     iterator = gc->allObjs->ops->createIterator(gc->allObjs);
+//    printf("Iterator created1...\n");
     while (iterator->hasNext(iterator)) {
+//        printf("Checked for next1...\n");
         RlxObj obj = (RlxObj) iterator->current(iterator);
+//        printf("Got Element1 %llu...\n", obj);
+
+        if (obj == 0) {
+            iterator->next(iterator);
+            continue;
+        }
+
         struct rlxGCData* inf = obj->gc_info;
         bool wasVisited = inf->visited;
         if (!wasVisited)
@@ -141,6 +155,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
         inf->visited = false;
         iterator->next(iterator);
     }
+    free(iterator);
     printf("freeing %i\n", listSize(freed));
 
     // TODO: in reality, I should go through with the frees first and do a single-pass consolidation
@@ -159,6 +174,10 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
         __rlxrt_free_obj(obj);
     }
     listFree(freed);
+
+    if (gc->allObjs->size != 0 && gc->allObjs->size != 2) {
+        exit(-1);
+    }
 
     printf("survived %i\n", gc->allObjs->size);
 }
@@ -259,7 +278,7 @@ EXPORT EXPORT_FUNC void __rlxrt_init() {
     // signal(SIGFPE, segfaultHandler);
     
     tfc_ralux_runtime_GC_GLOBAL_GC = calloc(1, sizeof(struct rlxGC));
-    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createArraySet(16);
-    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createArraySet(16);
+    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createHashSet(16, 8);
+    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createHashSet(16, 8);
     __rlxrt_init_gc();
 }

@@ -10,7 +10,7 @@ public class ArrayField {
     public static int main() {
         tfc.ralux.runtime.GC gc = GC.getGlobalGC();
 
-        for (int i = 0; i < 2000000; i++) {
+        for (int i = 0; i < 200000; i++) {
             //GC.collect(gc);
             ArrayField testObj = new ArrayField();
             //GC.collect(gc);
@@ -28,9 +28,9 @@ public class ArrayField {
             testObj.fields[8] = new Object();
             testObj.fields[9] = new Object();
             testObj = null;
-            GC.collect(gc);
+            //GC.collect(gc);
         }
-        //GC.collect(gc);
+        GC.collect(gc);
 
         return 0;
     }

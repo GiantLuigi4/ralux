@@ -18,6 +18,7 @@ struct set_ops {
     bool (*contains_element)(struct iterable_set*, void*);
     void (*clear)(struct iterable_set*);
     struct set_iterator* (*createIterator)(struct iterable_set*);
+    struct set_iterator* (*createReverseIterator)(struct iterable_set*);
 };
 
 struct iterable_set {
