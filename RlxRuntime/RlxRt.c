@@ -125,8 +125,8 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
     printf("visited %i\n", numVisited);
 
-    ArrayList freed = listCreate();
-    iterator = hs_createIterator(gc->allObjs);
+    struct hash_set* set = gc->allObjs;
+    iterator = hs_createIterator(set);
     while (hs_hasNext(iterator)) {
         RlxObj obj = (RlxObj) hs_current(iterator);
 
@@ -137,31 +137,17 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
         struct rlxGCData* inf = obj->gc_info;
         bool wasVisited = inf->visited;
-        if (!wasVisited)
-            listAdd(freed, obj);
         inf->visited = false;
+        if (!wasVisited) {
+            hs_iterator_remove_element(iterator);
+            __rlxrt_free_obj(obj);
+        }
         hs_next(iterator);
     }
     hs_free_iterator(iterator);
-    printf("freeing %i\n", listSize(freed));
-
-    // TODO: in reality, I should go through with the frees first and do a single-pass consolidation
-    // actually, under that logic, I shouldn't even need a working list for which objects should get removed
-    // I suppose the "free" solution to tracking this is to null out the GC data of objects that have been freed
-    // I can then in the consolidation pass check if the gc data is null, and if so, free the object itself and change the shift delta
-
-    // go through in reverse order to minimize required shifting
-    struct hash_set* set = gc->allObjs;
-//    hs_prep_inplace_remove(hash_set);
-    for (int i = listSize(freed) - 1; i >= 0; i--) {
-        RlxObj obj = listGet(freed, i);
-        hs_remove_element_fast(set, obj);
-        __rlxrt_free_obj(obj);
-    }
     hs_compact(set);
-    listFree(freed);
 
-    printf("survived %i\n", gc->allObjs->size);
+    printf("survived %i\n", set->size);
 }
 
 // runtime functions

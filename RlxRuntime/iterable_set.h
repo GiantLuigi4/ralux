@@ -10,6 +10,7 @@ struct set_iterator {
     void (*previous)(struct set_iterator*);
     bool (*hasNext)(struct set_iterator*);
     bool (*hasPrevious)(struct set_iterator*);
+    void (*removeElement)(struct set_iterator*);
     void (*free)(struct set_iterator*);
 };
 
@@ -17,7 +18,7 @@ struct set_ops {
     bool (*add_element)(struct iterable_set*, void*);
     bool (*remove_element)(struct iterable_set*, void*);
     bool (*remove_element_fast)(struct iterable_set*, void*);
-    void (*compact)(struct iterable_set*);
+    int (*compact)(struct iterable_set*);
     bool (*contains_element)(struct iterable_set*, void*);
     void (*clear)(struct iterable_set*);
     struct set_iterator* (*createIterator)(struct iterable_set*);

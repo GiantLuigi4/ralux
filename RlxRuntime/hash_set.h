@@ -11,6 +11,7 @@ struct hs_iterator {
     void (*previous)(struct set_iterator*);
     bool (*hasNext)(struct set_iterator*);
     bool (*hasPrevious)(struct set_iterator*);
+    void (*removeElement)(struct set_iterator*);
     void (*free)(struct set_iterator*);
     struct hash_set* set;
     struct set_iterator* currentIterator;
@@ -77,11 +78,14 @@ internal bool hs_remove_element_fast(struct hash_set* set, void* element) {
     return value;
 }
 
-internal void hs_compact(struct hash_set* set) {
+internal int hs_compact(struct hash_set* set) {
+    int numLost = 0;
     for (int i = 0; i < set->capacity; i++) {
         struct binary_search_array_set* bin = set->bins[i];
-        if (bin != 0) bs_as_compact(bin);
+        if (bin != 0) numLost += bs_as_compact(bin);
     }
+    set->size -= numLost;
+    return numLost;
 }
 
 internal bool hs_contains_element(struct hash_set* set, void* element) {
@@ -210,6 +214,12 @@ internal void hs_free_iterator(struct hs_iterator* iterator) {
     free(iterator);
 }
 
+internal void hs_iterator_remove_element(struct hs_iterator* iterator) {
+    if (iterator->currentIterator != 0) {
+        bs_as_iterator_remove_element(iterator->currentIterator);
+    }
+}
+
 internal struct set_iterator* hs_createIterator(struct hash_set* set) {
     struct hs_iterator* iterator = malloc(sizeof(struct hs_iterator));
 
@@ -219,6 +229,7 @@ internal struct set_iterator* hs_createIterator(struct hash_set* set) {
     iterator->hasNext = (bool (*)(struct set_iterator*)) hs_hasNext;
     iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrevious;
     iterator->free = (void (*)(struct set_iterator*)) hs_free_iterator;
+    iterator->removeElement = (void (*)(struct set_iterator*)) hs_iterator_remove_element;
     iterator->set = set;
     iterator->currentBin = 0;
     if (set->capacity == 0 || set->size == 0) {
@@ -257,6 +268,7 @@ internal struct set_iterator* hs_createReverseIterator(struct hash_set* set) {
     iterator->hasNext = (bool (*)(struct set_iterator*)) hs_hasNext;
     iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrevious;
     iterator->free = (void (*)(struct set_iterator*)) hs_free_iterator;
+    iterator->removeElement = (void (*)(struct set_iterator*)) hs_iterator_remove_element;
     iterator->set = set;
     if (set->capacity == 0 || set->size == 0) {
         iterator->currentBin = 0;
@@ -289,7 +301,7 @@ static const struct set_ops hs_ops = {
     .add_element = (bool (*)(struct iterable_set*, void*)) hs_add_element,
     .remove_element = (bool (*)(struct iterable_set*, void*)) hs_remove_element,
     .remove_element_fast = (bool (*)(struct iterable_set*, void*)) hs_remove_element_fast,
-    .compact = (void (*)(struct iterable_set*)) hs_compact,
+    .compact = (int (*)(struct iterable_set*)) hs_compact,
     .contains_element = (bool (*)(struct iterable_set*, void*)) hs_contains_element,
     .clear = (void (*)(struct iterable_set*)) hs_clear,
     .createIterator = (struct set_iterator* (*)(struct iterable_set*)) hs_createIterator,
