@@ -107,7 +107,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
 
         // TODO: probably should walk the object tree before continuing to minimize allocated working memory
     }
-    free(iterator);
+    hs_free_iterator(iterator);
 //    printf("Iterated roots...\n");
 
     if (listSize(fref) != 0) {
@@ -155,7 +155,7 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
         inf->visited = false;
         hs_next(iterator);
     }
-    free(iterator);
+    hs_free_iterator(iterator);
     printf("freeing %i\n", listSize(freed));
 
     // TODO: in reality, I should go through with the frees first and do a single-pass consolidation
@@ -177,9 +177,9 @@ EXPORT EXPORT_FUNC void tfc_ralux_runtime_GC_collect(RlxGC gc) {
     hs_compact(set);
     listFree(freed);
 
-    if (gc->allObjs->size != 0 && gc->allObjs->size != 2) {
-        exit(-1);
-    }
+//    if (gc->allObjs->size != 0 && gc->allObjs->size != 2) {
+//        exit(-1);
+//    }
 
     printf("survived %i\n", gc->allObjs->size);
 }
@@ -280,7 +280,7 @@ EXPORT EXPORT_FUNC void __rlxrt_init() {
     // signal(SIGFPE, segfaultHandler);
     
     tfc_ralux_runtime_GC_GLOBAL_GC = calloc(1, sizeof(struct rlxGC));
-    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createHashSet(128, 8);
-    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createHashSet(128, 8);
+    tfc_ralux_runtime_GC_GLOBAL_GC->roots = createHashSet(64, 8);
+    tfc_ralux_runtime_GC_GLOBAL_GC->allObjs = createHashSet(512, 8);
     __rlxrt_init_gc();
 }

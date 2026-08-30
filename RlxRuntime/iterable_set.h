@@ -10,6 +10,7 @@ struct set_iterator {
     void (*previous)(struct set_iterator*);
     bool (*hasNext)(struct set_iterator*);
     bool (*hasPrevious)(struct set_iterator*);
+    void (*free)(struct set_iterator*);
 };
 
 struct set_ops {

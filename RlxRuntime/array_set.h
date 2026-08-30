@@ -9,6 +9,7 @@ struct as_iterator {
     void (*previous)(struct set_iterator*);
     bool (*hasNext)(struct set_iterator*);
     bool (*hasPrevious)(struct set_iterator*);
+    void (*free)(struct set_iterator*);
     struct array_set* set;
     int index;
 };
@@ -174,6 +175,10 @@ internal bool as_hasPrevious(struct as_iterator* iterator) {
     return iterator->index >= 0;
 }
 
+internal void as_free_iterator(struct bs_as_iterator* iterator) {
+    free(iterator);
+}
+
 internal struct set_iterator* as_createIterator(struct array_set* set) {
     struct as_iterator* iterator = malloc(sizeof(struct as_iterator));
 
@@ -182,6 +187,7 @@ internal struct set_iterator* as_createIterator(struct array_set* set) {
     iterator->previous = (void (*)(struct set_iterator*)) as_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) as_hasNext;
     iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrevious;
+    iterator->free = (void (*)(struct set_iterator*)) as_free_iterator;
     iterator->set = set;
     iterator->index = 0;
 
@@ -196,6 +202,7 @@ internal struct set_iterator* as_createReverseIterator(struct array_set* set) {
     iterator->previous = (void (*)(struct set_iterator*)) as_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) as_hasNext;
     iterator->hasPrevious = (bool (*)(struct set_iterator*)) as_hasPrevious;
+    iterator->free = (void (*)(struct set_iterator*)) as_free_iterator;
     iterator->set = set;
     iterator->index = set->size - 1;
 

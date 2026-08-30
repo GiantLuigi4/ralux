@@ -1,6 +1,7 @@
 #pragma once
 #include "iterable_set.h"
 #include "array_set.h"
+#include "binary_search_array_set.h"
 
 struct hash_set;
 
@@ -10,6 +11,7 @@ struct hs_iterator {
     void (*previous)(struct set_iterator*);
     bool (*hasNext)(struct set_iterator*);
     bool (*hasPrevious)(struct set_iterator*);
+    void (*free)(struct set_iterator*);
     struct hash_set* set;
     struct set_iterator* currentIterator;
     int currentBin;
@@ -20,15 +22,15 @@ struct hash_set {
 
     int capacity;
     int size;
-    struct array_set** bins;
+    struct binary_search_array_set** bins;
     int loadFactor;
 };
 
 internal bool hs_add_element(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct array_set* bin = set->bins[binId];
+    struct binary_search_array_set* bin = set->bins[binId];
     if (bin == 0) {
-        bin = createArraySet(4);
+        bin = createBinarySearchArraySet(4);
         set->bins[binId] = bin;
     }
 
@@ -36,14 +38,14 @@ internal bool hs_add_element(struct hash_set* set, void* element) {
 //    printf("%i\n", binId);
 //    printf("%llu\n", bin);
 
-    bool value = as_add_element(bin, element);
+    bool value = bs_as_add_element(bin, element);
     if (value) set->size++;
     return value;
 }
 
 internal bool hs_remove_element(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct array_set* bin = set->bins[binId];
+    struct binary_search_array_set* bin = set->bins[binId];
     if (bin == 0) {
         return false;
     }
@@ -52,7 +54,7 @@ internal bool hs_remove_element(struct hash_set* set, void* element) {
 //    printf("%i\n", binId);
 //    printf("%llu\n", bin);
 
-    bool value = as_remove_element(bin, element);
+    bool value = bs_as_remove_element(bin, element);
     if (value) set->size--;
 //    puts("removedElem");
     return value;
@@ -60,7 +62,7 @@ internal bool hs_remove_element(struct hash_set* set, void* element) {
 
 internal bool hs_remove_element_fast(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct array_set* bin = set->bins[binId];
+    struct binary_search_array_set* bin = set->bins[binId];
     if (bin == 0) {
         return false;
     }
@@ -69,7 +71,7 @@ internal bool hs_remove_element_fast(struct hash_set* set, void* element) {
 //    printf("%i\n", binId);
 //    printf("%llu\n", bin);
 
-    bool value = as_remove_element_fast(bin, element);
+    bool value = bs_as_remove_element_fast(bin, element);
     if (value) set->size--;
 //    puts("removedElem");
     return value;
@@ -77,28 +79,28 @@ internal bool hs_remove_element_fast(struct hash_set* set, void* element) {
 
 internal void hs_compact(struct hash_set* set) {
     for (int i = 0; i < set->capacity; i++) {
-        struct array_set* bin = set->bins[i];
-        if (bin != 0) as_compact(bin);
+        struct binary_search_array_set* bin = set->bins[i];
+        if (bin != 0) bs_as_compact(bin);
     }
 }
 
 internal bool hs_contains_element(struct hash_set* set, void* element) {
     int binId = (((uintptr_t) element) / 47) % set->capacity;
-    struct array_set* bin = set->bins[binId];
+    struct binary_search_array_set* bin = set->bins[binId];
     if (bin == 0) {
         return false;
     }
 
 //    puts("containsElem");
 
-    return as_contains_element(bin, element);
+    return bs_as_contains_element(bin, element);
 }
 
 internal void hs_clear(struct hash_set* set) {
     for (int i = 0; i < set->capacity; i++) {
-        struct array_set* bin = set->bins[i];
+        struct binary_search_array_set* bin = set->bins[i];
         if (bin != 0) {
-            as_clear(bin);
+            bs_as_clear(bin);
         }
     }
     set->size = 0;
@@ -106,17 +108,17 @@ internal void hs_clear(struct hash_set* set) {
 
 /* ITERATOR */
 internal void* hs_current(struct hs_iterator* iterator) {
-    struct as_iterator* curr = iterator->currentIterator;
-    return as_current(curr);
+    struct bs_as_iterator* curr = iterator->currentIterator;
+    return bs_as_current(curr);
 }
 
 internal void hs_next(struct hs_iterator* iterator) {
-    struct as_iterator* curr = iterator->currentIterator;
-    as_next(curr);
-    if (as_hasNext(curr)) return;
+    struct bs_as_iterator* curr = iterator->currentIterator;
+    bs_as_next(curr);
+    if (bs_as_hasNext(curr)) return;
     free(curr);
 
-//    printf("HAS_NEXT: further check...\n");
+//    printf("Hbs_AS_NEXT: further check...\n");
 
     int checkBin = iterator->currentBin + 1;
     while (true) {
@@ -129,7 +131,7 @@ internal void hs_next(struct hs_iterator* iterator) {
 
         struct iterable_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
-            iterator->currentIterator = as_createIterator(bin);
+            iterator->currentIterator = bs_as_createIterator(bin);
             iterator->currentBin = checkBin;
             return;
         }
@@ -139,9 +141,9 @@ internal void hs_next(struct hs_iterator* iterator) {
 }
 
 internal void hs_previous(struct hs_iterator* iterator) {
-    struct as_iterator* curr = iterator->currentIterator;
-    as_previous(curr);
-    if (as_hasPrevious(curr)) return;
+    struct bs_as_iterator* curr = iterator->currentIterator;
+    bs_as_previous(curr);
+    if (bs_as_hasPrevious(curr)) return;
     free(curr);
 
     int checkBin = iterator->currentBin - 1;
@@ -152,9 +154,9 @@ internal void hs_previous(struct hs_iterator* iterator) {
             return;
         }
 
-        struct array_set* bin = iterator->set->bins[checkBin];
+        struct binary_search_array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
-            iterator->currentIterator = as_createReverseIterator(bin);
+            iterator->currentIterator = bs_as_createReverseIterator(bin);
             iterator->currentBin = checkBin;
             return;
         }
@@ -164,9 +166,9 @@ internal void hs_previous(struct hs_iterator* iterator) {
 }
 
 internal bool hs_hasNext(struct hs_iterator* iterator) {
-    struct as_iterator* curr = iterator->currentIterator;
+    struct bs_as_iterator* curr = iterator->currentIterator;
     if (curr == 0) return false; // no iterator exists
-    if (as_hasNext(curr)) return true;
+    if (bs_as_hasNext(curr)) return true;
 //    printf("Must check further\n");
 
     int checkBin = iterator->currentBin + 1;
@@ -175,7 +177,7 @@ internal bool hs_hasNext(struct hs_iterator* iterator) {
             return false;
         }
 
-        struct array_set* bin = iterator->set->bins[checkBin];
+        struct binary_search_array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
 //            printf("Found bin: %llu with %i elements\n", bin, bin->size);
             return true;
@@ -186,19 +188,26 @@ internal bool hs_hasNext(struct hs_iterator* iterator) {
 }
 
 internal bool hs_hasPrevious(struct hs_iterator* iterator) {
-    struct as_iterator* curr = iterator->currentIterator;
+    struct bs_as_iterator* curr = iterator->currentIterator;
     if (curr == 0) return false; // no iterator exists
-    if (as_hasPrevious(curr)) return true;
+    if (bs_as_hasPrevious(curr)) return true;
 
     int checkBin = iterator->currentBin - 1;
     while (true) {
         if (checkBin < 0) return false;
 
-        struct array_set* bin = iterator->set->bins[checkBin];
+        struct binary_search_array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) return true;
 
         checkBin -= 1;
     }
+}
+
+internal void hs_free_iterator(struct hs_iterator* iterator) {
+    if (iterator->currentIterator != 0) {
+        bs_as_free_iterator(iterator->currentIterator);
+    }
+    free(iterator);
 }
 
 internal struct set_iterator* hs_createIterator(struct hash_set* set) {
@@ -209,6 +218,7 @@ internal struct set_iterator* hs_createIterator(struct hash_set* set) {
     iterator->previous = (void (*)(struct set_iterator*)) hs_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) hs_hasNext;
     iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrevious;
+    iterator->free = (void (*)(struct set_iterator*)) hs_free_iterator;
     iterator->set = set;
     iterator->currentBin = 0;
     if (set->capacity == 0 || set->size == 0) {
@@ -227,7 +237,7 @@ internal struct set_iterator* hs_createIterator(struct hash_set* set) {
         struct iterable_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
 //            printf("Found bin: %llu\n", bin);
-            iterator->currentIterator = bin->ops->createIterator(bin);
+            iterator->currentIterator = bs_as_createIterator(bin);
             iterator->currentBin = checkBin;
             break;
         }
@@ -246,6 +256,7 @@ internal struct set_iterator* hs_createReverseIterator(struct hash_set* set) {
     iterator->previous = (void (*)(struct set_iterator*)) hs_previous;
     iterator->hasNext = (bool (*)(struct set_iterator*)) hs_hasNext;
     iterator->hasPrevious = (bool (*)(struct set_iterator*)) hs_hasPrevious;
+    iterator->free = (void (*)(struct set_iterator*)) hs_free_iterator;
     iterator->set = set;
     if (set->capacity == 0 || set->size == 0) {
         iterator->currentBin = 0;
@@ -261,9 +272,9 @@ internal struct set_iterator* hs_createReverseIterator(struct hash_set* set) {
             return iterator;
         }
 
-        struct array_set* bin = iterator->set->bins[checkBin];
+        struct binary_search_array_set* bin = iterator->set->bins[checkBin];
         if (bin != 0 && bin->size != 0) {
-            iterator->currentIterator = as_createReverseIterator(bin);
+            iterator->currentIterator = bs_as_createReverseIterator(bin);
             iterator->currentBin = checkBin;
             break;
         }
@@ -290,7 +301,7 @@ internal struct iterable_set* createHashSet(int capacity, int loadFactor) {
     set->capacity = capacity;
     set->loadFactor = loadFactor;
     set->ops = &hs_ops;
-    set->bins = calloc(capacity, sizeof(struct array_set*));
+    set->bins = calloc(capacity, sizeof(struct binary_search_array_set*));
 
     return set;
 }
